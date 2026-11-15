@@ -7,6 +7,17 @@ function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } })
 }
 
+/** ব্যর্থ হওয়া অনুরোধ থেকে ApiError ধরে ফেরত দেয়; ব্যর্থ না হলে টেস্ট ভাঙে। */
+async function failure(p: Promise<unknown>): Promise<ApiError> {
+  try {
+    await p
+  } catch (e) {
+    if (e instanceof ApiError) return e
+    throw e
+  }
+  throw new Error("অনুরোধ ব্যর্থ হওয়ার কথা ছিল")
+}
+
 describe("apiRequest", () => {
   it("সফল উত্তর parse করে ফেরত দেয় এবং টোকেন ও বডি পাঠায়", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse(200, { status: "ok" }))
@@ -28,8 +39,7 @@ describe("apiRequest", () => {
     const fetchImpl = vi.fn(async () =>
       jsonResponse(401, { error: { code: "invalid_credentials", message: "ফোন নম্বর বা পাসওয়ার্ড ঠিক নয়" } }),
     )
-    const err = await apiRequest("/v1/auth/login", (d) => d, { baseUrl: BASE, fetchImpl: fetchImpl as unknown as typeof fetch }).catch((e) => e)
-    expect(err).toBeInstanceOf(ApiError)
+    const err = await failure(apiRequest("/v1/auth/login", (d) => d, { baseUrl: BASE, fetchImpl: fetchImpl as unknown as typeof fetch }))
     expect(err.status).toBe(401)
     expect(err.code).toBe("invalid_credentials")
     expect(errorMessage(err)).toBe("ফোন নম্বর বা পাসওয়ার্ড ঠিক নয়")
@@ -39,28 +49,27 @@ describe("apiRequest", () => {
     const fetchImpl = vi.fn(async () => {
       throw new TypeError("Failed to fetch")
     })
-    const err = await apiRequest("/health", (d) => d, { baseUrl: BASE, fetchImpl: fetchImpl as unknown as typeof fetch }).catch((e) => e)
-    expect(err).toBeInstanceOf(ApiError)
+    const err = await failure(apiRequest("/health", (d) => d, { baseUrl: BASE, fetchImpl: fetchImpl as unknown as typeof fetch }))
     expect(err.status).toBe(0)
     expect(err.code).toBe("network")
   })
 
   it("ত্রুটির খাম ছাড়া ব্যর্থ উত্তরে সাধারণ বার্তা দেয়", async () => {
     const fetchImpl = vi.fn(async () => new Response("<html>502</html>", { status: 502 }))
-    const err = await apiRequest("/health", (d) => d, { baseUrl: BASE, fetchImpl: fetchImpl as unknown as typeof fetch }).catch((e) => e)
+    const err = await failure(apiRequest("/health", (d) => d, { baseUrl: BASE, fetchImpl: fetchImpl as unknown as typeof fetch }))
     expect(err.status).toBe(502)
     expect(err.code).toBe("http_error")
   })
 
   it("প্রত্যাশিত আকারে না এলে bad_response দেয়", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse(200, { unexpected: true }))
-    const err = await apiRequest(
+    const err = await failure(apiRequest(
       "/v1/me",
       () => {
         throw new Error("bad shape")
       },
       { baseUrl: BASE, fetchImpl: fetchImpl as unknown as typeof fetch },
-    ).catch((e) => e)
+    ))
     expect(err.code).toBe("bad_response")
   })
 
