@@ -1,0 +1,16 @@
+"use client"
+
+import { useEffect, type ReactNode } from "react"
+import { AuthProvider } from "./auth-provider"
+
+export function Providers({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    // service worker শুধু প্রোডাকশনে; ডেভে পুরনো ক্যাশ ঝামেলা করে
+    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // অফলাইন সুবিধা ছাড়াই অ্যাপ চলবে
+      })
+    }
+  }, [])
+  return <AuthProvider>{children}</AuthProvider>
+}
