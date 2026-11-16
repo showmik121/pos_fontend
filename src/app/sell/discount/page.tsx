@@ -38,25 +38,25 @@ function DiscountScreen() {
     for (const { line } of lines) {
       const raw = lineInputs[line.productId] ?? ""
       const v = raw.trim() ? parseTaka(raw) : 0
-      if (v == null) return { error: "ছাড়ের পরিমাণ সঠিক নয়" as const }
+      if (v == null) return { ok: false as const, error: "ছাড়ের পরিমাণ সঠিক নয়" }
       discounts[line.productId] = v
     }
     const billValue = billInput.trim() ? parseTaka(billInput) : 0
-    if (billValue == null) return { error: "বিলের ছাড় সঠিক নয়" as const }
+    if (billValue == null) return { ok: false as const, error: "বিলের ছাড় সঠিক নয়" }
     const bill: BillDiscount = { type: kind, value: billValue }
     try {
       const totals = computeCart(
         lines.map(({ line, product }) => ({ unitPrice: product.pricePoisha, qty: line.qty, discount: discounts[line.productId] ?? 0 })),
         bill,
       )
-      return { totals, discounts, bill }
+      return { ok: true as const, totals, discounts, bill }
     } catch (err) {
-      return { error: domainMessage(err) }
+      return { ok: false as const, error: domainMessage(err) }
     }
   }, [lines, lineInputs, kind, billInput])
 
   const apply = () => {
-    if ("error" in preview) return
+    if (!preview.ok) return
     update((d) => ({ ...d, draft: setBillDiscount(setLineDiscounts(d.draft, preview.discounts), preview.bill) }))
     router.push("/sell")
   }
@@ -72,20 +72,20 @@ function DiscountScreen() {
       backHref="/sell"
       footer={
         <div className="space-y-2">
-          {"totals" in preview ? (
+          {preview.ok ? (
             <div className="flex items-center justify-between">
               <span className="text-muted">ছাড়ের পর মোট</span>
               <span className="text-xl font-bold">{formatTaka(preview.totals.total)}</span>
             </div>
           ) : null}
-          <Button full onClick={apply} disabled={"error" in preview}>
+          <Button full onClick={apply} disabled={!preview.ok}>
             ছাড় প্রয়োগ করুন
           </Button>
         </div>
       }
     >
       {lines.length === 0 ? <Banner tone="warn">বিলে কোনো পণ্য নেই।</Banner> : null}
-      {"error" in preview ? <Banner tone="danger">{preview.error}</Banner> : null}
+      {!preview.ok ? <Banner tone="danger">{preview.error}</Banner> : null}
 
       <h2 className="text-[15px] font-semibold">পণ্য ধরে ছাড় (মোট টাকা)</h2>
       <RowList>
@@ -109,7 +109,7 @@ function DiscountScreen() {
         </div>
       </Card>
 
-      {"totals" in preview ? (
+      {preview.ok ? (
         <RowList>
           <KeyValue label="ছাড়ের আগে" value={formatTaka(preview.totals.subtotal)} />
           <KeyValue label="পণ্যের ছাড়" value={`−${formatTaka(preview.totals.lineDiscount)}`} />
