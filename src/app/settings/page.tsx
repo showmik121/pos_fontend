@@ -1,49 +1,76 @@
 "use client"
 
-import Link from "next/link"
+import { useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
+import { useDb } from "@/components/db-provider"
+import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
+import { Row, RowList, SectionTitle } from "@/components/ui/card"
+import { Field } from "@/components/ui/field"
+import { toAsciiDigits } from "@/lib/format/bn"
 import { formatPhoneBn } from "@/lib/format/phone"
+import { updateSettings } from "@/lib/store/actions"
+import { withDemoData } from "@/lib/store/seed"
 
 const KIND_LABEL = { pharmacy: "ফার্মেসি", cosmetics: "কসমেটিক্স", other: "অন্যান্য" } as const
 
 export default function SettingsPage() {
   const { state, signOut } = useAuth()
+  const { db, update } = useDb()
+  const [minStock, setMinStock] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+
   if (state.status !== "authed") return <AppShell title="সেটিংস" backHref="/">{null}</AppShell>
   const { user, store } = state
+  const minValue = minStock ?? String(db.settings.defaultMinStock)
+
+  const saveMin = () => {
+    const n = Number(toAsciiDigits(minValue))
+    if (!Number.isInteger(n) || n < 0) return
+    update((d) => updateSettings(d, { defaultMinStock: n }))
+    setMinStock(null)
+    setSaved(true)
+  }
 
   return (
     <AppShell title="সেটিংস" backHref="/">
-      <section className="divide-y divide-line rounded-2xl border border-line bg-white">
-        <Row label="দোকান" value={store?.name ?? "—"} />
-        <Row label="ধরন" value={store ? KIND_LABEL[store.kind] : "—"} />
-        <Row label="আপনি" value={user.name} />
-        <Row label="মোবাইল" value={formatPhoneBn(user.phone)} />
-        <Row label="ভূমিকা" value={user.role === "owner" ? "মালিক" : "কর্মচারী"} />
-      </section>
+      <RowList>
+        <Row title="দোকান" right={<span className="font-medium">{store?.name ?? "—"}</span>} />
+        <Row title="ধরন" right={<span className="font-medium">{store ? KIND_LABEL[store.kind] : "—"}</span>} />
+        <Row title="আপনি" right={<span className="font-medium">{user.name}</span>} />
+        <Row title="মোবাইল" right={<span className="font-medium">{formatPhoneBn(user.phone)}</span>} />
+        <Row title="ভূমিকা" right={<span className="font-medium">{user.role === "owner" ? "মালিক" : "কর্মচারী"}</span>} />
+      </RowList>
 
       {user.role === "owner" ? (
-        <Link href="/settings/staff" className="flex min-h-14 items-center justify-between rounded-2xl border border-line bg-white px-4 active:bg-canvas">
-          <span className="font-medium">কর্মচারী</span>
-          <span aria-hidden="true" className="text-muted">
-            ›
-          </span>
-        </Link>
+        <RowList>
+          <Row href="/settings/staff" title="কর্মচারী" chevron />
+          <Row href="/products/import" title="CSV থেকে পণ্য আনুন" chevron />
+        </RowList>
+      ) : null}
+
+      <SectionTitle>স্টক</SectionTitle>
+      <div className="space-y-2">
+        <Field id="set-min" label="নতুন পণ্যের ডিফল্ট সর্বনিম্ন স্টক" inputMode="numeric" value={minValue} onChange={(e) => (setSaved(false), setMinStock(e.target.value))} />
+        <Button variant="secondary" onClick={saveMin} disabled={minStock === null}>
+          সেভ করুন
+        </Button>
+        {saved ? <p className="text-sm text-brand-dark">সেভ হয়েছে।</p> : null}
+      </div>
+
+      <SectionTitle>তথ্য সংরক্ষণ</SectionTitle>
+      <Banner tone="warn">পণ্য, বিল ও বাকির তথ্য এখন শুধু এই ফোনেই সেভ হচ্ছে — সার্ভারে সিংক শীঘ্রই আসছে। ব্রাউজারের ডেটা মুছলে এই তথ্যও মুছে যাবে।</Banner>
+
+      {db.products.length === 0 ? (
+        <Button variant="secondary" full onClick={() => update((d) => withDemoData(d, new Date()))}>
+          নমুনা তথ্য দিয়ে দেখুন
+        </Button>
       ) : null}
 
       <Button variant="danger" full onClick={signOut}>
         লগআউট
       </Button>
     </AppShell>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-h-12 items-center justify-between gap-3 px-4">
-      <span className="text-sm text-muted">{label}</span>
-      <span className="truncate font-medium">{value}</span>
-    </div>
   )
 }

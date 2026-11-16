@@ -20,7 +20,7 @@ function isActive(pathname: string, href: string): boolean {
 export function BottomNav() {
   const pathname = usePathname()
   return (
-    <nav aria-label="প্রধান মেনু" className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="প্রধান মেনু" className="no-print sticky bottom-0 z-10 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
       <ul className="mx-auto grid max-w-[480px] grid-cols-5">
         {TABS.map((tab) => {
           const active = isActive(pathname, tab.href)

@@ -3,42 +3,83 @@
 import Link from "next/link"
 import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
-import { Banner } from "@/components/ui/banner"
-
-const KIND_LABEL = { pharmacy: "ফার্মেসি", cosmetics: "কসমেটিক্স", other: "দোকান" } as const
+import { useDb } from "@/components/db-provider"
+import { LinkButton } from "@/components/ui/button"
+import { Card, Row, RowList, SectionTitle, StatBox } from "@/components/ui/card"
+import { Icon } from "@/components/ui/icons"
+import { todayIso } from "@/lib/domain/dates"
+import { formatTaka } from "@/lib/domain/money"
+import { formatTimeBn } from "@/lib/format/datetime"
+import { toBanglaDigits } from "@/lib/format/bn"
+import { daySummary, dueRows, expiringSoonCount, lowStockProducts, totalDue } from "@/lib/store/selectors"
 
 export default function HomePage() {
   const { state } = useAuth()
-  const store = state.status === "authed" ? state.store : null
-  const user = state.status === "authed" ? state.user : null
+  const { db } = useDb()
+  const today = todayIso()
+  const storeName = state.status === "authed" ? (state.store?.name ?? "হোম") : "হোম"
+
+  const summary = daySummary(db, today)
+  const low = lowStockProducts(db, today).length
+  const soon = expiringSoonCount(db, today)
+  const dueCount = dueRows(db).length
+  const recent = [...db.sales].reverse().slice(0, 5)
+  const alerts = low > 0 || soon > 0 || dueCount > 0
 
   return (
     <AppShell
-      title={store?.name ?? "হোম"}
+      title={storeName}
+      nav
       action={
         <Link href="/settings" aria-label="সেটিংস" className="grid size-11 place-items-center rounded-lg text-ink active:bg-canvas">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" />
-          </svg>
+          <Icon name="sliders" size={22} />
         </Link>
       }
     >
-      <section className="rounded-2xl border border-line bg-white p-4">
-        <p className="text-sm text-muted">{store ? KIND_LABEL[store.kind] : "দোকান"}</p>
-        <p className="mt-0.5 text-lg font-bold">স্বাগতম{user ? `, ${user.name}` : ""}</p>
-        <p className="mt-1 text-sm text-muted">আপনার দোকান তৈরি আছে। বিক্রি, স্টক আর বাকির পর্দা পরের ধাপগুলোতে যোগ হবে।</p>
-      </section>
+      <LinkButton href="/sell" full className="min-h-14 text-base">
+        <Icon name="plus" /> নতুন বিল
+      </LinkButton>
 
-      <Banner tone="info">এটি প্রথম সংস্করণ: লগইন, দোকান ও কর্মচারীর ব্যবস্থাপনা কাজ করছে।</Banner>
+      <div className="flex gap-3">
+        <StatBox label="আজকের বিক্রি" value={formatTaka(summary.total)} />
+        <StatBox label="বিল" value={`${toBanglaDigits(summary.bills)}টি`} />
+      </div>
 
-      {user?.role === "owner" ? (
-        <Link href="/settings/staff" className="flex min-h-14 items-center justify-between rounded-2xl border border-line bg-white px-4 active:bg-canvas">
-          <span className="font-medium">কর্মচারী যোগ ও ব্যবস্থাপনা</span>
-          <span aria-hidden="true" className="text-muted">
-            ›
-          </span>
-        </Link>
+      {db.products.length === 0 ? (
+        <Card className="space-y-3 px-4 py-5">
+          <p className="font-medium">শুরু করুন</p>
+          <p className="text-sm text-muted">বিল করার আগে পণ্য যোগ করুন — একটি একটি করে, অথবা CSV ফাইল থেকে একসাথে।</p>
+          <LinkButton href="/products/new">প্রথম পণ্য যোগ করুন</LinkButton>
+        </Card>
+      ) : null}
+
+      <SectionTitle>নজর দিন</SectionTitle>
+      {alerts ? (
+        <RowList>
+          {low > 0 ? <Row href="/stock/low" dot="danger" title="স্টক কম" subtitle={`${toBanglaDigits(low)}টি পণ্য`} chevron /> : null}
+          {soon > 0 ? <Row href="/stock/expiry" dot="amber" title="মেয়াদ কাছে" subtitle={`৩০ দিনের মধ্যে ${toBanglaDigits(soon)}টি ব্যাচ`} chevron /> : null}
+          {dueCount > 0 ? <Row href="/dues" dot="amber" title="বাকি" subtitle={`${toBanglaDigits(dueCount)} জনের কাছে ${formatTaka(totalDue(db))}`} chevron /> : null}
+        </RowList>
+      ) : (
+        <Card className="px-4 py-5 text-center text-muted">এখন সব ঠিক আছে।</Card>
+      )}
+
+      {recent.length > 0 ? (
+        <>
+          <SectionTitle>সাম্প্রতিক বিল</SectionTitle>
+          <RowList>
+            {recent.map((s) => (
+              <Row
+                key={s.id}
+                href={`/sell/receipt?id=${s.id}`}
+                title={`বিল #${toBanglaDigits(s.no)}`}
+                subtitle={`${formatTimeBn(s.at)}${s.customerName ? ` · ${s.customerName}` : ""}`}
+                right={<span className="font-semibold">{formatTaka(s.total)}</span>}
+                chevron
+              />
+            ))}
+          </RowList>
+        </>
       ) : null}
     </AppShell>
   )

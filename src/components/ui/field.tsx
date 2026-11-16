@@ -24,7 +24,7 @@ export function Field({ id, label, hint, error, trailing, className, ...input }:
           {...input}
           className={cn(
             "min-h-12 w-full rounded-xl border bg-white px-3 text-base text-ink placeholder:text-muted/70 focus:border-brand focus:outline-2 focus:outline-brand/30",
-            error ? "border-danger" : "border-line",
+            error ? "border-danger" : "border-line-strong",
             trailing ? "pr-20" : "",
             className,
           )}

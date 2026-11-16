@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from "react"
 import { AuthProvider } from "./auth-provider"
+import { DbProvider } from "./db-provider"
 
 export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -12,5 +13,9 @@ export function Providers({ children }: { children: ReactNode }) {
       })
     }
   }, [])
-  return <AuthProvider>{children}</AuthProvider>
+  return (
+    <AuthProvider>
+      <DbProvider>{children}</DbProvider>
+    </AuthProvider>
+  )
 }

@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes } from "react"
+import Link from "next/link"
+import type { ButtonHTMLAttributes, ReactNode } from "react"
 import { cn } from "@/lib/cn"
 
 type Variant = "primary" | "secondary" | "danger" | "ghost"
@@ -32,5 +33,17 @@ export function Button({ variant = "primary", loading = false, full = false, cla
     >
       {loading ? "অপেক্ষা করুন…" : children}
     </button>
+  )
+}
+
+/** বোতামের মতো দেখতে লিংক */
+export function LinkButton({ href, variant = "primary", full = false, className, children }: { href: string; variant?: Variant; full?: boolean; className?: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className={cn("inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-medium transition-colors", VARIANTS[variant], full && "w-full", className)}
+    >
+      {children}
+    </Link>
   )
 }

@@ -1,0 +1,264 @@
+import { computeCart, settlePayments, type BillDiscount, type MobileMethod } from "../domain/cart"
+import { localDateIso } from "../domain/dates"
+import { DomainError, requireNonNegativeInt, requirePositiveInt } from "../domain/errors"
+import { allocateFifo } from "../domain/fifo"
+import { toBaseUnits, type StockUnit } from "../domain/units"
+import { normalizeBdPhone } from "../format/phone"
+import type { ImportRow } from "./csv"
+import { newId } from "./db"
+import { customerBalance, findByBarcode, findProduct } from "./selectors"
+import type { Batch, Customer, Db, Draft, LedgerEntry, Product, Sale, SaleLine, UnitLabel } from "./types"
+
+// সব ফাংশন বিশুদ্ধ: পুরনো Db বদলায় না, নতুন Db ফেরত দেয়। ব্যর্থ হলে DomainError ছোঁড়ে।
+
+export interface ProductInput {
+  name: string
+  unit: UnitLabel
+  cartonSize: number
+  costPoisha: number
+  pricePoisha: number
+  minStock: number
+  category: string
+  barcode: string | null
+  open: boolean
+}
+
+function validateProductFields(input: ProductInput): void {
+  if (!input.name.trim()) throw new DomainError("name_required", "পণ্যের নাম দিন")
+  if (!(input.pricePoisha > 0)) throw new DomainError("price_required", "বিক্রয়মূল্য দিন")
+  requireNonNegativeInt(input.costPoisha, "ক্রয়মূল্য")
+  requirePositiveInt(input.cartonSize, "কার্টনে পিসের সংখ্যা")
+  requireNonNegativeInt(input.minStock, "সর্বনিম্ন স্টক")
+}
+
+export function createProduct(db: Db, input: ProductInput, now: Date): { db: Db; product: Product } {
+  validateProductFields(input)
+  const code = input.barcode?.trim() || null
+  if (code && findByBarcode(db, code)) throw new DomainError("duplicate_barcode", "এই বারকোড আগে থেকেই আছে")
+  const product: Product = {
+    id: newId(),
+    name: input.name.trim(),
+    barcodes: code ? [{ code, packSize: 1 }] : [],
+    unit: input.unit,
+    cartonSize: input.cartonSize,
+    costPoisha: input.costPoisha,
+    pricePoisha: input.pricePoisha,
+    minStock: input.minStock,
+    category: input.category.trim(),
+    open: input.open && !code,
+    createdAt: now.toISOString(),
+  }
+  return { db: { ...db, products: [...db.products, product] }, product }
+}
+
+export function updateProduct(db: Db, id: string, input: Omit<ProductInput, "barcode" | "open">): Db {
+  validateProductFields({ ...input, barcode: null, open: false })
+  if (!findProduct(db, id)) throw new DomainError("not_found", "পণ্যটি পাওয়া যায়নি")
+  return {
+    ...db,
+    products: db.products.map((p) =>
+      p.id === id ? { ...p, name: input.name.trim(), unit: input.unit, cartonSize: input.cartonSize, costPoisha: input.costPoisha, pricePoisha: input.pricePoisha, minStock: input.minStock, category: input.category.trim() } : p,
+    ),
+  }
+}
+
+export function addBarcode(db: Db, productId: string, code: string, packSize: number): Db {
+  const c = code.trim()
+  if (!c) throw new DomainError("barcode_required", "বারকোড ফাঁকা")
+  requirePositiveInt(packSize, "কার্টনে পিসের সংখ্যা")
+  if (!findProduct(db, productId)) throw new DomainError("not_found", "পণ্যটি পাওয়া যায়নি")
+  if (findByBarcode(db, c)) throw new DomainError("duplicate_barcode", "এই বারকোড আগে থেকেই আছে")
+  return {
+    ...db,
+    products: db.products.map((p) => (p.id === productId ? { ...p, open: false, barcodes: [...p.barcodes, { code: c, packSize }] } : p)),
+  }
+}
+
+export interface StockInInput {
+  productId: string
+  qty: number
+  unit: StockUnit
+  batchNo: string
+  expiryDate: string | null
+  /** unit অনুযায়ী প্রতি কার্টন বা প্রতি পিসের ক্রয়মূল্য (পয়সা) */
+  costPoisha: number
+  /** প্রতি পিস বিক্রয়মূল্য; null হলে আগেরটাই থাকে */
+  pricePoisha: number | null
+  /** ফার্মেসিতে ব্যাচ ও মেয়াদ বাধ্যতামূলক */
+  requireBatchAndExpiry: boolean
+}
+
+export function stockIn(db: Db, input: StockInInput, now: Date): Db {
+  const product = findProduct(db, input.productId)
+  if (!product) throw new DomainError("not_found", "পণ্যটি পাওয়া যায়নি")
+  const pieces = toBaseUnits({ qty: input.qty, unit: input.unit, packSize: product.cartonSize })
+  requireNonNegativeInt(input.costPoisha, "ক্রয়মূল্য")
+  const batchNo = input.batchNo.trim()
+  if (input.requireBatchAndExpiry) {
+    if (!batchNo) throw new DomainError("batch_required", "ব্যাচ নম্বর দিন")
+    if (!input.expiryDate) throw new DomainError("expiry_required", "মেয়াদ দিন (মাস/বছর)")
+  }
+  const costPerPiece = input.unit === "carton" ? Math.round(input.costPoisha / product.cartonSize) : input.costPoisha
+  const nowIso = now.toISOString()
+
+  const existing = db.batches.find((b) => b.productId === product.id && b.batchNo === batchNo && b.expiryDate === input.expiryDate && batchNo !== "")
+  const batches: Batch[] = existing
+    ? db.batches.map((b) => (b.id === existing.id ? { ...b, qtyRemaining: b.qtyRemaining + pieces, costPoisha: costPerPiece } : b))
+    : [...db.batches, { id: newId(), productId: product.id, batchNo, expiryDate: input.expiryDate, qtyRemaining: pieces, costPoisha: costPerPiece, receivedAt: nowIso }]
+
+  const price = input.pricePoisha != null && input.pricePoisha > 0 ? input.pricePoisha : product.pricePoisha
+  const products = db.products.map((p) => (p.id === product.id ? { ...p, costPoisha: costPerPiece, pricePoisha: price } : p))
+  return { ...db, batches, products }
+}
+
+export function removeBatch(db: Db, batchId: string): Db {
+  return { ...db, batches: db.batches.filter((b) => b.id !== batchId) }
+}
+
+// ---- কার্ট (খসড়া বিল) ----
+
+export function addToCart(draft: Draft, productId: string, qty = 1): Draft {
+  requirePositiveInt(qty, "পরিমাণ")
+  const has = draft.lines.some((l) => l.productId === productId)
+  const lines = has
+    ? draft.lines.map((l) => (l.productId === productId ? { ...l, qty: l.qty + qty } : l))
+    : [...draft.lines, { productId, qty, discount: 0 }]
+  return { ...draft, lines }
+}
+
+export function setCartQty(draft: Draft, productId: string, qty: number): Draft {
+  if (qty <= 0) return { ...draft, lines: draft.lines.filter((l) => l.productId !== productId) }
+  return { ...draft, lines: draft.lines.map((l) => (l.productId === productId ? { ...l, qty } : l)) }
+}
+
+export function setLineDiscounts(draft: Draft, discounts: Record<string, number>): Draft {
+  return { ...draft, lines: draft.lines.map((l) => ({ ...l, discount: discounts[l.productId] ?? l.discount })) }
+}
+
+export function setBillDiscount(draft: Draft, bill: BillDiscount): Draft {
+  return { ...draft, bill }
+}
+
+export function setCartCustomer(draft: Draft, customerId: string | null): Draft {
+  return { ...draft, customerId }
+}
+
+export const EMPTY_DRAFT: Draft = { lines: [], bill: { type: "amount", value: 0 }, customerId: null }
+
+// ---- বিল সম্পন্ন ----
+
+export interface CompleteSaleInput {
+  cashier: string
+  cash: number
+  mobile: number
+  mobileMethod: MobileMethod
+}
+
+export function completeSale(db: Db, input: CompleteSaleInput, now: Date): { db: Db; sale: Sale } {
+  const draft = db.draft
+  if (draft.lines.length === 0) throw new DomainError("empty_cart", "বিলে কমপক্ষে একটি পণ্য লাগবে")
+  const today = localDateIso(now)
+
+  const priced = draft.lines.map((l) => {
+    const product = findProduct(db, l.productId)
+    if (!product) throw new DomainError("not_found", "কার্টের একটি পণ্য আর পাওয়া যাচ্ছে না")
+    return { line: l, product }
+  })
+  const totals = computeCart(
+    priced.map(({ line, product }) => ({ unitPrice: product.pricePoisha, qty: line.qty, discount: line.discount })),
+    draft.bill,
+  )
+  const customer = draft.customerId ? db.customers.find((c) => c.id === draft.customerId) : undefined
+  const settled = settlePayments({ total: totals.total, cash: input.cash, mobile: input.mobile, mobileMethod: input.mobileMethod, hasCustomer: customer != null })
+
+  let batches = db.batches
+  const lines: SaleLine[] = priced.map(({ line, product }) => {
+    const productBatches = batches.filter((b) => b.productId === product.id)
+    const allocs = allocateFifo(productBatches, line.qty, today)
+    batches = batches.map((b) => {
+      const a = allocs.find((x) => x.batchId === b.id)
+      return a ? { ...b, qtyRemaining: b.qtyRemaining - a.qty } : b
+    })
+    return {
+      productId: product.id,
+      name: product.name,
+      qty: line.qty,
+      unitPrice: product.pricePoisha,
+      discount: line.discount,
+      allocations: allocs.map((a) => {
+        const b = productBatches.find((x) => x.id === a.batchId)
+        return { batchId: a.batchId, batchNo: b?.batchNo ?? "", qty: a.qty, costPoisha: b?.costPoisha ?? product.costPoisha }
+      }),
+    }
+  })
+
+  const no = db.billCounter + 1
+  const sale: Sale = {
+    id: newId(),
+    no,
+    at: now.toISOString(),
+    cashier: input.cashier,
+    lines,
+    subtotal: totals.subtotal,
+    lineDiscount: totals.lineDiscount,
+    billDiscount: totals.billDiscount,
+    total: totals.total,
+    payments: settled.payments,
+    change: settled.change,
+    due: settled.due,
+    customerId: customer?.id ?? null,
+    customerName: customer?.name ?? null,
+  }
+  const ledger: LedgerEntry[] =
+    settled.due > 0 && customer
+      ? [...db.ledger, { id: newId(), customerId: customer.id, at: sale.at, kind: "sale", amount: settled.due, saleNo: no, by: input.cashier }]
+      : db.ledger
+  return {
+    db: { ...db, batches, sales: [...db.sales, sale], ledger, billCounter: no, draft: EMPTY_DRAFT },
+    sale,
+  }
+}
+
+// ---- কাস্টমার ও বাকি ----
+
+export function addCustomer(db: Db, input: { name: string; phone: string }, now: Date): { db: Db; customer: Customer } {
+  const name = input.name.trim()
+  if (!name) throw new DomainError("name_required", "কাস্টমারের নাম দিন")
+  let phone = ""
+  if (input.phone.trim()) {
+    const normalized = normalizeBdPhone(input.phone)
+    if (!normalized) throw new DomainError("invalid_phone", "মোবাইল নম্বর সঠিক নয় (যেমন ০১৭১২৩৪৫৬৭৮)")
+    if (db.customers.some((c) => c.phone === normalized)) throw new DomainError("duplicate_phone", "এই নম্বরে কাস্টমার আগে থেকেই আছে")
+    phone = normalized
+  }
+  const customer: Customer = { id: newId(), name, phone, createdAt: now.toISOString() }
+  return { db: { ...db, customers: [...db.customers, customer] }, customer }
+}
+
+export function receiveDue(db: Db, customerId: string, amount: number, by: string, now: Date): Db {
+  requirePositiveInt(amount, "জমার পরিমাণ")
+  if (!db.customers.some((c) => c.id === customerId)) throw new DomainError("not_found", "কাস্টমার পাওয়া যায়নি")
+  if (amount > customerBalance(db, customerId)) throw new DomainError("overpay", "বাকির চেয়ে বেশি জমা নেওয়া যায় না")
+  const entry: LedgerEntry = { id: newId(), customerId, at: now.toISOString(), kind: "payment", amount, saleNo: null, by }
+  return { ...db, ledger: [...db.ledger, entry] }
+}
+
+export function updateSettings(db: Db, patch: Partial<Db["settings"]>): Db {
+  return { ...db, settings: { ...db.settings, ...patch } }
+}
+
+export function importProducts(db: Db, rows: readonly ImportRow[], now: Date): Db {
+  let next = db
+  for (const r of rows) {
+    const created = createProduct(
+      next,
+      { name: r.name, unit: r.unit, cartonSize: r.cartonSize, costPoisha: r.costPoisha, pricePoisha: r.pricePoisha, minStock: r.minStock, category: r.category, barcode: r.barcode || null, open: !r.barcode },
+      now,
+    )
+    next = created.db
+    if (r.qty > 0) {
+      next = stockIn(next, { productId: created.product.id, qty: r.qty, unit: "piece", batchNo: r.batchNo, expiryDate: r.expiryDate, costPoisha: r.costPoisha, pricePoisha: null, requireBatchAndExpiry: false }, now)
+    }
+  }
+  return next
+}

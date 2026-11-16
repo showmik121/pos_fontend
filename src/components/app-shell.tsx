@@ -5,13 +5,19 @@ import { useRouter } from "next/navigation"
 import { useEffect, type ReactNode } from "react"
 import { useAuth } from "./auth-provider"
 import { BottomNav } from "./bottom-nav"
+import { useDb } from "./db-provider"
+import { Icon } from "./ui/icons"
 
 interface AppShellProps {
   title: string
-  /** দিলে হেডারে "পিছনে" লিংক দেখায় (সেটিংসের ভেতরের পর্দার জন্য) */
+  /** দিলে হেডারে "পিছনে" লিংক দেখায় */
   backHref?: string
   /** হেডারের ডানের অংশ */
   action?: ReactNode
+  /** নিচের প্রধান মেনু দেখাবে কি না (ডিফল্ট: না; শুধু ৫টি মূল পর্দায় true) */
+  nav?: boolean
+  /** নিচে আটকানো অ্যাকশন বার (মেনুর বদলে) */
+  footer?: ReactNode
   children: ReactNode
 }
 
@@ -23,32 +29,52 @@ export function Splash() {
   )
 }
 
-/** লগইন করা ইউজারের পর্দার কাঠামো: হেডার, মূল অংশ, নিচের মেনু। লগইন না থাকলে /login-এ পাঠায়। */
-export function AppShell({ title, backHref, action, children }: AppShellProps) {
+/** লগইন ও লোকাল ডেটা তৈরি না হওয়া পর্যন্ত ভেতরের অংশ (যার state ডেটা থেকে শুরু হয়) চালায় না */
+export function Ready({ children }: { children: ReactNode }) {
   const { state } = useAuth()
+  const { ready } = useDb()
+  const router = useRouter()
+  useEffect(() => {
+    if (state.status === "anon") router.replace("/login")
+  }, [state.status, router])
+  if (state.status !== "authed" || !ready) return <Splash />
+  return <>{children}</>
+}
+
+/** লগইন করা ইউজারের পর্দার কাঠামো: হেডার, মূল অংশ, নিচের মেনু বা অ্যাকশন বার। লগইন না থাকলে /login-এ পাঠায়। */
+export function AppShell({ title, backHref, action, nav = false, footer, children }: AppShellProps) {
+  const { state } = useAuth()
+  const { ready, saveFailed } = useDb()
   const router = useRouter()
 
   useEffect(() => {
     if (state.status === "anon") router.replace("/login")
   }, [state.status, router])
 
-  if (state.status !== "authed") return <Splash />
+  if (state.status !== "authed" || !ready) return <Splash />
 
   return (
-    <div className="mx-auto min-h-dvh max-w-[480px] bg-canvas pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
-      <header className="sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-line bg-white px-4">
+    <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-canvas">
+      <header className="no-print sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-line bg-white px-4">
         {backHref ? (
           <Link href={backHref} aria-label="পিছনে যান" className="-ml-2 grid size-11 place-items-center rounded-lg text-ink active:bg-canvas">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M15 5l-7 7 7 7" />
-            </svg>
+            <Icon name="back" size={22} />
           </Link>
         ) : null}
         <h1 className="flex-1 truncate text-lg font-bold text-ink">{title}</h1>
         {action}
       </header>
-      <main className="space-y-4 p-4">{children}</main>
-      <BottomNav />
+      {saveFailed ? (
+        <div role="alert" className="bg-danger-bg px-4 py-2 text-sm text-danger">
+          ফোনের জায়গা ভরা বা সেভ বন্ধ — নতুন তথ্য সেভ হচ্ছে না। জায়গা খালি করুন।
+        </div>
+      ) : null}
+      <main className="flex-1 space-y-4 p-4">{children}</main>
+      {footer ? (
+        <div className="no-print sticky bottom-0 z-10 border-t border-line bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">{footer}</div>
+      ) : nav ? (
+        <BottomNav />
+      ) : null}
     </div>
   )
 }

@@ -13,6 +13,11 @@
   --color-warn: #8a4b00;
   --color-danger-bg: #fdecea;
   --color-danger: #b42318;
+  --color-chip: #eef0f3;
+  --color-chip-ink: #3a4250;
+  --color-ink2: #3a4250;
+  --color-amber: #b45309;
+  --color-line-strong: #a3abb8;
   --font-sans: var(--font-bengali), system-ui, sans-serif;
 }
 
@@ -38,4 +43,14 @@ textarea {
 :focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
+}
+
+/* ছাপার সময় শুধু রসিদ থাকবে */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
 }
