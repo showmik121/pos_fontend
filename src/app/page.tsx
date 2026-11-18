@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/icons"
 import { todayIso } from "@/lib/domain/dates"
 import { formatTaka } from "@/lib/domain/money"
 import { formatTimeBn } from "@/lib/format/datetime"
+import { formatBillNo } from "@/lib/domain/bill"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { daySummary, dueRows, expiringSoonCount, lowStockProducts, totalDue } from "@/lib/store/selectors"
 
@@ -72,7 +73,7 @@ export default function HomePage() {
               <Row
                 key={s.id}
                 href={`/sell/receipt?id=${s.id}`}
-                title={`বিল #${toBanglaDigits(s.no)}`}
+                title={`বিল #${formatBillNo(s)}`}
                 subtitle={`${formatTimeBn(s.at)}${s.customerName ? ` · ${s.customerName}` : ""}`}
                 right={s.voided ? <Pill tone="danger">বাতিল</Pill> : <span className="font-semibold">{formatTaka(s.total)}</span>}
                 chevron

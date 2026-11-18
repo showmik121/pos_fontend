@@ -152,6 +152,8 @@ export interface CompleteSaleInput {
   cash: number
   mobile: number
   mobileMethod: MobileMethod
+  /** এই ফোনের ডিভাইস কোড; নিবন্ধিত না হলে বাদ */
+  devicePrefix?: string | null
 }
 
 export function completeSale(db: Db, input: CompleteSaleInput, now: Date): { db: Db; sale: Sale } {
@@ -196,6 +198,7 @@ export function completeSale(db: Db, input: CompleteSaleInput, now: Date): { db:
   const sale: Sale = {
     id: newId(),
     no,
+    ...(input.devicePrefix ? { prefix: input.devicePrefix } : {}),
     at: now.toISOString(),
     cashier: input.cashier,
     lines,
@@ -211,7 +214,7 @@ export function completeSale(db: Db, input: CompleteSaleInput, now: Date): { db:
   }
   const ledger: LedgerEntry[] =
     settled.due > 0 && customer
-      ? [...db.ledger, { id: newId(), customerId: customer.id, at: sale.at, kind: "sale", amount: settled.due, saleNo: no, by: input.cashier }]
+      ? [...db.ledger, { id: newId(), customerId: customer.id, at: sale.at, kind: "sale", amount: settled.due, saleNo: no, ...(sale.prefix ? { salePrefix: sale.prefix } : {}), by: input.cashier }]
       : db.ledger
   return {
     db: { ...db, batches, sales: [...db.sales, sale], ledger, billCounter: no, draft: EMPTY_DRAFT },
@@ -256,7 +259,7 @@ export function voidSale(db: Db, saleId: string, input: { by: string; reason: st
     // কাস্টমার পরে কিছু বাকি শোধ করে থাকলে সেটুকু ঋণাত্মক বাকি না বানিয়ে ফেরতের হিসাবে যায়
     dueReversed = Math.min(sale.due, Math.max(0, customerBalance(db, sale.customerId)))
     if (dueReversed > 0) {
-      ledger = [...ledger, { id: newId(), customerId: sale.customerId, at: now.toISOString(), kind: "void", amount: dueReversed, saleNo: sale.no, by: input.by }]
+      ledger = [...ledger, { id: newId(), customerId: sale.customerId, at: now.toISOString(), kind: "void", amount: dueReversed, saleNo: sale.no, ...(sale.prefix ? { salePrefix: sale.prefix } : {}), by: input.by }]
     }
   }
   const refundPoisha = sale.total - sale.due + (sale.due - dueReversed)

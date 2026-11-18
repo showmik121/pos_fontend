@@ -29,3 +29,5 @@ export const UserResponseSchema = z.object({ user: UserSchema })
 export const ErrorEnvelopeSchema = z.object({
   error: z.object({ code: z.string(), message: z.string(), details: z.unknown().optional() }),
 })
+
+export const DeviceResponseSchema = z.object({ code: z.string().regex(/^[A-Z]$/) })

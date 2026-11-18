@@ -16,6 +16,7 @@ import { Icon } from "@/components/ui/icons"
 import { useSessionInfo } from "@/lib/hooks/use-session"
 import { formatTaka } from "@/lib/domain/money"
 import { formatDateTimeBn } from "@/lib/format/datetime"
+import { formatBillNo } from "@/lib/domain/bill"
 import { toBanglaDigits } from "@/lib/format/bn"
 import type { Sale } from "@/lib/store/types"
 
@@ -23,7 +24,7 @@ const METHOD_LABEL = { cash: "ক্যাশ", bkash: "বিকাশ", nagad:
 
 function receiptText(storeName: string, sale: Sale): string {
   const rows = sale.lines.map((l) => `${l.name} × ${toBanglaDigits(l.qty)} = ${formatTaka(l.unitPrice * l.qty - l.discount)}`)
-  const out = sale.voided ? ["*** বাতিল বিল ***", storeName, `বিল নং ${toBanglaDigits(sale.no)} · ${formatDateTimeBn(sale.at)}`, "", ...rows, ""] : [storeName, `বিল নং ${toBanglaDigits(sale.no)} · ${formatDateTimeBn(sale.at)}`, "", ...rows, ""]
+  const out = sale.voided ? ["*** বাতিল বিল ***", storeName, `বিল নং ${formatBillNo(sale)} · ${formatDateTimeBn(sale.at)}`, "", ...rows, ""] : [storeName, `বিল নং ${formatBillNo(sale)} · ${formatDateTimeBn(sale.at)}`, "", ...rows, ""]
   if (sale.lineDiscount + sale.billDiscount > 0) out.push(`ছাড়: −${formatTaka(sale.lineDiscount + sale.billDiscount)}`)
   out.push(`মোট: ${formatTaka(sale.total)}`)
   for (const p of sale.payments) out.push(`${METHOD_LABEL[p.method]}: ${formatTaka(p.amount)}`)
@@ -92,7 +93,7 @@ function ReceiptView() {
 
   return (
     <AppShell
-      title={`বিল #${toBanglaDigits(sale.no)}`}
+      title={`বিল #${formatBillNo(sale)}`}
       backHref="/"
       footer={
         <div className="grid grid-cols-3 gap-2">
@@ -117,7 +118,7 @@ function ReceiptView() {
         <div className="space-y-1 px-4 py-4 text-center">
           <div className="text-lg font-bold">{storeName}</div>
           <div className="text-sm text-muted">
-            বিল নং {toBanglaDigits(sale.no)} · {formatDateTimeBn(sale.at)}
+            বিল নং {formatBillNo(sale)} · {formatDateTimeBn(sale.at)}
           </div>
           {sale.customerName ? <div className="text-sm text-muted">কাস্টমার: {sale.customerName}</div> : null}
         </div>
@@ -154,7 +155,7 @@ function ReceiptView() {
         </div>
       ) : null}
       <Sheet open={voidOpen} onClose={() => setVoidOpen(false)} label="বিল বাতিল">
-        <h2 className="text-lg font-bold">বিল #{toBanglaDigits(sale.no)} বাতিল করবেন?</h2>
+        <h2 className="text-lg font-bold">বিল #{formatBillNo(sale)} বাতিল করবেন?</h2>
         <p className="text-sm text-muted">পণ্য স্টকে ফিরবে আর রিপোর্ট থেকে বাদ যাবে। এটি আর ফেরানো যাবে না।</p>
         <Field id="void-reason" label="বাতিলের কারণ" placeholder="যেমন: ভুল পণ্য, কাস্টমার ফেরত দিয়েছে" value={reason} onChange={(e) => setReason(e.target.value)} error={voidError} />
         <div className="grid grid-cols-2 gap-2">

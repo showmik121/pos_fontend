@@ -77,3 +77,11 @@ describe("apiRequest", () => {
     expect(errorMessage(new Error("x"))).toBe("কিছু একটা ভুল হয়েছে, আবার চেষ্টা করুন")
   })
 })
+
+describe("register-device স্কিমা", () => {
+  it("A–Z এক অক্ষর নেয়, অন্য কিছু নয়", async () => {
+    const { DeviceResponseSchema } = await import("../src/lib/api/schemas")
+    expect(DeviceResponseSchema.parse({ code: "A" }).code).toBe("A")
+    expect(() => DeviceResponseSchema.parse({ code: "a1" })).toThrow()
+  })
+})

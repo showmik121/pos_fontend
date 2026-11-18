@@ -15,6 +15,7 @@ import { computeCart, settlePayments, type MobileMethod } from "@/lib/domain/car
 import { domainMessage } from "@/lib/domain/errors"
 import { formatTaka, parseTaka, takaInputValue } from "@/lib/domain/money"
 import { completeSale, setCartCustomer } from "@/lib/store/actions"
+import { loadDevice } from "@/lib/store/device"
 import { findProduct } from "@/lib/store/selectors"
 
 const METHODS = [
@@ -26,7 +27,7 @@ const METHODS = [
 function PayScreen() {
   const { db, update, run } = useDb()
   const router = useRouter()
-  const { actor } = useSessionInfo()
+  const { actor, storeId } = useSessionInfo()
   const [picking, setPicking] = useState(false)
   const [method, setMethod] = useState<MobileMethod>("bkash")
   const [mobileInput, setMobileInput] = useState("")
@@ -75,7 +76,7 @@ function PayScreen() {
     try {
       completed.current = true
       const sale = run((d) => {
-        const out = completeSale(d, { cashier: actor, cash, mobile, mobileMethod: method }, new Date())
+        const out = completeSale(d, { cashier: actor, cash, mobile, mobileMethod: method, devicePrefix: storeId ? loadDevice(storeId).code : null }, new Date())
         return { db: out.db, value: out.sale }
       })
       router.replace(`/sell/receipt?id=${sale.id}`)

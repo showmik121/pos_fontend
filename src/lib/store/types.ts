@@ -62,6 +62,8 @@ export interface SaleLine {
 export interface Sale {
   id: string
   no: number
+  /** ডিভাইস-উপসর্গ (A–Z); নিবন্ধনের আগের বিলে নেই */
+  prefix?: string
   at: string // ISO সময়
   cashier: string
   lines: SaleLine[]
@@ -86,6 +88,7 @@ export interface LedgerEntry {
   kind: "sale" | "opening" | "payment" | "void"
   amount: number // সবসময় ধনাত্মক পয়সা
   saleNo: number | null
+  salePrefix?: string
   by: string
 }
 

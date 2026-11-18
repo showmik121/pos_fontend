@@ -1,6 +1,7 @@
 import { apiRequest } from "./client"
 import {
   AuthResponseSchema,
+  DeviceResponseSchema,
   MeResponseSchema,
   StaffListSchema,
   UserResponseSchema,
@@ -43,5 +44,14 @@ export function setStaffActive(token: string, id: string, active: boolean) {
     method: "PATCH",
     token,
     body: { active },
+  })
+}
+
+/** এই ফোনকে দোকানে নিবন্ধন করে A–Z কোড নেয়; একই deviceId আবার দিলে একই কোড ফেরে */
+export function registerDevice(token: string, deviceId: string) {
+  return apiRequest("/v1/sync/register-device", (d) => DeviceResponseSchema.parse(d).code, {
+    method: "POST",
+    token,
+    body: { deviceId },
   })
 }
