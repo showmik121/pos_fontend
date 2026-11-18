@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
 import { useDb } from "@/components/db-provider"
 import { LinkButton } from "@/components/ui/button"
-import { Card, Row, RowList, SectionTitle, StatBox } from "@/components/ui/card"
+import { Card, Pill, Row, RowList, SectionTitle, StatBox } from "@/components/ui/card"
 import { Icon } from "@/components/ui/icons"
 import { todayIso } from "@/lib/domain/dates"
 import { formatTaka } from "@/lib/domain/money"
@@ -74,7 +74,7 @@ export default function HomePage() {
                 href={`/sell/receipt?id=${s.id}`}
                 title={`বিল #${toBanglaDigits(s.no)}`}
                 subtitle={`${formatTimeBn(s.at)}${s.customerName ? ` · ${s.customerName}` : ""}`}
-                right={<span className="font-semibold">{formatTaka(s.total)}</span>}
+                right={s.voided ? <Pill tone="danger">বাতিল</Pill> : <span className="font-semibold">{formatTaka(s.total)}</span>}
                 chevron
               />
             ))}

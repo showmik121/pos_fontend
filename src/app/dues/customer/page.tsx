@@ -82,9 +82,9 @@ function CustomerDues() {
           {entries.map((e) => (
             <Row
               key={e.id}
-              title={e.kind === "payment" ? "জমা" : e.kind === "opening" ? "আগের বাকি" : `বিল #${e.saleNo != null ? toBanglaDigits(e.saleNo) : ""}`}
+              title={e.kind === "payment" ? "জমা" : e.kind === "opening" ? "আগের বাকি" : e.kind === "void" ? `বিল #${e.saleNo != null ? toBanglaDigits(e.saleNo) : ""} বাতিল` : `বিল #${e.saleNo != null ? toBanglaDigits(e.saleNo) : ""}`}
               subtitle={`${formatDateTimeBn(e.at)}${e.by ? ` · ${e.by}` : ""}`}
-              right={<span className={e.kind === "payment" ? "font-semibold text-brand-dark" : "font-semibold"}>{e.kind === "payment" ? `−${formatTaka(e.amount)}` : `+${formatTaka(e.amount)}`}</span>}
+              right={<span className={e.kind === "payment" || e.kind === "void" ? "font-semibold text-brand-dark" : "font-semibold"}>{e.kind === "payment" || e.kind === "void" ? `−${formatTaka(e.amount)}` : `+${formatTaka(e.amount)}`}</span>}
             />
           ))}
         </RowList>

@@ -219,6 +219,52 @@ export function completeSale(db: Db, input: CompleteSaleInput, now: Date): { db:
   }
 }
 
+// ---- বিল বাতিল ----
+
+export interface VoidResult {
+  db: Db
+  /** ব্যাচে ফেরত গেল এত পিস */
+  restoredQty: number
+  /** ব্যাচ আগেই মুছে ফেলা হয়েছিল বলে ফেরানো যায়নি এত পিস (মেয়াদ অজানা, তাই নতুন ব্যাচ বানানো হয় না) */
+  lostQty: number
+  /** কাস্টমারকে ফেরত দিতে হবে এত পয়সা (বিলের সময় নেওয়া টাকা + পরে শোধ করা বাকি) */
+  refundPoisha: number
+}
+
+export function voidSale(db: Db, saleId: string, input: { by: string; reason: string }, now: Date): VoidResult {
+  const sale = db.sales.find((s) => s.id === saleId)
+  if (!sale) throw new DomainError("not_found", "বিলটি পাওয়া যায়নি")
+  if (sale.voided) throw new DomainError("already_voided", "এই বিল আগেই বাতিল করা হয়েছে")
+  const reason = input.reason.trim()
+  if (!reason) throw new DomainError("reason_required", "বাতিলের কারণ লিখুন")
+
+  let restoredQty = 0
+  let lostQty = 0
+  let batches = db.batches
+  for (const line of sale.lines) {
+    for (const a of line.allocations) {
+      if (batches.some((b) => b.id === a.batchId)) {
+        batches = batches.map((b) => (b.id === a.batchId ? { ...b, qtyRemaining: b.qtyRemaining + a.qty } : b))
+        restoredQty += a.qty
+      } else lostQty += a.qty
+    }
+  }
+
+  let ledger = db.ledger
+  let dueReversed = 0
+  if (sale.due > 0 && sale.customerId) {
+    // কাস্টমার পরে কিছু বাকি শোধ করে থাকলে সেটুকু ঋণাত্মক বাকি না বানিয়ে ফেরতের হিসাবে যায়
+    dueReversed = Math.min(sale.due, Math.max(0, customerBalance(db, sale.customerId)))
+    if (dueReversed > 0) {
+      ledger = [...ledger, { id: newId(), customerId: sale.customerId, at: now.toISOString(), kind: "void", amount: dueReversed, saleNo: sale.no, by: input.by }]
+    }
+  }
+  const refundPoisha = sale.total - sale.due + (sale.due - dueReversed)
+
+  const sales = db.sales.map((s) => (s.id === saleId ? { ...s, voided: { at: now.toISOString(), by: input.by, reason } } : s))
+  return { db: { ...db, batches, sales, ledger }, restoredQty, lostQty, refundPoisha }
+}
+
 // ---- কাস্টমার ও বাকি ----
 
 export function addCustomer(db: Db, input: { name: string; phone: string }, now: Date): { db: Db; customer: Customer } {

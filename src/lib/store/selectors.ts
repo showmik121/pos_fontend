@@ -89,7 +89,7 @@ export function customerBalance(db: Db, customerId: string): number {
   let sum = 0
   for (const e of db.ledger) {
     if (e.customerId !== customerId) continue
-    sum += e.kind === "payment" ? -e.amount : e.amount
+    sum += e.kind === "payment" || e.kind === "void" ? -e.amount : e.amount
   }
   return sum
 }
@@ -120,7 +120,7 @@ export function saleDate(sale: Sale): string {
 }
 
 export function salesOn(db: Db, date: string): Sale[] {
-  return db.sales.filter((s) => saleDate(s) === date)
+  return db.sales.filter((s) => !s.voided && saleDate(s) === date)
 }
 
 export interface DaySummary {
@@ -161,6 +161,7 @@ export interface TopRow {
 export function topProducts(db: Db, from: string, to: string, limit = 10): TopRow[] {
   const map = new Map<string, TopRow>()
   for (const s of db.sales) {
+    if (s.voided) continue
     const d = saleDate(s)
     if (d < from || d > to) continue
     for (const l of s.lines) {

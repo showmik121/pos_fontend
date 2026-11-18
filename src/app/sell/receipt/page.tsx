@@ -3,10 +3,15 @@
 import { useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
 import { AppShell, Splash } from "@/components/app-shell"
+import { useAuth } from "@/components/auth-provider"
 import { useDb } from "@/components/db-provider"
 import { Banner } from "@/components/ui/banner"
 import { Button, LinkButton } from "@/components/ui/button"
 import { Card, KeyValue } from "@/components/ui/card"
+import { Field } from "@/components/ui/field"
+import { Sheet } from "@/components/ui/sheet"
+import { domainMessage } from "@/lib/domain/errors"
+import { voidSale } from "@/lib/store/actions"
 import { Icon } from "@/components/ui/icons"
 import { useSessionInfo } from "@/lib/hooks/use-session"
 import { formatTaka } from "@/lib/domain/money"
@@ -18,7 +23,7 @@ const METHOD_LABEL = { cash: "ক্যাশ", bkash: "বিকাশ", nagad:
 
 function receiptText(storeName: string, sale: Sale): string {
   const rows = sale.lines.map((l) => `${l.name} × ${toBanglaDigits(l.qty)} = ${formatTaka(l.unitPrice * l.qty - l.discount)}`)
-  const out = [storeName, `বিল নং ${toBanglaDigits(sale.no)} · ${formatDateTimeBn(sale.at)}`, "", ...rows, ""]
+  const out = sale.voided ? ["*** বাতিল বিল ***", storeName, `বিল নং ${toBanglaDigits(sale.no)} · ${formatDateTimeBn(sale.at)}`, "", ...rows, ""] : [storeName, `বিল নং ${toBanglaDigits(sale.no)} · ${formatDateTimeBn(sale.at)}`, "", ...rows, ""]
   if (sale.lineDiscount + sale.billDiscount > 0) out.push(`ছাড়: −${formatTaka(sale.lineDiscount + sale.billDiscount)}`)
   out.push(`মোট: ${formatTaka(sale.total)}`)
   for (const p of sale.payments) out.push(`${METHOD_LABEL[p.method]}: ${formatTaka(p.amount)}`)
@@ -31,9 +36,14 @@ function receiptText(storeName: string, sale: Sale): string {
 function ReceiptView() {
   const params = useSearchParams()
   const id = params.get("id")
-  const { db } = useDb()
+  const { db, run } = useDb()
+  const { state } = useAuth()
   const { storeName } = useSessionInfo()
   const [note, setNote] = useState<string | null>(null)
+  const [voidOpen, setVoidOpen] = useState(false)
+  const [reason, setReason] = useState("")
+  const [voidError, setVoidError] = useState<string | null>(null)
+  const isOwner = state.status === "authed" && state.user.role === "owner"
   const sale = db.sales.find((s) => s.id === id)
 
   if (!sale) {
@@ -61,6 +71,25 @@ function ReceiptView() {
     }
   }
 
+  const confirmVoid = () => {
+    if (state.status !== "authed") return
+    try {
+      const out = run((d) => {
+        const r = voidSale(d, sale.id, { by: state.user.name, reason }, new Date())
+        return { db: r.db, value: r }
+      })
+      const parts = [`বিল বাতিল হয়েছে; ${toBanglaDigits(out.restoredQty)} পিস স্টকে ফিরেছে।`]
+      if (out.refundPoisha > 0) parts.push(`কাস্টমারকে ${formatTaka(out.refundPoisha)} ফেরত দিন।`)
+      if (out.lostQty > 0) parts.push(`${toBanglaDigits(out.lostQty)} পিসের ব্যাচ আগেই মুছে ফেলা ছিল, তাই ফেরানো যায়নি; স্টক হাতে গুনে মিলিয়ে নিন।`)
+      setNote(parts.join(" "))
+      setVoidOpen(false)
+      setReason("")
+      setVoidError(null)
+    } catch (err) {
+      setVoidError(domainMessage(err))
+    }
+  }
+
   return (
     <AppShell
       title={`বিল #${toBanglaDigits(sale.no)}`}
@@ -77,7 +106,13 @@ function ReceiptView() {
         </div>
       }
     >
-      <Banner tone="info">বিল সম্পন্ন হয়েছে।</Banner>
+      {sale.voided ? (
+        <Banner tone="danger">
+          এই বিল বাতিল করা হয়েছে ({sale.voided.by}, {formatDateTimeBn(sale.voided.at)}) — কারণ: {sale.voided.reason}
+        </Banner>
+      ) : (
+        <Banner tone="info">বিল সম্পন্ন হয়েছে।</Banner>
+      )}
       <Card>
         <div className="space-y-1 px-4 py-4 text-center">
           <div className="text-lg font-bold">{storeName}</div>
@@ -111,6 +146,26 @@ function ReceiptView() {
         </div>
       </Card>
       {note ? <Banner tone="info">{note}</Banner> : null}
+      {isOwner && !sale.voided ? (
+        <div className="no-print">
+          <Button variant="danger" full onClick={() => setVoidOpen(true)}>
+            বিল বাতিল করুন
+          </Button>
+        </div>
+      ) : null}
+      <Sheet open={voidOpen} onClose={() => setVoidOpen(false)} label="বিল বাতিল">
+        <h2 className="text-lg font-bold">বিল #{toBanglaDigits(sale.no)} বাতিল করবেন?</h2>
+        <p className="text-sm text-muted">পণ্য স্টকে ফিরবে আর রিপোর্ট থেকে বাদ যাবে। এটি আর ফেরানো যাবে না।</p>
+        <Field id="void-reason" label="বাতিলের কারণ" placeholder="যেমন: ভুল পণ্য, কাস্টমার ফেরত দিয়েছে" value={reason} onChange={(e) => setReason(e.target.value)} error={voidError} />
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="secondary" onClick={() => setVoidOpen(false)}>
+            না
+          </Button>
+          <Button variant="danger" onClick={confirmVoid}>
+            হ্যাঁ, বাতিল করুন
+          </Button>
+        </div>
+      </Sheet>
       <p className="no-print text-center text-sm text-muted">এই বিল আপাতত এই ফোনেই সেভ আছে।</p>
     </AppShell>
   )

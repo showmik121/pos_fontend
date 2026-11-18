@@ -74,14 +74,16 @@ export interface Sale {
   due: number
   customerId: string | null
   customerName: string | null
+  /** বাতিল হলে কখন, কে, কেন; বাতিল বিল স্টক ও রিপোর্টে আর ধরা হয় না */
+  voided?: { at: string; by: string; reason: string }
 }
 
-/** বাকির খাতার এন্ট্রি: sale/opening = বাকি বাড়ে, payment = কমে */
+/** বাকির খাতার এন্ট্রি: sale/opening = বাকি বাড়ে, payment/void = কমে (void = বিল বাতিলে বাকি ফেরানো) */
 export interface LedgerEntry {
   id: string
   customerId: string
   at: string
-  kind: "sale" | "opening" | "payment"
+  kind: "sale" | "opening" | "payment" | "void"
   amount: number // সবসময় ধনাত্মক পয়সা
   saleNo: number | null
   by: string
