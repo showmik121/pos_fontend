@@ -52,3 +52,80 @@ jobs:
             playwright-report
             test-results
           retention-days: 7
+
+  e2e-real:
+    # একই মূল পথ, কিন্তু নকল ছাড়া: আসল ব্যাকএন্ড (pos_backend main) + আসল Postgres 16 + pos_app রোল।
+    # এতে API-র চুক্তি, CORS (আলাদা origin), ডিভাইস কোড (A-১০০১) ও লগইন যাচাই হয়।
+    runs-on: ubuntu-latest
+    needs: check
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-admin-password
+          POSTGRES_DB: pos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # শুধু এই জবের জন্য, আসল পাসওয়ার্ড নয়।
+      DATABASE_URL_UNPOOLED: postgres://postgres:ci-admin-password@localhost:5432/pos
+      POS_APP_PASSWORD: ci-pos-app-password-1234
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: showmik121/pos_backend
+          # বদলে গেলে ফ্রন্টএন্ডের CI ভাঙতে পারে; স্থিতিশীল করতে চাইলে এখানে কমিট SHA বসান।
+          ref: main
+          path: backend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - name: ব্যাকএন্ড: ইনস্টল ও মাইগ্রেশন
+        working-directory: backend
+        run: |
+          npm install --no-audit --no-fund
+          npm run db:migrate
+      - name: ব্যাকএন্ড চালু (http://localhost:3001)
+        working-directory: backend
+        run: |
+          nohup npm start > ../backend.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3001/api/health && exit 0
+            sleep 1
+          done
+          echo "ব্যাকএন্ড চালু হয়নি:"; cat ../backend.log; exit 1
+        env:
+          DATABASE_URL: postgres://pos_app:ci-pos-app-password-1234@localhost:5432/pos
+          JWT_SECRET: ci-only-jwt-secret-for-e2e-0123456789abcdef
+          ALLOWED_ORIGINS: http://localhost:3210
+          API_PORT: "3001"
+      - run: npm install --no-audit --no-fund
+      - name: ফ্রন্টএন্ড বিল্ড (আলাদা origin-এর আসল API)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          E2E_REAL: "1"
+      - name: ব্যাকএন্ড লগ ও রিপোর্ট (ব্যর্থ হলে)
+        if: failure()
+        run: tail -n 80 backend.log || true
+      - name: রিপোর্ট ও ট্রেস সংরক্ষণ (ব্যর্থ হলে)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-real
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
