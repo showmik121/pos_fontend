@@ -83,12 +83,12 @@ test("দোকান খোলা থেকে বাকি আদায় প
     await addToBill(page, "ফেস", "ফেসওয়াশ")
     await page.getByRole("link", { name: "পেমেন্ট নিন" }).click()
     await page.locator("#pay-cash").fill("100")
-    await expect(page.getByText("বাকি থাকছে ৳ ১৪০")).toBeVisible()
     await expect(page.getByRole("button", { name: "বিল সম্পন্ন করুন" })).toBeDisabled() // কাস্টমার ছাড়া বাকি হয় না
     await page.getByText("কাস্টমার বাছুন", { exact: true }).first().click()
     await page.getByRole("button", { name: "+ নতুন কাস্টমার" }).click()
     await page.locator("#nc-name").fill("করিম")
     await page.getByRole("button", { name: "যোগ করুন", exact: true }).click()
+    await expect(page.getByText("বাকি থাকছে ৳ ১৪০")).toBeVisible()
     await page.getByRole("button", { name: "বিল সম্পন্ন করুন" }).click()
     await expect(page).toHaveURL(/\/sell\/receipt\/\?id=/)
     await expect(page.getByText("A-১০০২").first()).toBeVisible()
