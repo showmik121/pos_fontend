@@ -1,10 +1,12 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { downloadTextFile } from "@/lib/browser/download"
+import { requestPersistentStorage } from "@/lib/browser/persist"
 import { domainMessage } from "@/lib/domain/errors"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { backupFileName, buildBackup, parseBackup, storageStatus, type ParsedBackup } from "@/lib/store/backup"
+import { markBackedUp } from "@/lib/store/backup-reminder"
 import { dbStorageChars } from "@/lib/store/db"
 import { useDb } from "./db-provider"
 import { Banner } from "./ui/banner"
@@ -18,10 +20,16 @@ export function BackupSection({ storeId }: { storeId: string }) {
   const [message, setMessage] = useState<{ tone: "info" | "danger"; text: string } | null>(null)
 
   const usage = storageStatus(dbStorageChars(storeId))
+  const [persistent, setPersistent] = useState<boolean | null>(true)
+
+  useEffect(() => {
+    void requestPersistentStorage().then(setPersistent)
+  }, [])
 
   const download = () => {
     const now = new Date()
     downloadTextFile(backupFileName(now), buildBackup(db, storeId, now))
+    markBackedUp(storeId, now)
     setMessage({ tone: "info", text: "ব্যাকআপ ফাইল নামানো হয়েছে। ফাইলটি নিরাপদ জায়গায় (গুগল ড্রাইভ বা অন্য ফোনে) রাখুন।" })
   }
 
@@ -53,6 +61,12 @@ export function BackupSection({ storeId }: { storeId: string }) {
       ) : (
         <p className="text-sm text-muted">ফোনের সেভ-জায়গা ব্যবহার: {toBanglaDigits(usage.percent)}%</p>
       )}
+
+      {persistent !== true ? (
+        <Banner tone="warn">
+          ব্রাউজার এই ডেটা স্থায়ী রাখার নিশ্চয়তা দেয়নি; ফোনের জায়গা কমলে বা অনেক দিন না খুললে মুছে যেতে পারে। অ্যাপটি হোম স্ক্রিনে যোগ করুন আর নিয়মিত ব্যাকআপ নিন।
+        </Banner>
+      ) : null}
 
       <Button variant="secondary" full onClick={download}>
         ব্যাকআপ ফাইল নামান

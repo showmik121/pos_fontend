@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from "react"
 import { useAuth } from "./auth-provider"
 import { BottomNav } from "./bottom-nav"
 import { useDb } from "./db-provider"
+import { BackupReminder } from "./backup-reminder"
 import { InstallBanner } from "./install-banner"
 import { Icon } from "./ui/icons"
 
@@ -71,6 +72,7 @@ export function AppShell({ title, backHref, action, nav = false, footer, childre
         </div>
       ) : null}
       <main className="flex-1 space-y-4 p-4">
+        {nav ? <BackupReminder /> : null}
         {nav ? <InstallBanner /> : null}
         {children}
       </main>

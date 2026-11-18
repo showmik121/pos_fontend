@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react"
 import { AuthProvider } from "./auth-provider"
 import { DbProvider } from "./db-provider"
 import { DeviceRegistrar } from "./device-registrar"
+import { StorageGuard } from "./storage-guard"
 
 export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -18,6 +19,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <AuthProvider>
       <DbProvider>
         <DeviceRegistrar />
+        <StorageGuard />
         {children}
       </DbProvider>
     </AuthProvider>
