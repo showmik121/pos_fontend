@@ -1,16 +1,35 @@
 // মূল পথ: দোকান খোলা → পণ্য → স্টক → নগদ বিল → রসিদ → বাকিতে বিক্রি → বাকি আদায়।
-// ব্যাকএন্ড নকল করা হয়েছে (page.route), তাই এটি শুধু ফ্রন্টএন্ড ও ফোনের ডেটা স্তর যাচাই করে; আসল API-র সাথে মেলানো এখানে নেই।
+// দুই মোড:
+//  • সাধারণ (ডিফল্ট): ব্যাকএন্ড নকল (page.route); শুধু ফ্রন্টএন্ড ও ফোনের ডেটা স্তর যাচাই হয়।
+//  • E2E_REAL=1: নকল নেই; অ্যাপ আসল ব্যাকএন্ড (আসল Postgres-এ) ডাকে, তাই API-র চুক্তি, CORS ও ডিভাইস-কোড যাচাই হয়।
 import { expect, test, type Page } from "@playwright/test"
 
 const STORE = { id: "11111111-1111-4111-8111-111111111111", name: "সবুজ কসমেটিক্স", kind: "cosmetics" }
 const USER = { id: "22222222-2222-4222-8222-222222222222", storeId: STORE.id, name: "রহিম", phone: "01712345678", role: "owner", active: true }
 const TOKEN = "e2e-token"
+const REAL = process.env.E2E_REAL === "1"
+const PASSWORD = "Sobuj#Ghar2026"
+const BN = "০১২৩৪৫৬৭৮৯"
+const toBn = (v: string) => v.replace(/\d/g, (d) => BN[Number(d)] ?? d)
+// আসল সার্ভারে প্রতিবার আলাদা নম্বর (ফোন গ্লোবালি ইউনিক); নকলে স্থির
+const PHONE = REAL ? `017${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}` : "01712345678"
 
-async function mockApi(page: Page, seen: string[]) {
+/** অ্যাপ যে /api/v1/... গুলো ডাকে তার তালিকা (নকল বা আসল, দুই মোডেই) */
+function recordApi(page: Page): string[] {
+  const seen: string[] = []
+  page.on("request", (r) => {
+    const u = new URL(r.url())
+    const i = u.pathname.indexOf("/api/v1/")
+    if (i >= 0) seen.push(`${r.method()} ${u.pathname.slice(i + 4)}`)
+  })
+  return seen
+}
+
+async function mockApi(page: Page) {
+  if (REAL) return
   await page.route("**/api/v1/**", async (route) => {
     const req = route.request()
     const p = new URL(req.url()).pathname.replace(/^.*\/api/, "")
-    seen.push(`${req.method()} ${p}`)
     const json = (status: number, body: unknown) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) })
     if (req.method() === "POST" && p === "/v1/auth/register-store") return json(201, { token: TOKEN, user: USER })
     if (req.method() === "GET" && p === "/v1/me") return json(200, { user: USER, store: STORE })
@@ -28,18 +47,18 @@ async function addToBill(page: Page, search: string, name: string) {
 }
 
 test("দোকান খোলা থেকে বাকি আদায় পর্যন্ত", async ({ page }) => {
-  const seen: string[] = []
+  const seen = recordApi(page)
   const pageErrors: string[] = []
   page.on("pageerror", (e) => pageErrors.push(e.message))
-  await mockApi(page, seen)
+  await mockApi(page)
 
   await test.step("দোকান খুলুন", async () => {
     await page.goto("/signup/")
     await page.locator("#storeName").fill(STORE.name)
     await page.getByRole("radio", { name: "কসমেটিক্স" }).click()
     await page.locator("#ownerName").fill("রহিম")
-    await page.locator("#phone").fill("০১৭১২৩৪৫৬৭৮")
-    await page.locator("#password").fill("Sobuj#Ghar2026")
+    await page.locator("#phone").fill(toBn(PHONE))
+    await page.locator("#password").fill(PASSWORD)
     await page.getByRole("button", { name: "দোকান খুলুন" }).click()
     await expect(page.getByRole("heading", { name: STORE.name })).toBeVisible()
     await expect(page.getByText("প্রথম পণ্য যোগ করুন").first()).toBeVisible()
@@ -120,11 +139,46 @@ test("দোকান খোলা থেকে বাকি আদায় প
 })
 
 test("ভুল ফর্ম: খালি সাইন-আপে বাংলা ত্রুটি, সার্ভারে অনুরোধ যায় না", async ({ page }) => {
-  const seen: string[] = []
-  await mockApi(page, seen)
+  const seen = recordApi(page)
+  await mockApi(page)
   await page.goto("/signup/")
   await page.getByRole("button", { name: "দোকান খুলুন" }).click()
   await expect(page.getByText("দোকানের নাম দিন")).toBeVisible()
   await expect(page.getByText("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে")).toBeVisible()
   expect(seen).toEqual([])
+})
+
+test("আসল সার্ভার: লগআউট → লগইন, ভুল পাসওয়ার্ড, একই নম্বরে দ্বিতীয় দোকান আটকানো", async ({ page }) => {
+  test.skip(!REAL, "আসল ব্যাকএন্ড লাগে (E2E_REAL=1)")
+  const phone = `018${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`
+  const signup = async (name: string) => {
+    await page.goto("/signup/")
+    await page.locator("#storeName").fill(name)
+    await page.locator("#ownerName").fill("রহিম")
+    await page.locator("#phone").fill(toBn(phone))
+    await page.locator("#password").fill(PASSWORD)
+    await page.getByRole("button", { name: "দোকান খুলুন" }).click()
+  }
+
+  await signup("প্রথম দোকান")
+  await expect(page.getByRole("heading", { name: "প্রথম দোকান" })).toBeVisible()
+
+  await page.goto("/settings/")
+  await page.getByRole("button", { name: "লগআউট" }).click()
+  await expect(page).toHaveURL(/\/login\/$/)
+
+  await page.locator("#phone").fill(toBn(phone))
+  await page.locator("#password").fill("ভুল-পাসওয়ার্ড-১")
+  await page.getByRole("button", { name: "লগইন করুন" }).click()
+  await expect(page.getByRole("alert")).toBeVisible()
+  await expect(page).toHaveURL(/\/login\/$/)
+
+  await page.locator("#password").fill(PASSWORD)
+  await page.getByRole("button", { name: "লগইন করুন" }).click()
+  await expect(page.getByRole("heading", { name: "প্রথম দোকান" })).toBeVisible() // সার্ভারের /me থেকে দোকানের নাম
+
+  await page.goto("/settings/")
+  await page.getByRole("button", { name: "লগআউট" }).click()
+  await signup("দ্বিতীয় দোকান")
+  await expect(page.getByText("এই নম্বরে আগেই অ্যাকাউন্ট আছে")).toBeVisible()
 })
