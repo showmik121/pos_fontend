@@ -1,9 +1,9 @@
 /** সার্ভার UUID চায়; randomUUID না থাকা পুরনো ব্রাউজারেও UUID v4 বানায় */
 function newDeviceId(): string {
-  const c = typeof crypto !== "undefined" ? crypto : undefined
-  if (c && "randomUUID" in c) return c.randomUUID()
+  const c: Crypto | undefined = typeof crypto !== "undefined" ? crypto : undefined
+  if (typeof c?.randomUUID === "function") return c.randomUUID()
   const b = new Uint8Array(16)
-  if (c) c.getRandomValues(b)
+  if (typeof c?.getRandomValues === "function") c.getRandomValues(b)
   else for (let i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256)
   b[6] = (b[6]! & 0x0f) | 0x40
   b[8] = (b[8]! & 0x3f) | 0x80
