@@ -11,7 +11,7 @@ import { Icon } from "@/components/ui/icons"
 import { domainMessage } from "@/lib/domain/errors"
 import { formatCount } from "@/lib/domain/money"
 import { importProducts } from "@/lib/store/actions"
-import { IMPORT_HEADERS, IMPORT_TEMPLATE_CSV, parseCsv, validateImport, type ImportRow, type ImportRowError } from "@/lib/store/csv"
+import { IMPORT_HEADERS, IMPORT_TEMPLATE_CSV, MAX_IMPORT_BYTES, parseCsv, validateImport, type ImportRow, type ImportRowError } from "@/lib/store/csv"
 
 interface Parsed {
   fileName: string
@@ -40,6 +40,7 @@ export default function ImportPage() {
   const onFile = async (file: File) => {
     setError(null)
     setParsed(null)
+    if (file.size > MAX_IMPORT_BYTES) return setError("ফাইলটি অনেক বড় (সর্বোচ্চ ১ MB)। ছোট ছোট ফাইলে ভাগ করে দিন।")
     try {
       const text = (await file.text()).replace(/^﻿/, "")
       const rows = parseCsv(text)

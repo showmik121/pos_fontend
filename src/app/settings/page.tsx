@@ -11,6 +11,7 @@ import { Field } from "@/components/ui/field"
 import { toAsciiDigits } from "@/lib/format/bn"
 import { formatPhoneBn } from "@/lib/format/phone"
 import { updateSettings } from "@/lib/store/actions"
+import { DEMO_ENABLED } from "@/lib/config"
 import { withDemoData } from "@/lib/store/seed"
 
 const KIND_LABEL = { pharmacy: "ফার্মেসি", cosmetics: "কসমেটিক্স", other: "অন্যান্য" } as const
@@ -62,7 +63,7 @@ export default function SettingsPage() {
       <SectionTitle>তথ্য সংরক্ষণ</SectionTitle>
       <Banner tone="warn">পণ্য, বিল ও বাকির তথ্য এখন শুধু এই ফোনেই সেভ হচ্ছে — সার্ভারে সিংক শীঘ্রই আসছে। ব্রাউজারের ডেটা মুছলে এই তথ্যও মুছে যাবে।</Banner>
 
-      {db.products.length === 0 ? (
+      {DEMO_ENABLED && db.products.length === 0 ? (
         <Button variant="secondary" full onClick={() => update((d) => withDemoData(d, new Date()))}>
           নমুনা তথ্য দিয়ে দেখুন
         </Button>

@@ -39,6 +39,10 @@ export function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim() !== ""))
 }
 
+/** এর বেশি বড় ফাইল/সারি নিলে ফোন আটকে যায় ও স্টোরেজ ভরে; তাই আগেই ফেরত */
+export const MAX_IMPORT_BYTES = 1_000_000
+export const MAX_IMPORT_ROWS = 5000
+
 export const IMPORT_HEADERS = ["barcode", "name", "cost", "price", "unit", "carton_size", "min_stock", "category", "batch", "expiry", "qty"] as const
 
 export const IMPORT_TEMPLATE_CSV = `${IMPORT_HEADERS.join(",")}\n8901234567890,পন্ডস ক্রিম ১০০ মি.লি.,200,240,piece,10,5,স্কিন কেয়ার,B2407,06/2027,30\n`
@@ -75,6 +79,7 @@ export function validateImport(csvRows: string[][], db: Db): { ok: ImportRow[]; 
   const errors: ImportRowError[] = []
   const [header, ...body] = csvRows
   if (!header) return { ok, errors: [{ line: 1, message: "ফাইল ফাঁকা" }] }
+  if (body.length > MAX_IMPORT_ROWS) return { ok, errors: [{ line: 1, message: `একবারে সর্বোচ্চ ${MAX_IMPORT_ROWS} টি পণ্য আনা যায়; ফাইল ভাগ করে আবার দিন` }] }
   const idx = new Map(header.map((h, i) => [h.trim().toLowerCase(), i]))
   if (!idx.has("name") || !idx.has("price")) {
     return { ok, errors: [{ line: 1, message: "প্রথম সারিতে name ও price কলাম থাকতে হবে (নমুনা ফাইল দেখুন)" }] }
@@ -101,7 +106,7 @@ export function validateImport(csvRows: string[][], db: Db): { ok: ImportRow[]; 
       seen.add(barcode)
     }
     const unitText = get(r, "unit").toLowerCase()
-    const unit = unitText ? UNIT_ALIASES[unitText] : "piece"
+    const unit = unitText ? (Object.prototype.hasOwnProperty.call(UNIT_ALIASES, unitText) ? UNIT_ALIASES[unitText] : undefined) : "piece"
     if (!unit) return fail("একক হবে piece / strip / box")
     const cartonText = get(r, "carton_size")
     const carton = cartonText ? toInt(cartonText) : 1

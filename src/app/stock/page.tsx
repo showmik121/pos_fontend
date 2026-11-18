@@ -13,6 +13,7 @@ import { formatCount, formatTaka } from "@/lib/domain/money"
 import { searchProducts } from "@/lib/store/search"
 import { expiringSoonCount, isLowStock, lowStockProducts, nearestExpiryDays, sellableStock } from "@/lib/store/selectors"
 import { toBanglaDigits } from "@/lib/format/bn"
+import { DEMO_ENABLED } from "@/lib/config"
 
 type Filter = "all" | "low" | "expiry"
 
@@ -66,9 +67,11 @@ export default function StockPage() {
             <LinkButton href="/products/import" variant="secondary">
               CSV থেকে আনুন
             </LinkButton>
-            <Button variant="ghost" onClick={() => import("@/lib/store/seed").then((m) => update((d) => m.withDemoData(d, new Date())))}>
-              নমুনা তথ্য দিয়ে দেখুন
-            </Button>
+            {DEMO_ENABLED ? (
+              <Button variant="ghost" onClick={() => import("@/lib/store/seed").then((m) => update((d) => m.withDemoData(d, new Date())))}>
+                নমুনা তথ্য দিয়ে দেখুন
+              </Button>
+            ) : null}
           </div>
         </Card>
       ) : rows.length === 0 ? (

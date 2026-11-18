@@ -55,6 +55,7 @@ tests/              Vitest (domain, store, client, bn)
 - প্রিন্ট: `window.print` + `.no-print` CSS; রসিদ শেয়ার `navigator.share`, না থাকলে ক্লিপবোর্ড।
 - সার্ভিস ওয়ার্কার শুধু একই origin-এর GET ক্যাশ করে, API কখনো নয়। ক্যাশ কৌশল বদলালে `public/sw.js`-এর `VERSION` বাড়ান।
 - সার্ভারের কোনো গোপন তথ্য ফ্রন্টএন্ডে রাখা যাবে না (`NEXT_PUBLIC_*` সবাই দেখে)।
+- নিরাপত্তা হেডার (CSP সহ) `public/_headers`-এ। API অন্য origin-এ সরালে সেখানকার `connect-src` বদলাতে হবে। নমুনা-তথ্য বোতাম ডিফল্টে বন্ধ (`NEXT_PUBLIC_ENABLE_DEMO=1` দিলে চালু)। CSV ইমপোর্টের সীমা: ১ MB ও ৫০০০ সারি।
 - কমিট: `type: বর্ণনা` (feat, fix, chore, docs, test, refactor)।
 
 ## পরিবেশ

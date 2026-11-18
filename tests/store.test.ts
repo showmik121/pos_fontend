@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { addToCart, completeSale, createProduct, importProducts, receiveDue, removeBatch, setBillDiscount, setCartCustomer, setCartQty, addCustomer, stockIn } from "../src/lib/store/actions"
-import { parseCsv, validateImport } from "../src/lib/store/csv"
+import { MAX_IMPORT_ROWS, parseCsv, validateImport } from "../src/lib/store/csv"
 import { emptyDb } from "../src/lib/store/db"
 import { customerBalance, daySummary, dueRows, expiryBuckets, findByBarcode, lowStockProducts, sellableStock, topProducts, totalStock } from "../src/lib/store/selectors"
 import { withDemoData } from "../src/lib/store/seed"
@@ -151,5 +151,27 @@ describe("CSV ইমপোর্ট", () => {
   })
   it("কোটেশনসহ কমা ও BOM পড়ে", () => {
     expect(parseCsv('﻿a,"b,c"\n1,2')).toEqual([["a", "b,c"], ["1", "2"]])
+  })
+})
+
+describe("CSV ইমপোর্টের নিরাপত্তা", () => {
+  const HEAD = "name,price,unit"
+  it("প্রোটোটাইপ নামের একক (constructor, __proto__) বাতিল হয়", () => {
+    for (const bad of ["constructor", "__proto__", "toString"]) {
+      const out = validateImport(parseCsv(`${HEAD}\nপণ্য,100,${bad}`), emptyDb())
+      expect(out.ok).toHaveLength(0)
+      expect(out.errors[0]?.message).toContain("একক")
+    }
+  })
+  it("চেনা একক ও ফাঁকা একক চলে", () => {
+    const out = validateImport(parseCsv(`${HEAD}\nক,100,strip\nখ,100,\nগ,100,পিস`), emptyDb())
+    expect(out.errors).toEqual([])
+    expect(out.ok.map((r) => r.unit)).toEqual(["strip", "piece", "piece"])
+  })
+  it("সীমার বেশি সারি এলে পুরো ফাইল ফেরত", () => {
+    const rows = Array.from({ length: MAX_IMPORT_ROWS + 1 }, (_, i) => `পণ্য${i},100,piece`).join("\n")
+    const out = validateImport(parseCsv(`${HEAD}\n${rows}`), emptyDb())
+    expect(out.ok).toHaveLength(0)
+    expect(out.errors).toHaveLength(1)
   })
 })
