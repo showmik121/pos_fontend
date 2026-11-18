@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { useAuth } from "./auth-provider"
-import { emptyDb, loadDb, saveDb } from "@/lib/store/db"
+import { dbStorageKey, emptyDb, loadDb, saveDb } from "@/lib/store/db"
 import type { Db } from "@/lib/store/types"
 
 interface DbContextValue {
@@ -44,6 +44,18 @@ export function DbProvider({ children }: { children: ReactNode }) {
     ref.current = loadDb(storeId)
     setDb(ref.current)
     setReady(true)
+  }, [storeId])
+
+  // অন্য ট্যাব/উইন্ডো একই ডেটা বদলালে সেটিই নিই, নইলে এই ট্যাবের পুরনো কপি দিয়ে সেটি ঘষে ফেলা হতো
+  useEffect(() => {
+    if (!storeId) return
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== dbStorageKey(storeId)) return
+      ref.current = loadDb(storeId)
+      setDb(ref.current)
+    }
+    window.addEventListener("storage", onStorage)
+    return () => window.removeEventListener("storage", onStorage)
   }, [storeId])
 
   const commit = useCallback(

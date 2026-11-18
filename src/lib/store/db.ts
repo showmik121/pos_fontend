@@ -16,10 +16,11 @@ export function emptyDb(): Db {
   }
 }
 
-const key = (storeId: string) => `pos.db.v1.${storeId}`
+export const dbStorageKey = (storeId: string) => `pos.db.v1.${storeId}`
+const key = dbStorageKey
 const backupKey = (storeId: string) => `pos.db.v1.${storeId}.corrupt`
 
-function isDb(x: unknown): x is Db {
+export function isDb(x: unknown): x is Db {
   if (typeof x !== "object" || x === null) return false
   const d = x as Record<string, unknown>
   return (
@@ -64,4 +65,13 @@ export function saveDb(storeId: string, db: Db): boolean {
 export function newId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID()
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+/** এই দোকানের ডেটা এখন ব্রাউজারের কত অক্ষর জায়গা নিচ্ছে (পড়া না গেলে 0) */
+export function dbStorageChars(storeId: string): number {
+  try {
+    return window.localStorage.getItem(key(storeId))?.length ?? 0
+  } catch {
+    return 0
+  }
 }
