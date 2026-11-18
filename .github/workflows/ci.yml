@@ -89,12 +89,12 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: package.json
-      - name: ব্যাকএন্ড: ইনস্টল ও মাইগ্রেশন
+      - name: "ব্যাকএন্ড - ইনস্টল ও মাইগ্রেশন"
         working-directory: backend
         run: |
           npm install --no-audit --no-fund
           npm run db:migrate
-      - name: ব্যাকএন্ড চালু (http://localhost:3001)
+      - name: "ব্যাকএন্ড চালু (পোর্ট ৩০০১)"
         working-directory: backend
         run: |
           nohup npm start > ../backend.log 2>&1 &
