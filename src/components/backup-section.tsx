@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { downloadTextFile } from "@/lib/browser/download"
 import { domainMessage } from "@/lib/domain/errors"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { backupFileName, buildBackup, parseBackup, storageStatus, type ParsedBackup } from "@/lib/store/backup"
@@ -20,15 +21,7 @@ export function BackupSection({ storeId }: { storeId: string }) {
 
   const download = () => {
     const now = new Date()
-    const blob = new Blob([buildBackup(db, storeId, now)], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = backupFileName(now)
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    URL.revokeObjectURL(url)
+    downloadTextFile(backupFileName(now), buildBackup(db, storeId, now))
     setMessage({ tone: "info", text: "ব্যাকআপ ফাইল নামানো হয়েছে। ফাইলটি নিরাপদ জায়গায় (গুগল ড্রাইভ বা অন্য ফোনে) রাখুন।" })
   }
 
