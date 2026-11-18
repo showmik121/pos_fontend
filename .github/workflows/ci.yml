@@ -24,3 +24,31 @@ jobs:
           name: pos-frontend-out
           path: out
           retention-days: 7
+
+  e2e:
+    # মূল পথ ব্রাউজারে (ফোনের মাপে) চালায়; ব্যাকএন্ড নকল, তাই আসল API নয়।
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-audit --no-fund
+      - name: স্ট্যাটিক বিল্ড (একই origin-এর /api)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: /api
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: রিপোর্ট ও ট্রেস সংরক্ষণ (ব্যর্থ হলে)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
