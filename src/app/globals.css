@@ -19,10 +19,25 @@
   --color-amber: #b45309;
   --color-line-strong: #a3abb8;
   --font-sans: var(--font-bengali), system-ui, sans-serif;
+  /* পর্দার কলামের প্রস্থ: ফোনে ৪৮০px, ট্যাবলেটে বড়, ডেস্কটপে আরও বড় */
+  --app-col: 30rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --app-col: 40rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  :root {
+    --app-col: 48rem;
+  }
 }
 
 html {
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -31,6 +46,16 @@ body {
   font-size: 15px;
   line-height: 1.5;
   font-family: var(--font-sans);
+  /* পাশে সরে যাওয়া ও টানলে রিফ্রেশ-ঝাঁকুনি ঠেকায়; ল্যান্ডস্কেপে নচের জায়গা ছাড়ে */
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+}
+
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
 }
 
 /* iPhone-এ ইনপুটে ফোকাস করলে জুম ঠেকাতে ইনপুট ১৬px */

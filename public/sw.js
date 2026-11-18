@@ -1,9 +1,21 @@
 // হাতে লেখা ছোট service worker: অ্যাপ শেল অফলাইনে খোলার জন্য।
 // API (অন্য origin) কখনো ক্যাশ হয় না; শুধু একই origin-এর GET অনুরোধ।
-const VERSION = "v1"
+const VERSION = "v2"
 const PAGES = `pos-pages-${VERSION}`
 const ASSETS = `pos-assets-${VERSION}`
-const PRECACHE = ["/", "/login/", "/manifest.webmanifest", "/icons/icon-192.png"]
+const PRECACHE = [
+  "/",
+  "/login/",
+  "/signup/",
+  "/sell/",
+  "/stock/",
+  "/dues/",
+  "/reports/",
+  "/settings/",
+  "/manifest.webmanifest",
+  "/icons/icon-192.png",
+  "/icons/apple-touch-icon.png",
+]
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

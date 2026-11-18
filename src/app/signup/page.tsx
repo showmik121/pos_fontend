@@ -63,7 +63,7 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-[480px] bg-white px-5 py-10">
+    <main className="mx-auto min-h-dvh max-w-(--app-col) bg-white px-5 py-10">
       <h1 className="text-2xl font-bold">দোকান খুলুন</h1>
       <p className="mt-1 text-sm text-muted">দোকানের তথ্য দিয়ে আপনার অ্যাকাউন্ট তৈরি করুন।</p>
 

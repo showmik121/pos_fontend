@@ -51,7 +51,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-[480px] bg-white px-5 py-10">
+    <main className="mx-auto min-h-dvh max-w-(--app-col) bg-white px-5 py-10">
       <h1 className="text-2xl font-bold">লগইন</h1>
       <p className="mt-1 text-sm text-muted">আপনার মোবাইল নম্বর ও পাসওয়ার্ড দিন।</p>
 

@@ -16,7 +16,7 @@ export function Sheet({ open, onClose, label, children }: { open: boolean; onClo
   if (!open) return null
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center bg-ink/55" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-label={label} onClick={(e) => e.stopPropagation()} className="w-full max-w-[480px] space-y-3 rounded-t-[20px] bg-white px-5 pb-6 pt-5">
+      <div role="dialog" aria-modal="true" aria-label={label} onClick={(e) => e.stopPropagation()} className="max-h-[90dvh] w-full max-w-(--app-col) space-y-3 overflow-y-auto rounded-t-[20px] bg-white px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5">
         {children}
       </div>
     </div>
