@@ -9,12 +9,9 @@ import { SyncStatus } from "@/components/sync-status"
 import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
 import { Row, RowList, SectionTitle } from "@/components/ui/card"
-import { Field } from "@/components/ui/field"
 import { Sheet } from "@/components/ui/sheet"
 import { downloadBackup } from "@/lib/browser/backup-download"
-import { toAsciiDigits } from "@/lib/format/bn"
 import { formatPhoneBn } from "@/lib/format/phone"
-import { updateSettings } from "@/lib/store/actions"
 import { DEMO_ENABLED } from "@/lib/config"
 import { withDemoData } from "@/lib/store/seed"
 import { wipeStoreData } from "@/lib/store/wipe"
@@ -24,8 +21,6 @@ const KIND_LABEL = { pharmacy: "ফার্মেসি", cosmetics: "কসম
 export default function SettingsPage() {
   const { state, signOut } = useAuth()
   const { db, update } = useDb()
-  const [minStock, setMinStock] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
   // লগআউটের ধাপ: null = বন্ধ, "choose" = ফোনে ডেটা রাখবেন নাকি মুছবেন, "wipe" = মোছার নিশ্চিতকরণ
   const [logoutStep, setLogoutStep] = useState<null | "choose" | "wipe">(null)
   const [backedUp, setBackedUp] = useState(false)
@@ -33,15 +28,6 @@ export default function SettingsPage() {
 
   if (state.status !== "authed") return <AppShell title="সেটিংস" backHref="/">{null}</AppShell>
   const { user, store } = state
-  const minValue = minStock ?? String(db.settings.defaultMinStock)
-
-  const saveMin = () => {
-    const n = Number(toAsciiDigits(minValue))
-    if (!Number.isInteger(n) || n < 0) return
-    update((d) => updateSettings(d, { defaultMinStock: n }))
-    setMinStock(null)
-    setSaved(true)
-  }
 
   const closeLogout = () => {
     setLogoutStep(null)
@@ -75,15 +61,6 @@ export default function SettingsPage() {
           <Row href="/products/import" title="CSV থেকে পণ্য আনুন" chevron />
         </RowList>
       ) : null}
-
-      <SectionTitle>স্টক</SectionTitle>
-      <div className="space-y-2">
-        <Field id="set-min" label="নতুন পণ্যের ডিফল্ট সর্বনিম্ন স্টক" inputMode="numeric" value={minValue} onChange={(e) => (setSaved(false), setMinStock(e.target.value))} />
-        <Button variant="secondary" onClick={saveMin} disabled={minStock === null}>
-          সেভ করুন
-        </Button>
-        {saved ? <p className="text-sm text-brand-dark">সেভ হয়েছে।</p> : null}
-      </div>
 
       <SectionTitle>তথ্য সংরক্ষণ</SectionTitle>
       <SyncStatus />
