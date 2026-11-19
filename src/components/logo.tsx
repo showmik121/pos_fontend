@@ -1,5 +1,5 @@
 /** অ্যাপের নাম এক জায়গায়; নাম ঠিক হলে শুধু এটি বদলাবে */
-export const APP_NAME = "বিপণি"
+export const APP_NAME = "Bipone"
 
 /** লোগো-চিহ্ন (ব্যাগ + শাপলা) ও নাম */
 export function Logo({ size = 56 }: { size?: number }) {
