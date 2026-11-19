@@ -9,6 +9,12 @@ function dayPart(hour: number): string {
   return "রাত"
 }
 
+/** "শুভ সকাল" … "শুভ রাত্রি" (ঘণ্টা ০–২৩) */
+export function greetingBn(hour: number): string {
+  const part = dayPart(hour)
+  return part === "রাত" ? "শুভ রাত্রি" : `শুভ ${part}`
+}
+
 /** "দুপুর ২:৩০" */
 export function formatTimeBn(iso: string): string {
   const d = new Date(iso)

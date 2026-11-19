@@ -22,6 +22,8 @@ interface AppShellProps {
   footer?: ReactNode
   /** পাতার শেষে শহর-দৃশ্যের জলছাপ (ডিফল্ট: মেনুওয়ালা পাতায় আছে) */
   art?: boolean
+  /** দিলে সাধারণ হেডারের বদলে এটি দেখায় (হোমের ছবিওয়ালা হেডার) */
+  hero?: ReactNode
   children: ReactNode
 }
 
@@ -46,7 +48,7 @@ export function Ready({ children }: { children: ReactNode }) {
 }
 
 /** লগইন করা ইউজারের পর্দার কাঠামো: হেডার, মূল অংশ, নিচের মেনু বা অ্যাকশন বার। লগইন না থাকলে /login-এ পাঠায়। */
-export function AppShell({ title, backHref, action, nav = false, footer, art = nav, children }: AppShellProps) {
+export function AppShell({ title, backHref, action, nav = false, footer, art = nav, hero, children }: AppShellProps) {
   const { state } = useAuth()
   const { ready, saveFailed } = useDb()
   const router = useRouter()
@@ -59,15 +61,17 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-(--app-col) flex-col bg-canvas">
-      <header className="no-print sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-line bg-white px-4">
-        {backHref ? (
-          <Link href={backHref} aria-label="পিছনে যান" className="-ml-2 grid size-11 place-items-center rounded-lg text-ink active:bg-canvas">
-            <Icon name="back" size={22} />
-          </Link>
-        ) : null}
-        <h1 className="flex-1 truncate text-lg font-bold text-ink">{title}</h1>
-        {action}
-      </header>
+      {hero ?? (
+        <header className="no-print sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-line bg-white px-4">
+          {backHref ? (
+            <Link href={backHref} aria-label="পিছনে যান" className="-ml-2 grid size-11 place-items-center rounded-lg text-ink active:bg-canvas">
+              <Icon name="back" size={22} />
+            </Link>
+          ) : null}
+          <h1 className="flex-1 truncate text-lg font-bold text-ink">{title}</h1>
+          {action}
+        </header>
+      )}
       {saveFailed ? (
         <div role="alert" className="bg-danger-bg px-4 py-2 text-sm text-danger">
           ফোনের জায়গা ভরা বা সেভ বন্ধ — নতুন তথ্য সেভ হচ্ছে না। জায়গা খালি করুন।
