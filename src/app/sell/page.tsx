@@ -70,6 +70,7 @@ export default function SellPage() {
     <AppShell
       title="নতুন বিল"
       backHref="/"
+      art={lines.length === 0}
       footer={
         lines.length > 0 && totals ? (
           <div className="space-y-3">
