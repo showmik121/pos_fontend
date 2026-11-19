@@ -76,6 +76,7 @@ export function AppShell({ title, backHref, action, nav = false, footer, childre
         {nav ? <InstallBanner /> : null}
         {children}
       </main>
+      {nav ? <div aria-hidden="true" className="app-skyline no-print" /> : null}
       {footer ? (
         <div className="no-print sticky bottom-0 z-10 border-t border-line bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">{footer}</div>
       ) : nav ? (
