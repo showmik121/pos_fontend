@@ -1,6 +1,6 @@
 {
-  "name": "দোকান POS — বিক্রি ও স্টক",
-  "short_name": "দোকান POS",
+  "name": "বিপণি — বিক্রি ও স্টক",
+  "short_name": "বিপণি",
   "description": "ফার্মেসি ও কসমেটিক্স দোকানের বিক্রি, স্টক ও বাকির হিসাব",
   "lang": "bn",
   "dir": "ltr",
@@ -12,19 +12,19 @@
   "theme_color": "#1E4D36",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/icon-v2-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/icon-v2-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-maskable-512.png",
+      "src": "/icons/icon-v2-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -47,7 +47,7 @@
       "url": "/sell/",
       "icons": [
         {
-          "src": "/icons/icon-192.png",
+          "src": "/icons/icon-v2-192.png",
           "sizes": "192x192"
         }
       ]
@@ -58,7 +58,7 @@
       "url": "/stock/",
       "icons": [
         {
-          "src": "/icons/icon-192.png",
+          "src": "/icons/icon-v2-192.png",
           "sizes": "192x192"
         }
       ]
@@ -69,7 +69,7 @@
       "url": "/dues/",
       "icons": [
         {
-          "src": "/icons/icon-192.png",
+          "src": "/icons/icon-v2-192.png",
           "sizes": "192x192"
         }
       ]

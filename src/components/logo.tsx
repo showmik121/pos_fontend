@@ -1,5 +1,5 @@
 /** অ্যাপের নাম এক জায়গায়; নাম ঠিক হলে শুধু এটি বদলাবে */
-export const APP_NAME = "দোকান POS"
+export const APP_NAME = "বিপণি"
 
 /** লোগো-চিহ্ন (ব্যাগ + শাপলা) ও নাম */
 export function Logo({ size = 56 }: { size?: number }) {
@@ -12,7 +12,7 @@ export function Logo({ size = 56 }: { size?: number }) {
       />
       <div className="leading-tight">
         <div className="text-xl font-extrabold tracking-tight text-ink">{APP_NAME}</div>
-        <div className="text-xs text-muted">বিক্রি · স্টক · বাকির হিসাব</div>
+        <div className="text-xs text-muted">দোকানের বিক্রি · স্টক · বাকি</div>
       </div>
     </div>
   )

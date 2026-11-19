@@ -1,6 +1,6 @@
 // হাতে লেখা ছোট service worker: অ্যাপ শেল অফলাইনে খোলার জন্য।
 // API (অন্য origin) কখনো ক্যাশ হয় না; শুধু একই origin-এর GET অনুরোধ।
-const VERSION = "v9"
+const VERSION = "v10"
 const PAGES = `pos-pages-${VERSION}`
 const ASSETS = `pos-assets-${VERSION}`
 // ক্যাশ অনির্দিষ্ট বাড়তে দেওয়া যাবে না (ফোনের জায়গা সীমিত; কোয়েরিসহ পেজ ?id=… আলাদা এন্ট্রি হয়)।
@@ -17,8 +17,8 @@ const PRECACHE = [
   "/reports/",
   "/settings/",
   "/manifest.webmanifest",
-  "/icons/icon-192.png",
-  "/icons/apple-touch-icon.png",
+  "/icons/icon-v2-192.png",
+  "/icons/apple-touch-icon-v2.png",
 ]
 
 /** শুধু সফল (২xx) উত্তর ক্যাশ হয়; ৪০৪/৫০০ বা রিডাইরেক্ট ক্যাশ করে অফলাইনে ভুল পাতা দেখানো হয় না। পরে সীমা মানে। */

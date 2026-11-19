@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn"
 type Variant = "primary" | "secondary" | "danger" | "ghost"
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-brand text-white active:bg-brand-dark disabled:bg-brand/50",
+  primary: "btn-primary-grad text-white",
   secondary: "bg-white text-ink border border-line active:bg-canvas disabled:text-muted",
   danger: "bg-white text-danger border border-danger/40 active:bg-danger-bg disabled:opacity-50",
   ghost: "bg-transparent text-brand active:bg-brand-soft disabled:text-muted",
@@ -25,7 +25,7 @@ export function Button({ variant = "primary", loading = false, full = false, cla
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-medium transition-colors",
+        "inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-[15px] font-semibold transition-colors",
         VARIANTS[variant],
         full && "w-full",
         className,
@@ -41,7 +41,7 @@ export function LinkButton({ href, variant = "primary", full = false, className,
   return (
     <Link
       href={href}
-      className={cn("inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-medium transition-colors", VARIANTS[variant], full && "w-full", className)}
+      className={cn("inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-[15px] font-semibold transition-colors", VARIANTS[variant], full && "w-full", className)}
     >
       {children}
     </Link>
