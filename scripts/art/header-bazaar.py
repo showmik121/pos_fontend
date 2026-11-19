@@ -112,6 +112,9 @@ def banana(x, y, seed):
     return "".join(s)
 
 
+SIGN_D = "M 12.7 19.9 L 14.6 22.6 L 17.9 22.6 L 17.9 24.7 L 14.8 24.7 L 14.8 45 L 12.8 45 L 12.8 24.7 L 9.5 24.7 L 9.5 22.6 L 12.2 22.6 L 10.5 20.3 C 10.8 18.3 11.8 16.6 13.5 15.2 C 15.2 13.7 17.0 13 18.8 13 C 20.4 13 22.0 13.3 23.6 14.0 C 25.3 14.7 26.6 15.4 27.6 16.2 C 28.6 16.9 29.9 18.0 31.6 19.5 L 30.2 21.0 C 26.0 17.0 22.3 15.0 18.9 15.0 C 17.2 15.0 15.9 15.6 14.7 16.7 C 13.6 17.9 12.9 18.9 12.7 19.9 Z M 29.4 41.4 C 29.1 40.3 27.9 38.8 25.9 37 C 23.9 35.1 21.8 34.2 19.8 34.2 L 18.5 32.0 C 21.8 29.4 25.5 27.5 29.4 26.4 L 29.4 24.7 L 17.1 24.7 L 17.1 22.6 L 33.8 22.6 L 33.8 24.7 L 31.4 24.7 L 31.4 45 L 29.4 45 Z M 29.4 28.4 C 28.7 28.6 27.4 29.1 25.4 30.1 C 23.5 31.0 22.2 31.8 21.6 32.4 C 22.6 32.5 24.0 33.2 25.8 34.4 C 27.6 35.5 28.8 36.7 29.4 37.9 Z M 34.2 28.2 C 34.5 26.9 35.3 25.7 36.8 24.6 C 38.3 23.6 39.7 23.0 41.1 23.0 C 44.7 23.0 47.4 24.8 49.3 28.2 L 49.3 19.2 L 51.3 19.2 L 51.3 22.6 L 53.7 22.6 L 53.7 24.7 L 51.3 24.7 L 51.3 45 L 49.3 45 L 49.3 32.4 C 49.1 31.8 48.7 31.0 48.1 30.0 C 47.6 29.1 47.2 28.5 46.9 28.2 L 39.5 36 L 38.0 34.6 C 39.0 33.6 39.5 32.6 39.5 31.7 C 39.5 31.1 39.3 30.5 38.9 30.0 C 38.6 29.5 38.1 29.3 37.5 29.3 C 37.5 29.3 36.8 29.4 35.6 29.6 Z M 37.1 27.4 C 37.8 27.4 38.4 27.4 38.8 27.5 C 39.3 27.7 39.7 28.0 40.2 28.6 C 40.6 29.2 41.0 30.0 41.3 31.2 C 43.2 29.3 44.7 27.8 45.7 26.7 C 44.3 25.6 43 25.1 41.6 25.1 C 40.8 25.1 40.0 25.3 39.1 25.7 C 38.2 26.1 37.5 26.7 37.1 27.4 Z M 56.1 19.9 L 57.9 22.6 L 61.2 22.6 L 61.2 24.7 L 58.1 24.7 L 58.1 45 L 56.1 45 L 56.1 24.7 L 52.9 24.7 L 52.9 22.6 L 55.6 22.6 L 53.9 20.3 C 54.1 18.3 55.1 16.6 56.8 15.2 C 58.6 13.7 60.3 13 62.1 13 C 63.7 13 65.3 13.3 66.9 14.0 C 68.6 14.7 69.9 15.4 70.9 16.2 C 71.9 16.9 73.3 18.0 74.9 19.5 L 73.5 21.0 C 69.3 17.0 65.6 15.0 62.2 15.0 C 60.6 15.0 59.2 15.6 58.0 16.7 C 56.9 17.9 56.2 18.9 56.1 19.9 Z M 64.2 29.2 C 64.2 30.0 64.5 30.8 65.1 31.6 C 65.7 32.5 66.3 32.9 67.1 32.9 C 67.3 32.9 67.6 32.8 67.8 32.7 L 67.1 34.7 C 66.8 34.8 66.6 34.8 66.4 34.8 C 65.3 34.8 64.3 34.2 63.5 33.1 C 62.6 31.9 62.1 30.6 62.1 29.3 C 62.1 27.8 62.7 26.3 63.7 24.9 C 64.7 23.4 66.2 22.7 68.0 22.7 C 68.8 22.7 69.6 22.9 70.3 23.1 C 70.9 23.4 71.5 23.8 72.0 24.3 C 72.5 24.8 72.9 25.3 73.1 25.6 C 73.3 25.9 73.6 26.3 73.9 26.7 L 73.9 19.2 L 75.9 19.2 L 75.9 22.6 L 78.3 22.6 L 78.3 24.7 L 75.9 24.7 L 75.9 45 L 73.9 45 L 73.9 31.6 C 73.9 30.5 73.2 29.0 71.9 27.3 C 70.6 25.6 69.4 24.7 68.5 24.7 C 67.1 24.7 66.1 25.2 65.3 26.1 C 64.6 27.0 64.2 28.0 64.2 29.2 Z M 10 13 "  # "বিপণি", FreeSans থেকে পাথে রূপান্তর (ফন্ট ছাড়াই দেখায়)
+
+
 def build():
     rr = random.Random(11)
     add(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}">')
@@ -171,7 +174,7 @@ def build():
     add('<g filter="url(#rough)"><path d="M236 156C250 142 262 134 280 130S330 126 372 124S440 120 480 118V200H214C220 178 226 166 236 156Z" fill="url(#bank)"/>')
     add('<path d="M236 156C250 142 262 134 280 130S330 126 372 124S440 120 480 118V128C440 130 400 132 372 134S300 140 270 146S244 158 236 166Z" fill="#c8d884" opacity=".7"/></g>')
     # বাঁ পাড়
-    add('<g filter="url(#rough)"><path d="M0 124C40 120 90 128 130 140S170 158 176 200H0Z" fill="url(#bankL)"/></g>')
+    add('<g filter="url(#rough)"><path d="M0 124C40 120 80 128 104 142S124 164 130 200H0Z" fill="url(#bankL)"/></g>')
     # পাড়ের জলরেখায় ছায়া
     add('<path d="M214 200C220 178 226 166 236 156" stroke="#4f8a5a" stroke-opacity=".35" stroke-width="3" fill="none"/>')
 
@@ -209,22 +212,15 @@ def build():
         x2, y2 = 340 + i * 6.2, 116
         add(f'<path d="M{n(x1)} {n(y1)}L{n(x2)} {n(y2)}" stroke="#6e4624" stroke-opacity=".28" stroke-width=".8"/><path d="M{n(x1 + 1.4)} {n(y1)}L{n(x2 + 1.5)} {n(y2)}" stroke="#ffe2a8" stroke-opacity=".3" stroke-width=".6"/>')
     add('<path d="M284 116L340 88L346 91L292 118Z" fill="#fff" opacity=".12"/><path d="M284 116H396" stroke="#5a3a1e" stroke-opacity=".5" stroke-width="2"/>')
-    # সাইনবোর্ড (বারকোড)
-    add('<rect x="318" y="100" width="44" height="12" rx="2.5" fill="#2e6b3a"/><rect x="318" y="100" width="44" height="12" rx="2.5" fill="none" stroke="#1f4d2a" stroke-width=".8"/>')
-    x = 322
-    for w in [2, 1, 3, 1, 2, 1, 3, 1, 2, 3, 1, 2, 1, 3, 1, 2]:
-        add(f'<rect x="{n(x)}" y="103" width="{w * .85}" height="6" fill="#fff" opacity=".92"/>')
-        x += w * .85 + 1.05
+    # সাইনবোর্ড ("বিপণি")
+    add('<rect x="321" y="96.5" width="38" height="16" rx="3" fill="#2e6b3a"/><rect x="321" y="96.5" width="38" height="16" rx="3" fill="none" stroke="#1f4d2a" stroke-width=".8"/><rect x="323" y="98.5" width="34" height="12" rx="2" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".5"/>')
+    add(f'<path transform="translate(321.54 92.82) scale(0.42)" d="{SIGN_D}" fill="#fff" fill-opacity=".95"/>')
     # চাঁদোয়া (ডোরা কাপড়)
     for i in range(7):
         c = "#f2a900" if i % 2 == 0 else "#fff3cc"
         x0 = 292 + i * 14.3
         add(f'<path d="M{n(x0)} 116h14.3v10q-7.15 5 -14.3 0z" fill="{c}"/><path d="M{n(x0)} 116h14.3v10q-7.15 5 -14.3 0z" fill="#8a5a2b" opacity=".08"/>')
     add('<path d="M292 126q50 8 100 0" stroke="#8a5a2b" stroke-opacity=".25" stroke-width="1.2" fill="none"/>')
-    # ঝোলানো চিহ্ন: ফার্মেসি ও কসমেটিক্স
-    add('<path d="M300 126v6M386 126v6" stroke="#5a3a1e" stroke-width=".8"/>')
-    add('<circle cx="300" cy="138" r="7" fill="#fff" stroke="#2e6b3a" stroke-width="1.6"/><path d="M300 134v8M296 138h8" stroke="#2e6b3a" stroke-width="2" stroke-linecap="round"/>')
-    add('<circle cx="386" cy="138" r="7" fill="#fff" stroke="#c4547c" stroke-width="1.6"/><rect x="383.6" y="138.4" width="4.8" height="5" rx=".8" fill="#e58ba6"/><path d="M384.6 138.4v-4l3 -1.4v5.4" fill="#c4547c"/>')
     # কলার কাঁদি, পাটের বস্তা
     add('<path d="M332 126q-2 6 1 12q4 -5 3 -12z" fill="#f4c542"/><path d="M336 126q-1 7 3 11q3 -5 1 -11z" fill="#e6b52e"/><path d="M334 125v2" stroke="#6b8a3a" stroke-width="1.4"/>')
     add('<path d="M288 153q-2 -14 6 -15q8 1 6 15z" fill="#c9a569"/><path d="M290 140q4 -3 8 0" stroke="#8a6b3a" stroke-width=".9" fill="none"/><path d="M302 153q-1 -11 5 -12q6 1 5 12z" fill="#d6b87a"/>')
@@ -250,36 +246,36 @@ def build():
     add('<g filter="url(#rough)">' + canopy(62, 96, 42, 32, 80, ["#2f6b33", "#47934a", "#6bb35a", "#a6d77c"], 41, {"count": 7, "col": "#f2a900", "hi": "#ffd866"}) + '</g>')
 
     # ১১. ছই-নৌকা ও মাঝি (প্রতিফলনসহ)
-    boat = '''<g id="boat">
-<path d="M112 142Q116 156 148 160Q196 164 230 142Q228 152 200 162Q150 170 118 156Z" fill="url(#hull)"/>
-<path d="M118 150Q150 160 226 146" stroke="#d9b070" stroke-opacity=".55" stroke-width="1.1" fill="none"/>
-<path d="M126 155Q160 164 214 152" stroke="#1d150d" stroke-opacity=".5" stroke-width="1.3" fill="none"/>
-<path d="M146 146Q150 126 166 124Q186 124 196 146Z" fill="url(#thatch)"/>
-<path d="M152 144Q155 130 166 128M160 144Q162 130 170 127M170 144Q172 130 178 127M180 144Q182 132 186 129" stroke="#8a6b3a" stroke-opacity=".5" stroke-width=".8" fill="none"/>
-<path d="M146 146Q150 126 166 124Q186 124 196 146" stroke="#5a3a1e" stroke-opacity=".6" stroke-width=".9" fill="none"/>
-<path d="M214 118L242 170" stroke="#7a5a2f" stroke-width="1.6" stroke-linecap="round"/>
-<circle cx="207" cy="115" r="3.4" fill="#8a5a3a"/><path d="M203.8 113.6q3.2 -4.4 6.4 0" fill="#2a1a10"/>
-<path d="M203 119q4 -1 8 0l2 15h-10z" fill="#f4efe0"/><path d="M203 119q4 -1 8 0" stroke="#d9c9a0" stroke-width=".8" fill="none"/>
-<path d="M203 134h10l1 9h-12z" fill="#3b6ea5"/><path d="M204 137h9M204 140h9" stroke="#fff" stroke-opacity=".45" stroke-width=".6"/>
-<path d="M211 122l5 -4" stroke="#8a5a3a" stroke-width="2" stroke-linecap="round"/>
-<path d="M205 143l-1 5M210 143l1 5" stroke="#8a5a3a" stroke-width="1.8" stroke-linecap="round"/>
+    boat = '''<g id="boat" transform="translate(-2 4)">
+<path d="M116 146Q170 158 232 140Q224 162 172 166Q128 166 116 146Z" fill="url(#hull)"/>
+<path d="M116 146Q170 158 232 140" stroke="#d9b070" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+<path d="M124 156Q172 164 222 150" stroke="#1d150d" stroke-opacity=".45" stroke-width="1.2" fill="none"/>
+<path d="M142 152Q146 130 166 128Q188 128 196 152Z" fill="url(#thatch)"/>
+<path d="M150 151Q153 136 165 132M159 152Q161 136 171 131M169 152Q171 136 180 131M179 152Q181 138 187 133" stroke="#8a6b3a" stroke-opacity=".5" stroke-width=".8" fill="none"/>
+<path d="M142 152Q146 130 166 128Q188 128 196 152" stroke="#5a3a1e" stroke-opacity=".6" stroke-width=".9" fill="none"/>
+<path d="M219 124L246 172" stroke="#7a5a2f" stroke-width="1.6" stroke-linecap="round"/>
+<circle cx="210" cy="121" r="3.4" fill="#8a5a3a"/><path d="M206.8 119.6q3.2 -4.4 6.4 0" fill="#2a1a10"/>
+<path d="M206 125q4 -1 8 0l2 15h-10z" fill="#f4efe0"/><path d="M206 125q4 -1 8 0" stroke="#d9c9a0" stroke-width=".8" fill="none"/>
+<path d="M206 140h10l1 8h-12z" fill="#3b6ea5"/><path d="M207 143h9M207 146h9" stroke="#fff" stroke-opacity=".45" stroke-width=".6"/>
+<path d="M214 128l6 -4" stroke="#8a5a3a" stroke-width="2" stroke-linecap="round"/>
+<path d="M208 148l-1 4M213 148l1 4" stroke="#8a5a3a" stroke-width="1.8" stroke-linecap="round"/>
 </g>'''
-    add('<g transform="translate(0 322) scale(1 -1)" opacity=".28" filter="url(#wave)"><use href="#boat"/></g>')
+    add('<g transform="translate(0 340) scale(1 -1)" opacity=".3" filter="url(#wave)"><use href="#boat"/></g>')
     add(boat)
-    add('<path d="M108 164q10 2 20 0M222 160q12 3 26 0" stroke="#fff" stroke-opacity=".8" stroke-width="1.2" fill="none" stroke-linecap="round"/>')
+    add('<path d="M108 170q8 2 16 0M120 169q50 6 110 -2M236 160q12 3 24 0" stroke="#fff" stroke-opacity=".8" stroke-width="1.2" fill="none" stroke-linecap="round"/>')
 
     # ১২. নলখাগড়া ও সামনের ঘাস
     add('<g filter="url(#rough)">')
     for _ in range(18):
-        x = rr.uniform(176, 232)
-        y = rr.uniform(168, 186)
+        x = rr.choice([rr.uniform(96, 112), rr.uniform(236, 250)])
+        y = rr.uniform(176, 192)
         h = rr.uniform(14, 26)
         add(f'<path d="M{n(x)} {n(y)}Q{n(x + rr.uniform(-3, 3))} {n(y - h * .6)} {n(x + rr.uniform(-5, 5))} {n(y - h)}" stroke="{rr.choice(["#5e9a45", "#7fb85a", "#4a8a3c"])}" stroke-width="1.2" fill="none" stroke-linecap="round"/>')
         add(f'<ellipse cx="{n(x + rr.uniform(-4, 4))}" cy="{n(y - h)}" rx="1.4" ry="3.2" fill="#c9a569" transform="rotate({n(rr.uniform(-20, 20))} {n(x)} {n(y - h)})"/>')
     for _ in range(100):
         x = rr.uniform(0, 480)
         y = rr.uniform(160, 196)
-        if 150 < x < 240 and y < 190:
+        if 112 < x < 236 and y < 192:
             continue
         h = rr.uniform(5, 13)
         col = rr.choice(["#5e9a45", "#7fb85a", "#4a8a3c", "#9bcf6e"])
