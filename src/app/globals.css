@@ -2,25 +2,25 @@
 
 /* ডিজাইন টোকেন: ডিজাইন ক্যানভাস থেকে */
 @theme {
-  /* রঙের নকশা "শাপলা": আসল শাপলা থেকে নেওয়া — পাতা, পরাগ, পাপড়ি, কাদা */
-  --color-brand: #1e4d36; /* পাতা (Pad) — গভীর পুকুর-সবুজ */
-  --color-brand-dark: #143826; /* পাতার ছায়া */
-  --color-brand-soft: #e4eee2; /* ভেজা পাতার আভা */
-  --color-gold: #e8b517; /* পরাগ (Stamen) — সোনালি জোর */
-  --color-gold-soft: #fbeebd;
-  --color-ink: #17221b;
-  --color-muted: #6a6454; /* কাদা (Mud) থেকে নরম */
-  --color-line: #e4dcc6;
-  --color-canvas: #f7f2e4; /* পাপড়ি (Petal) — হালকা ক্রিম */
-  --color-warn-bg: #fbeebd;
+  /* রঙের নকশা "আম": পাকা আমের খোসা, পাতা, শাঁস, আঁটি — উজ্জ্বল ও উষ্ণ */
+  --color-brand: #2e6b3a; /* পাতা (Leaf) — তাজা আমপাতা-সবুজ */
+  --color-brand-dark: #1f4d2a; /* পাতার ছায়া */
+  --color-brand-soft: #e3efdc; /* কচি পাতার আভা */
+  --color-gold: #f2a900; /* খোসা (Peel) — পাকা আমের সোনালি */
+  --color-gold-soft: #ffe9a8;
+  --color-ink: #2a2315;
+  --color-muted: #7a6e52;
+  --color-line: #ebddb5;
+  --color-canvas: #fff6dd; /* শাঁস (Flesh) — হালকা আম-ক্রিম */
+  --color-warn-bg: #ffe9a8;
   --color-warn: #7a4b00;
   --color-danger-bg: #fbe9e5;
   --color-danger: #b3342a;
-  --color-chip: #ece6d3;
-  --color-chip-ink: #3e3a2e;
-  --color-ink2: #3e3a2e;
+  --color-chip: #f3e8c4;
+  --color-chip-ink: #4a3f26;
+  --color-ink2: #4a3f26;
   --color-amber: #a8660b;
-  --color-line-strong: #b2a88e;
+  --color-line-strong: #bfaf85;
   --font-sans: var(--font-bengali), system-ui, sans-serif;
   /* পর্দার কলামের প্রস্থ: ফোনে ৪৮০px, ট্যাবলেটে বড়, ডেস্কটপে আরও বড় */
   --app-col: 30rem;
@@ -55,7 +55,7 @@ body {
   padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
 }
 
-/* জলছাপ-ছবি: পাতার শেষে হালকা শহর-দৃশ্য (শাপলা-সবুজ ছোঁয়া, ফার্মেসি, রিকশা) */
+/* জলছাপ-ছবি: পাতার শেষে হালকা শহর-দৃশ্য (আম-ক্রিম ছোঁয়া, ফার্মেসি, রিকশা) */
 .app-skyline {
   width: 100%;
   aspect-ratio: 480 / 230;
@@ -92,13 +92,13 @@ textarea {
   }
 }
 
-/* ভিতরের নকশা: নরম ছায়া, সবুজ গ্রেডিয়েন্ট বোতাম, হিরো কার্ড */
+/* ভিতরের নকশা: নরম ছায়া, সবুজ গ্রেডিয়েন্ট বোতাম, আম-সোনালি হিরো কার্ড */
 .card-surface {
-  box-shadow: 0 1px 2px rgb(30 77 54 / 0.05), 0 8px 18px -10px rgb(30 77 54 / 0.18);
+  box-shadow: 0 1px 2px rgb(107 68 35 / 0.06), 0 8px 18px -10px rgb(107 68 35 / 0.22);
 }
 .btn-primary-grad {
-  background-image: linear-gradient(180deg, #2b6549 0%, var(--color-brand) 100%);
-  box-shadow: 0 8px 16px -8px rgb(30 77 54 / 0.65), inset 0 1px 0 rgb(255 255 255 / 0.18);
+  background-image: linear-gradient(180deg, #3b7f49 0%, var(--color-brand) 100%);
+  box-shadow: 0 8px 16px -8px rgb(46 107 58 / 0.65), inset 0 1px 0 rgb(255 255 255 / 0.18);
 }
 .btn-primary-grad:active {
   background-image: linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-dark) 100%);
@@ -110,10 +110,10 @@ textarea {
 .hero-card {
   position: relative;
   overflow: hidden;
-  color: #fff;
-  background-image: radial-gradient(120% 90% at 100% 0%, rgb(232 181 23 / 0.28) 0%, rgb(232 181 23 / 0) 55%),
-    linear-gradient(135deg, #2b6549 0%, var(--color-brand) 55%, var(--color-brand-dark) 100%);
-  box-shadow: 0 14px 28px -14px rgb(20 56 38 / 0.7);
+  color: var(--color-ink);
+  background-image: radial-gradient(120% 90% at 100% 0%, rgb(255 255 255 / 0.32) 0%, rgb(255 255 255 / 0) 55%),
+    linear-gradient(135deg, #f7b500 0%, #f2a900 50%, #d98a00 100%);
+  box-shadow: 0 14px 28px -14px rgb(217 138 0 / 0.75);
 }
 .hero-card::after {
   content: "";
@@ -123,5 +123,5 @@ textarea {
   width: 150px;
   height: 150px;
   border-radius: 50%;
-  border: 22px solid rgb(255 255 255 / 0.06);
+  border: 22px solid rgb(255 255 255 / 0.18);
 }

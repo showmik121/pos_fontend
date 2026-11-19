@@ -42,10 +42,10 @@ export default function HomePage() {
       </LinkButton>
 
       <section className="hero-card rounded-3xl px-5 py-5" aria-label="আজকের সারসংক্ষেপ">
-        <div className="text-[13px] font-medium text-white/75">আজকের বিক্রি</div>
+        <div className="text-[13px] font-medium text-ink/70">আজকের বিক্রি</div>
         <div className="mt-0.5 text-[34px] font-extrabold leading-tight tracking-tight">{formatTaka(summary.total)}</div>
-        <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[13px] font-medium text-white/90">
-          <span aria-hidden="true" className="size-2 rounded-full bg-gold" />
+        <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/45 px-3 py-1 text-[13px] font-medium text-ink">
+          <span aria-hidden="true" className="size-2 rounded-full bg-brand" />
           {toBanglaDigits(summary.bills)}টি বিল
         </div>
       </section>
