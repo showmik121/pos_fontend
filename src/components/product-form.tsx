@@ -9,6 +9,7 @@ import { Scanner } from "./scanner"
 import { Icon } from "./ui/icons"
 import { toAsciiDigits } from "@/lib/format/bn"
 import { domainMessage } from "@/lib/domain/errors"
+import { parseMonthYear } from "@/lib/domain/dates"
 import { parseTaka, takaInputValue } from "@/lib/domain/money"
 import type { ProductInput } from "@/lib/store/actions"
 import { UNIT_LABELS, type Product, type UnitLabel } from "@/lib/store/types"
@@ -24,11 +25,21 @@ interface Props {
   open?: boolean
   defaultMinStock: number
   submitLabel: string
-  onSubmit: (input: ProductInput) => void
+  /** নতুন পণ্যে "শুরুর স্টক" ঘর দেখায় (সম্পাদনায় নয়) */
+  withInitialStock?: boolean
+  /** ওষুধের দোকানে মেয়াদের ঐচ্ছিক ঘরও দেখায় */
+  showExpiry?: boolean
+  onSubmit: (input: ProductInput, stock: InitialStock) => void
+}
+
+export interface InitialStock {
+  /** পিসে; ০ = এখন স্টক তুলছেন না */
+  qty: number
+  expiryDate: string | null
 }
 
 /** নতুন পণ্য / খোলা পণ্য / পণ্য সম্পাদনার ফর্ম */
-export function ProductForm({ initial, initialBarcode = "", open = false, defaultMinStock, submitLabel, onSubmit }: Props) {
+export function ProductForm({ initial, initialBarcode = "", open = false, defaultMinStock, submitLabel, withInitialStock = false, showExpiry = false, onSubmit }: Props) {
   const editing = Boolean(initial)
   const [name, setName] = useState(initial?.name ?? "")
   const [barcode, setBarcode] = useState(initialBarcode)
@@ -40,6 +51,8 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
   const [category, setCategory] = useState(initial?.category ?? "")
   const [error, setError] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
+  const [stockQty, setStockQty] = useState("")
+  const [expiry, setExpiry] = useState("")
 
   const submit = () => {
     setError(null)
@@ -51,8 +64,15 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
     if (costPoisha == null) return setError("ক্রয়মূল্য সঠিক নয়")
     if (!Number.isInteger(cartonSize) || cartonSize < 1) return setError("কার্টনে পিসের সংখ্যা ১ বা তার বেশি হতে হবে")
     if (!Number.isInteger(min) || min < 0) return setError("সর্বনিম্ন স্টক সঠিক নয়")
+    const qty = stockQty.trim() ? Number(toAsciiDigits(stockQty)) : 0
+    if (withInitialStock && (!Number.isInteger(qty) || qty < 0)) return setError("শুরুর স্টক ০ বা পূর্ণসংখ্যা দিন")
+    let expiryDate: string | null = null
+    if (withInitialStock && showExpiry && qty > 0 && expiry.trim()) {
+      expiryDate = parseMonthYear(expiry)
+      if (!expiryDate) return setError("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)")
+    }
     try {
-      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, barcode: open || editing ? null : barcode.trim() || null, open })
+      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate })
     } catch (err) {
       setError(domainMessage(err))
     }
@@ -88,6 +108,12 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
         <Field id="p-carton" label="১ কার্টনে কত পিস" inputMode="numeric" value={carton} onChange={(e) => setCarton(e.target.value)} />
         <Field id="p-min" label="সর্বনিম্ন স্টক" inputMode="numeric" value={minStock} onChange={(e) => setMinStock(e.target.value)} />
       </div>
+      {withInitialStock ? (
+        <div className="space-y-3 rounded-xl border border-line bg-white p-3">
+          <Field id="p-stock" label="শুরুর স্টক (পিস) — এখন যতগুলো আছে" placeholder="০" inputMode="numeric" value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
+          {showExpiry ? <Field id="p-expiry" label="মেয়াদ (ঐচ্ছিক, মাস/বছর)" placeholder="০৬/২০২৭" inputMode="numeric" value={expiry} onChange={(e) => setExpiry(e.target.value)} /> : null}
+        </div>
+      ) : null}
       <Field id="p-cat" label="ক্যাটেগরি (ঐচ্ছিক)" value={category} onChange={(e) => setCategory(e.target.value)} />
       {error ? <Banner tone="danger">{error}</Banner> : null}
       <Button full onClick={submit}>

@@ -25,6 +25,12 @@ describe("পণ্য ও স্টক-ইন", () => {
     expect(() => createProduct(db, { ...input, barcode: null, name: " " }, NOW)).toThrow()
     expect(() => createProduct(db, { ...input, barcode: null, pricePoisha: 0 }, NOW)).toThrow()
   })
+  it("নতুন পণ্যের সাথে শুরুর স্টক: ব্যাচ নম্বর ও মেয়াদ ছাড়াই বিক্রির উপযোগী হয়", () => {
+    const made = createProduct(emptyDb(), { name: "Slim-shirt", unit: "piece", cartonSize: 1, costPoisha: 60000, pricePoisha: 80000, minStock: 5, category: "Summer", barcode: "8721124299737", open: false }, NOW)
+    const db = stockIn(made.db, { productId: made.product.id, qty: 12, unit: "piece", batchNo: "", expiryDate: null, costPoisha: 60000, pricePoisha: null, requireBatchAndExpiry: false }, NOW)
+    expect(totalStock(db, made.product.id)).toBe(12)
+    expect(sellableStock(db, made.product.id, TODAY)).toBe(12)
+  })
   it("স্টক তোলার সময় বিক্রয়মূল্য বদলানো যায়; ফাঁকা দিলে আগেরটাই থাকে", () => {
     const { db, pondsId } = setup()
     const changed = stockIn(db, { productId: pondsId, qty: 1, unit: "piece", batchNo: "B9", expiryDate: "2027-09-30", costPoisha: 21000, pricePoisha: 26000, requireBatchAndExpiry: true }, NOW)
