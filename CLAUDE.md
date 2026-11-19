@@ -51,6 +51,10 @@ tests/              Vitest (domain, store, client, bn)
 - বাকিতে বিক্রিতে কাস্টমার বাধ্যতামূলক। পেমেন্ট: ক্যাশ ও মোবাইল (বিকাশ/নগদ/রকেট)।
 - মোবাইল নম্বর বাংলা বা ইংরেজি অঙ্কে নেওয়া যায়, API-তে ইংরেজি অঙ্ক যায় (`format/phone.ts`)।
 
+### গোল্ডেন ফিক্সচার (ব্যাকএন্ডের সাথে আচরণ এক রাখা)
+- `tests/fixtures/domain/*.json` (ছাড়, পেমেন্ট, FIFO, মেয়াদ, ইউনিট) এই রিপোর `src/lib/domain`-এর আচরণ লিখে রাখে; `tests/golden.test.ts` চালায়। ব্যাকএন্ড (`showmik121/pos_backend` `tests/fixtures/domain/`) একই JSON চালায়।
+- ডোমেইন-যুক্তি বদলালে: আগে ফিক্সচার বদলান (লাল), তারপর কোড; `node scripts/golden-lock.mjs` চালিয়ে `fixtures.lock` নতুন করুন, তারপর JSON-গুলো ও `fixtures.lock` ব্যাকএন্ডে কপি করুন। দুই রিপোর লক একই না হলে আচরণ সরে গেছে।
+
 ### সিংক (ইভেন্ট-লগ, ধাপ ২–৩)
 - `applyEvents(db, events)` বিশুদ্ধ: `{db, deferred, ignored}` ফেরায়। একই ইভেন্ট আবার দিলে কিছু বদলায় না; ক্রম যাই হোক ফল এক (ইভেন্ট `at`, তারপর id দিয়ে সাজানো)।
 - ধরন: `product_upserted`, `stock_in`, `customer_upserted`, `sale_completed`, `sale_voided`, `due_received`, `batch_removed`, `settings_updated`। অচেনা ধরন `ignored` (ভবিষ্যৎ সামঞ্জস্য)।
