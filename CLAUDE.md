@@ -10,10 +10,11 @@ Next.js 15 (App Router, `output: "export"`, `trailingSlash`) · React 19 · Type
 npm install
 npm run dev         # http://localhost:3000
 npm run typecheck   # tsc --noEmit
+npm run lint        # eslint (next/core-web-vitals + next/typescript, eslint.config.mjs)
 npm test            # vitest run
 npm run build       # স্ট্যাটিক সাইট -> out/
 ```
-CI (`.github/workflows/ci.yml`): `npm install` → typecheck → test → build। কমিটের আগে চারটিই পাস করাতে হবে। লকফাইল নেই, তাই `npm ci` নয়, `npm install`।
+CI (`.github/workflows/ci.yml`): `npm install` → typecheck → lint → test → build; আলাদা জব `audit` (`npm audit --omit=dev --audit-level=high`, লকফাইল শুধু CI-তে বানানো), `e2e`, `e2e-real`। কমিটের আগে typecheck, lint, test, build পাস করাতে হবে। লকফাইল নেই, তাই `npm ci` নয়, `npm install`।
 
 ## আর্কিটেকচার
 পুরো অ্যাপ ক্লায়েন্ট-সাইড; কোনো সার্ভার রানটাইম নেই। Netlify-তে স্ট্যাটিক হোস্ট (`https://bipone.netlify.app/`)।
@@ -73,7 +74,7 @@ tests/              Vitest (domain, store, client, bn)
 - পেজ ছোট রাখা; হিসাব `domain/`-এ, ডেটা বদল `store/actions.ts`-এ, UI-তে নয়।
 - স্ক্যানার: নেটিভ `BarcodeDetector` (সব ব্রাউজারে নেই), না থাকলে হাতে নম্বর লেখা। ইমপোর্ট শুধু CSV।
 - প্রিন্ট: `window.print` + `.no-print` CSS; রসিদ শেয়ার `navigator.share`, না থাকলে ক্লিপবোর্ড।
-- সার্ভিস ওয়ার্কার শুধু একই origin-এর GET ক্যাশ করে, API কখনো নয়। ক্যাশ কৌশল বদলালে `public/sw.js`-এর `VERSION` বাড়ান।
+- সার্ভিস ওয়ার্কার শুধু একই origin-এর GET ক্যাশ করে, API কখনো নয়। শুধু সফল (২xx) উত্তর ক্যাশ হয়; পেজ ৬০ ও অ্যাসেট ১৫০ এন্ট্রির সীমা (পুরনো আগে যায়, `tests/sw.test.ts`)। ক্যাশ কৌশল বদলালে `public/sw.js`-এর `VERSION` বাড়ান।
 - সার্ভারের কোনো গোপন তথ্য ফ্রন্টএন্ডে রাখা যাবে না (`NEXT_PUBLIC_*` সবাই দেখে)।
 - নিরাপত্তা হেডার (CSP সহ) `public/_headers`-এ। API অন্য origin-এ সরালে সেখানকার `connect-src` বদলাতে হবে। নমুনা-তথ্য বোতাম ডিফল্টে বন্ধ (`NEXT_PUBLIC_ENABLE_DEMO=1` দিলে চালু)। CSV ইমপোর্টের সীমা: ১ MB ও ৫০০০ সারি।
 - কমিট: `type: বর্ণনা` (feat, fix, chore, docs, test, refactor)।
@@ -85,5 +86,4 @@ tests/              Vitest (domain, store, client, bn)
 - ডেটা ফোনে আটকা (ওপরে দেখুন); একাধিক ডিভাইসে মেলে না।
 - সেটিংসে ব্যাকআপ নামানো/ফেরানো (`store/backup.ts`) ও সেভ-জায়গার সতর্কতা আছে; একাধিক ট্যাবে অন্য ট্যাবের বদল `storage` ইভেন্টে নেওয়া হয়। বিল কখনো স্বয়ংক্রিয়ভাবে ছাঁটা হয় না, ব্যাকআপ না নিলে `BackupReminder` দিনে একবার মনে করায় (অবস্থা `store/backup-reminder.ts`, Db-র বাইরে), লগইনের পর `StorageGuard` `navigator.storage.persist()` চায় (ফল সেটিংসে), আর অ্যাপ ভাঙলে `error.tsx`/`global-error.tsx`-এর `CrashScreen` থেকে ডেটার কপি নামানো যায় (`store/rescue.ts`), তাই খুব ব্যস্ত দোকানে ব্যাকআপ নিয়মিত নিতে হবে; স্থায়ী সমাধান সার্ভার সিংক।
 - UI এখনো আসল ফোনে ম্যানুয়ালি যাচাই হয়নি। CI টাইপ, টেস্ট, বিল্ড ও একটি Playwright E2E (`e2e/`, মোবাইল Chromium, `npm run test:e2e`) চালায়: দোকান খোলা → পণ্য → স্টক → নগদ ও বাকি বিল → রসিদ (বিল নম্বর A-১০০১) → বাকি আদায়। E2E দুই জবে চলে: `e2e` (ব্যাকএন্ড নকল, `page.route`) আর `e2e-real` (`E2E_REAL=1`; `showmik121/pos_backend` main চেকআউট + Postgres 16 + `pos_app`, আলাদা origin-এ, তাই API চুক্তি, CORS, ডিভাইস কোড ও লগআউট/লগইন/ভুল পাসওয়ার্ড/একই নম্বরে দ্বিতীয় দোকান আটকানো যাচাই হয়)। ব্যাকএন্ড main বদলালে `e2e-real` ভাঙতে পারে (ইচ্ছাকৃত: ভাঙন আগে ধরা পড়ে); স্থির করতে ci.yml-এ `ref`-এ কমিট SHA বসান। স্টাফ, ব্যাকআপ-পুনরুদ্ধার, অফলাইন এতে নেই; কম্পোনেন্ট টেস্টও নেই। লোকালে (নকল): `NEXT_PUBLIC_API_URL=/api npm run build && npx playwright install chromium && npm run test:e2e`।
-- `README.md`-র "এখন যা কাজ করে" অংশ পুরনো (শুধু F0/F1 বলে); হালনাগাদ দরকার।
 - অ্যাপের নাম ঠিক হয়নি ("দোকান POS"; "Bipon"/"Bipone" বিবেচনায়)।

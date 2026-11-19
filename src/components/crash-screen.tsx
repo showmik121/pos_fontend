@@ -41,6 +41,8 @@ export function CrashScreen({ onRetry, error }: { onRetry: () => void; error?: u
       <button type="button" onClick={saveData} style={{ ...btn, background: "#fff", color: "#0F766E" }}>
         ডেটার কপি নামান
       </button>
+      {/* ইচ্ছাকৃত সাধারণ লিংক: অ্যাপের গাছ ভাঙা, তাই ক্লায়েন্ট-নেভিগেশন নয়, পুরো পাতা নতুন করে লোড হওয়া দরকার */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a href="/" style={{ color: "#0F766E", fontWeight: 600 }}>
         হোমে ফিরুন
       </a>

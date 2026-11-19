@@ -34,7 +34,7 @@ export const DeviceResponseSchema = z.object({ code: z.string().regex(/^[A-Z]$/)
 
 export const PushResponseSchema = z.object({ accepted: z.array(z.string()) })
 export const PullResponseSchema = z.object({
-  events: z.array(z.object({ seq: z.number() }).passthrough()),
+  events: z.array(z.looseObject({ seq: z.number() })),
   lastSeq: z.number(),
   hasMore: z.boolean(),
 })

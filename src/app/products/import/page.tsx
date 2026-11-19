@@ -84,7 +84,7 @@ export default function ImportPage() {
 
       <Card className="space-y-2 p-4">
         <p className="font-medium">ধাপ ২: ফাইল বাছুন</p>
-        <p className="text-sm text-muted">Excel হলে আগে "CSV হিসেবে সেভ করুন"। Excel (.xlsx) সরাসরি এখনো চলে না।</p>
+        <p className="text-sm text-muted">Excel হলে আগে &quot;CSV হিসেবে সেভ করুন&quot;। Excel (.xlsx) সরাসরি এখনো চলে না।</p>
         <input
           ref={input}
           type="file"

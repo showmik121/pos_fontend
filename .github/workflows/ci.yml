@@ -16,6 +16,7 @@ jobs:
           cache-dependency-path: package.json
       - run: npm install --no-audit --no-fund
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
       - run: npm run build
       - name: ফ্রন্টএন্ডের স্ট্যাটিক ফাইল সংরক্ষণ
@@ -24,6 +25,18 @@ jobs:
           name: pos-frontend-out
           path: out
           retention-days: 7
+
+  audit:
+    # চালু অ্যাপের (production) নির্ভরতায় জানা গুরুতর (high+) ঝুঁকি থাকলে লাল হয়; dev-টুলের ঝুঁকি আটকায় না।
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: লকফাইল তৈরি (রিপোতে নেই)
+        run: npm install --package-lock-only --no-fund --no-audit
+      - run: npm audit --omit=dev --audit-level=high
 
   e2e:
     # মূল পথ ব্রাউজারে (ফোনের মাপে) চালায়; ব্যাকএন্ড নকল, তাই আসল API নয়।
