@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from "react"
 import { AuthProvider } from "./auth-provider"
+import { CrashReporter } from "./crash-reporter"
 import { DbProvider } from "./db-provider"
 import { DeviceRegistrar } from "./device-registrar"
 import { StorageGuard } from "./storage-guard"
@@ -18,6 +19,7 @@ export function Providers({ children }: { children: ReactNode }) {
   }, [])
   return (
     <AuthProvider>
+      <CrashReporter />
       <DbProvider>
         <DeviceRegistrar />
         <StorageGuard />

@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { downloadTextFile } from "@/lib/browser/download"
+import { reportCrash } from "@/lib/report/send"
 import { rescueBackup } from "@/lib/store/rescue"
 
 // স্টাইল ইনলাইন: global-error-এ layout ও globals.css থাকে না, তবু যেন পাতা পড়া যায়
@@ -9,8 +10,12 @@ const box = { minHeight: "100dvh", display: "grid", placeContent: "center", gap:
 const btn = { padding: "12px 16px", borderRadius: 10, fontSize: 16, fontWeight: 600, border: "1px solid #0F766E" } as const
 
 /** অ্যাপ ভেঙে গেলে দেখানো পাতা: আবার চেষ্টা, হোমে ফেরা, আর ডেটা নামানো */
-export function CrashScreen({ onRetry }: { onRetry: () => void }) {
+export function CrashScreen({ onRetry, error }: { onRetry: () => void; error?: unknown }) {
   const [note, setNote] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (error !== undefined) reportCrash("render", error)
+  }, [error])
 
   const saveData = () => {
     try {
