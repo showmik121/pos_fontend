@@ -20,6 +20,7 @@ import type { StockUnit } from "@/lib/domain/units"
 import { toAsciiDigits } from "@/lib/format/bn"
 import { stockIn } from "@/lib/store/actions"
 import { searchProducts } from "@/lib/store/search"
+import { newProductFromScanHref } from "@/lib/store/flow"
 import { findByBarcode, findProduct, totalStock } from "@/lib/store/selectors"
 
 const UNITS = [
@@ -69,7 +70,19 @@ function StockInForm() {
         <Button variant="secondary" full onClick={() => setScanning(true)}>
           <Icon name="scan" /> বারকোড স্ক্যান করুন
         </Button>
-        {scanMiss ? <Banner tone="warn">এই বারকোডে কোনো পণ্য নেই — আগে নতুন পণ্য যোগ করুন।</Banner> : null}
+        {scanMiss ? (
+          <Banner tone="warn">
+            <div className="space-y-2">
+              <div>এই বারকোডে ({scanMiss}) কোনো পণ্য নেই।</div>
+              <Button full onClick={() => router.push(newProductFromScanHref(scanMiss))}>
+                <Icon name="plus" /> নতুন পণ্য হিসেবে যোগ করুন
+              </Button>
+            </div>
+          </Banner>
+        ) : null}
+        <Button variant="secondary" full onClick={() => router.push("/products/new?next=stock")}>
+          <Icon name="plus" /> নতুন পণ্য (তালিকায় নেই)
+        </Button>
         {results.length === 0 ? (
           <Card className="px-4 py-6 text-center text-muted">পণ্য পাওয়া যায়নি</Card>
         ) : (
