@@ -7,6 +7,7 @@ import { Logo } from "@/components/logo"
 import { Icon } from "@/components/ui/icons"
 import { LinkButton } from "@/components/ui/button"
 import { FEATURES, HERO, STEPS, TRUST_POINTS } from "./landing-content"
+import { InstallButton, InstallSection } from "./install-section"
 import { PhonePreview } from "./phone-preview"
 
 /** হোম-স্ক্রিন থেকে খোলা (ইনস্টল করা) অ্যাপে ল্যান্ডিং দেখানোর দরকার নেই, সরাসরি লগইনে যাবে */
@@ -26,9 +27,14 @@ export function Landing() {
     <div className="min-h-dvh overflow-x-clip bg-canvas">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
         <Logo size={44} />
-        <Link href="/login" className="inline-flex min-h-11 items-center rounded-xl px-3 text-[15px] font-semibold text-brand-dark active:bg-brand-soft">
-          লগইন
-        </Link>
+        <div className="flex items-center gap-1">
+          <div className="hidden sm:block">
+            <InstallButton variant="secondary" className="min-h-11 px-3 text-[14px]" />
+          </div>
+          <Link href="/login" className="inline-flex min-h-11 items-center rounded-xl px-3 text-[15px] font-semibold text-brand-dark active:bg-brand-soft">
+            লগইন
+          </Link>
+        </div>
       </header>
 
       <section className="mx-auto grid max-w-5xl items-center gap-10 px-5 pb-12 pt-6 md:grid-cols-2 md:pb-20 md:pt-12">
@@ -50,6 +56,7 @@ export function Landing() {
               লগইন
             </LinkButton>
           </div>
+          <InstallButton variant="secondary" className="mt-3 min-h-12 w-full sm:w-auto" />
           <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13.5px] font-medium text-ink2">
             {TRUST_POINTS.map((t) => (
               <li key={t} className="inline-flex items-center gap-1.5">
@@ -98,6 +105,8 @@ export function Landing() {
           ))}
         </ol>
       </section>
+
+      <InstallSection />
 
       <section className="px-5 pb-10">
         <div className="hero-card mx-auto max-w-5xl rounded-3xl px-6 py-9 text-center md:py-12">

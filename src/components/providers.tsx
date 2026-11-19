@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, type ReactNode } from "react"
+import "@/lib/pwa/install" // শুধু beforeinstallprompt আগেভাগে ধরার জন্য
 import { AuthProvider } from "./auth-provider"
 import { CrashReporter } from "./crash-reporter"
 import { DbProvider } from "./db-provider"
