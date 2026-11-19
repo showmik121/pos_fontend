@@ -29,12 +29,13 @@ export function BottomNav() {
               <Link
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
-                className={cn("flex h-14 flex-col items-center justify-center gap-0.5 text-xs", active ? "font-medium text-brand" : "text-muted")}
+                className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 text-xs", active ? "font-medium text-brand" : "text-muted")}
               >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d={tab.icon} />
                 </svg>
                 {tab.label}
+                {active ? <span aria-hidden="true" className="absolute inset-x-6 top-0 h-[3px] rounded-b-full bg-gold" /> : null}
               </Link>
             </li>
           )
