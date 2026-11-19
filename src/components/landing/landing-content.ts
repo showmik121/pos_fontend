@@ -33,4 +33,15 @@ export const HERO = {
   lead: "বিক্রি, স্টক, মেয়াদ আর বাকির খাতা — বাংলায়, সহজে, ইন্টারনেট না থাকলেও।",
 } as const
 
-export const TRUST_POINTS = ["সম্পূর্ণ বাংলায়", "ফোনে ইনস্টল করা যায়", "ইন্টারনেট ছাড়াও চলে"] as const
+export const TRUST_POINTS = ["সম্পূর্ণ বাংলায়", "ব্রাউজার থেকেই ইনস্টল", "ইন্টারনেট ছাড়াও চলে"] as const
+
+export interface InstallGuide {
+  platform: string
+  steps: readonly string[]
+}
+
+/** অ্যাপ স্টোর ছাড়া ব্রাউজার থেকে ইনস্টলের ধাপ (ব্রাউজারের নিজস্ব ইনস্টল বোতাম না এলেও এভাবে হয়) */
+export const INSTALL_GUIDES: readonly InstallGuide[] = [
+  { platform: "অ্যান্ড্রয়েড · Chrome", steps: ["Chrome-এ এই পাতা খুলুন", "ওপরের ডানে ⋮ মেনু চাপুন", "\"Install app\" বা \"Add to Home screen\" বেছে নিন"] },
+  { platform: "আইফোন · Safari", steps: ["Safari-তে এই পাতা খুলুন", "নিচের শেয়ার (⬆) বোতাম চাপুন", "\"Add to Home Screen\" বেছে নিয়ে Add চাপুন"] },
+]
