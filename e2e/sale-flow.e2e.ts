@@ -25,8 +25,10 @@ function recordApi(page: Page): string[] {
   return seen
 }
 
-async function mockApi(page: Page) {
-  if (REAL) return
+/** নকল সার্ভারে যেসব সিংক ইভেন্ট পৌঁছেছে (id → kind) */
+async function mockApi(page: Page): Promise<Map<string, string>> {
+  const pushed = new Map<string, string>()
+  if (REAL) return pushed
   await page.route("**/api/v1/**", async (route) => {
     const req = route.request()
     const p = new URL(req.url()).pathname.replace(/^.*\/api/, "")
@@ -34,8 +36,15 @@ async function mockApi(page: Page) {
     if (req.method() === "POST" && p === "/v1/auth/register-store") return json(201, { token: TOKEN, user: USER })
     if (req.method() === "GET" && p === "/v1/me") return json(200, { user: USER, store: STORE })
     if (req.method() === "POST" && p === "/v1/sync/register-device") return json(200, { code: "A" })
+    if (req.method() === "POST" && p === "/v1/sync/push") {
+      const body = req.postDataJSON() as { events: Array<{ id: string; kind: string }> }
+      for (const e of body.events) pushed.set(e.id, e.kind)
+      return json(200, { accepted: body.events.map((e) => e.id) })
+    }
+    if (req.method() === "GET" && p.startsWith("/v1/sync/pull")) return json(200, { events: [], lastSeq: 0, hasMore: false })
     return json(404, { error: { code: "not_found", message: "e2e: নকল সার্ভারে এই পথ নেই" } })
   })
+  return pushed
 }
 
 async function addToBill(page: Page, search: string, name: string) {
@@ -50,7 +59,7 @@ test("দোকান খোলা থেকে বাকি আদায় প
   const seen = recordApi(page)
   const pageErrors: string[] = []
   page.on("pageerror", (e) => pageErrors.push(e.message))
-  await mockApi(page)
+  const pushed = await mockApi(page)
 
   await test.step("দোকান খুলুন", async () => {
     await page.goto("/signup/")
@@ -134,8 +143,16 @@ test("দোকান খোলা থেকে বাকি আদায় প
   })
 
   expect(pageErrors).toEqual([])
-  // শুধু প্রত্যাশিত API ডাকা হয়েছে (পণ্য, বিল ইত্যাদি সার্ভারে যায় না)
-  expect(new Set(seen.map((s) => s.replace(/ .*\?.*/, "")))).toEqual(new Set(["POST /v1/auth/register-store", "GET /v1/me", "POST /v1/sync/register-device"]))
+  // বদলগুলো ইভেন্ট হয়ে সার্ভারে যায় (নকল সার্ভারে যাচাই; আসল সার্ভারের পথ e2e-real-এ)
+  if (!REAL) {
+    await expect.poll(() => [...pushed.values()].filter((k) => k === "sale_completed").length, { timeout: 15_000 }).toBe(2)
+    const kinds = new Set(pushed.values())
+    for (const k of ["product_upserted", "stock_in", "customer_upserted", "sale_completed", "due_received"]) expect(kinds).toContain(k)
+  }
+  // শুধু প্রত্যাশিত API ডাকা হয়েছে
+  expect(new Set(seen.map((s) => s.replace(/ .*\?.*/, "")))).toEqual(
+    new Set(["POST /v1/auth/register-store", "GET /v1/me", "POST /v1/sync/register-device", "POST /v1/sync/push", "GET /v1/sync/pull"]),
+  )
 })
 
 test("ভুল ফর্ম: খালি সাইন-আপে বাংলা ত্রুটি, সার্ভারে অনুরোধ যায় না", async ({ page }) => {

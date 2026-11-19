@@ -30,7 +30,7 @@ export interface ReplayResult {
 
 type Outcome = { db: Db } | "defer" | "ignore"
 
-const stamp = (e: SyncEvent) => `${e.at}|${e.id}`
+export const stamp = (e: SyncEvent) => `${e.at}|${e.id}`
 const compareEvents = (a: SyncEvent, b: SyncEvent) => (stamp(a) < stamp(b) ? -1 : stamp(a) > stamp(b) ? 1 : 0)
 
 /** শেষ-বদল-জেতে: ঘড়ির চেয়ে নতুন হলে true */
@@ -39,7 +39,7 @@ function isNewer(db: Db, key: string, e: SyncEvent): boolean {
   return cur === undefined || stamp(e) > cur
 }
 
-function withClock(db: Db, key: string, e: SyncEvent): Db {
+export function withClock(db: Db, key: string, e: SyncEvent): Db {
   return { ...db, sync: { clocks: { ...(db.sync?.clocks ?? {}), [key]: stamp(e) } } }
 }
 

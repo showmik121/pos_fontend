@@ -5,6 +5,7 @@ import { AuthProvider } from "./auth-provider"
 import { DbProvider } from "./db-provider"
 import { DeviceRegistrar } from "./device-registrar"
 import { StorageGuard } from "./storage-guard"
+import { SyncRunner } from "./sync-runner"
 
 export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -20,6 +21,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <DbProvider>
         <DeviceRegistrar />
         <StorageGuard />
+        <SyncRunner />
         {children}
       </DbProvider>
     </AuthProvider>

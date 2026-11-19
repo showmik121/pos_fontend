@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
 import { useDb } from "@/components/db-provider"
 import { BackupSection } from "@/components/backup-section"
+import { SyncStatus } from "@/components/sync-status"
 import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
 import { Row, RowList, SectionTitle } from "@/components/ui/card"
@@ -85,7 +86,7 @@ export default function SettingsPage() {
       </div>
 
       <SectionTitle>তথ্য সংরক্ষণ</SectionTitle>
-      <Banner tone="warn">পণ্য, বিল ও বাকির তথ্য এখন শুধু এই ফোনেই সেভ হচ্ছে — সার্ভারে সিংক শীঘ্রই আসছে। ব্রাউজারের ডেটা মুছলে এই তথ্যও মুছে যাবে।</Banner>
+      <SyncStatus />
 
       <BackupSection storeId={store?.id ?? ""} />
 
