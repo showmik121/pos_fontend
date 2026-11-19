@@ -20,6 +20,8 @@ interface AppShellProps {
   nav?: boolean
   /** নিচে আটকানো অ্যাকশন বার (মেনুর বদলে) */
   footer?: ReactNode
+  /** পাতার শেষে শহর-দৃশ্যের জলছাপ (ডিফল্ট: মেনুওয়ালা পাতায় আছে) */
+  art?: boolean
   children: ReactNode
 }
 
@@ -44,7 +46,7 @@ export function Ready({ children }: { children: ReactNode }) {
 }
 
 /** লগইন করা ইউজারের পর্দার কাঠামো: হেডার, মূল অংশ, নিচের মেনু বা অ্যাকশন বার। লগইন না থাকলে /login-এ পাঠায়। */
-export function AppShell({ title, backHref, action, nav = false, footer, children }: AppShellProps) {
+export function AppShell({ title, backHref, action, nav = false, footer, art = nav, children }: AppShellProps) {
   const { state } = useAuth()
   const { ready, saveFailed } = useDb()
   const router = useRouter()
@@ -76,7 +78,7 @@ export function AppShell({ title, backHref, action, nav = false, footer, childre
         {nav ? <InstallBanner /> : null}
         {children}
       </main>
-      {nav ? <div aria-hidden="true" className="app-skyline no-print" /> : null}
+      {art ? <div aria-hidden="true" className="app-skyline no-print" /> : null}
       {footer ? (
         <div className="no-print sticky bottom-0 z-10 border-t border-line bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">{footer}</div>
       ) : nav ? (
