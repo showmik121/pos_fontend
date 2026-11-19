@@ -164,7 +164,8 @@ test("আসল সার্ভার: লগআউট → লগইন, ভু�
   await expect(page.getByRole("heading", { name: "প্রথম দোকান" })).toBeVisible()
 
   await page.goto("/settings/")
-  await page.getByRole("button", { name: "লগআউট" }).click()
+  await page.getByRole("button", { name: "লগআউট", exact: true }).click()
+  await page.getByRole("button", { name: "লগআউট (ডেটা ফোনে থাকবে)" }).click()
   await expect(page).toHaveURL(/\/login\/$/)
 
   await page.locator("#phone").fill(toBn(phone))
@@ -178,7 +179,43 @@ test("আসল সার্ভার: লগআউট → লগইন, ভু�
   await expect(page.getByRole("heading", { name: "প্রথম দোকান" })).toBeVisible() // সার্ভারের /me থেকে দোকানের নাম
 
   await page.goto("/settings/")
-  await page.getByRole("button", { name: "লগআউট" }).click()
+  await page.getByRole("button", { name: "লগআউট", exact: true }).click()
+  await page.getByRole("button", { name: "লগআউট (ডেটা ফোনে থাকবে)" }).click()
   await signup("দ্বিতীয় দোকান")
   await expect(page.getByText("এই নম্বরে আগেই অ্যাকাউন্ট আছে")).toBeVisible()
+})
+
+test("লগআউটে ফোনের ডেটা মোছা: ব্যাকআপ-নিশ্চিতকরণ ছাড়া মোছা যায় না, মোছার পর স্টোরেজে দোকানের ডেটা থাকে না", async ({ page }) => {
+  await mockApi(page)
+  const phone = REAL ? `019${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}` : PHONE
+  await page.goto("/signup/")
+  await page.locator("#storeName").fill("মোছার দোকান")
+  await page.getByRole("radio", { name: "কসমেটিক্স" }).click()
+  await page.locator("#ownerName").fill("রহিম")
+  await page.locator("#phone").fill(toBn(phone))
+  await page.locator("#password").fill(PASSWORD)
+  await page.getByRole("button", { name: "দোকান খুলুন" }).click()
+  await expect(page.getByRole("heading", { name: "মোছার দোকান" })).toBeVisible()
+
+  await page.getByRole("link", { name: "প্রথম পণ্য যোগ করুন" }).click()
+  await page.locator("#p-name").fill("ফেসওয়াশ")
+  await page.locator("#p-cost").fill("180")
+  await page.locator("#p-price").fill("240")
+  await page.getByRole("button", { name: "পণ্য সেভ করুন" }).click()
+  await expect(page).toHaveURL(/\/products\/detail\/\?id=/)
+  const keys = () => page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("pos.db.v1.") || k.startsWith("pos.device.v1.")))
+  expect((await keys()).length).toBeGreaterThan(0)
+
+  await page.goto("/settings/")
+  await page.getByRole("button", { name: "লগআউট", exact: true }).click()
+  await page.getByRole("button", { name: "লগআউট ও এই ফোনের ডেটা মুছুন" }).click()
+  const wipe = page.getByRole("button", { name: "লগআউট করুন ও ডেটা মুছুন" })
+  await expect(wipe).toBeDisabled() // ব্যাকআপ নিশ্চিত না করলে মোছা যায় না
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "আগে ব্যাকআপ নামান" }).click()])
+  expect(download.suggestedFilename()).toMatch(/^pos-backup-\d{4}-\d{2}-\d{2}\.json$/)
+  await page.getByRole("checkbox").check()
+  await expect(wipe).toBeEnabled()
+  await wipe.click()
+  await expect(page).toHaveURL(/\/login\/$/)
+  expect(await keys()).toEqual([])
 })

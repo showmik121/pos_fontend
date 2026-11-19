@@ -69,7 +69,7 @@ describe("বিল বাতিল", () => {
     const { db, productId } = setup()
     const sold = sell(db, productId, 3, 72000)
     const batchId = sold.sale.lines[0]?.allocations[0]?.batchId ?? ""
-    const noBatch = removeBatch(sold.db, batchId)
+    const noBatch = removeBatch(sold.db, batchId, { by: "মালিক", reason: "নষ্ট" }, LATER)
     const out = voidSale(noBatch, sold.sale.id, { by: "মালিক", reason: "ভুল" }, LATER)
     expect(out.restoredQty).toBe(0)
     expect(out.lostQty).toBe(3)
