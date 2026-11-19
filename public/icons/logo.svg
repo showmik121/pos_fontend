@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
 <defs>
-<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f7a55"/><stop offset=".55" stop-color="#1e4d36"/><stop offset="1" stop-color="#0f2b1e"/></linearGradient>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffc61f"/><stop offset=".55" stop-color="#f2a900"/><stop offset="1" stop-color="#d98a00"/></linearGradient>
 <radialGradient id="glow"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-<linearGradient id="wh" gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="440"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e8efe2"/></linearGradient>
-<linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="124" y1="0" x2="396" y2="0"><stop offset="0" stop-color="#f6dc86"/><stop offset="1" stop-color="#e8b517"/></linearGradient>
+<linearGradient id="wh" gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="440"><stop offset="0" stop-color="#3b7f49"/><stop offset="1" stop-color="#1f4d2a"/></linearGradient>
+<linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="124" y1="0" x2="396" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#fff3c9"/></linearGradient>
 </defs><rect width="512" height="512" rx="112" fill="url(#bg)"/>
-<rect x="6" y="6" width="500" height="500" rx="106" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width="3"/>
+<rect x="6" y="6" width="500" height="500" rx="106" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3"/>
 <circle cx="400" cy="96" r="190" fill="url(#glow)"/><g transform="translate(256 256) scale(1.0) translate(-256 -256) translate(-2 -36)">
 <g stroke-linecap="round" stroke-linejoin="round" fill="none">
-<path d="M320 206L158 270C238 262 308 306 320 372" stroke="#0a1d14" stroke-opacity=".35" stroke-width="40" transform="translate(0 8)"/>
-<path d="M320 160V392" stroke="#0a1d14" stroke-opacity=".35" stroke-width="40" transform="translate(0 8)"/>
+<path d="M320 206L158 270C238 262 308 306 320 372" stroke="#7a4b00" stroke-opacity=".28" stroke-width="40" transform="translate(0 8)"/>
+<path d="M320 160V392" stroke="#7a4b00" stroke-opacity=".28" stroke-width="40" transform="translate(0 8)"/>
 <path d="M320 206L158 270C238 262 308 306 320 372" stroke="url(#wh)" stroke-width="38"/>
 <path d="M320 160V392" stroke="url(#wh)" stroke-width="38"/>
 <path d="M124 160H396" stroke="url(#gold)" stroke-width="30"/>
 </g>
-<g fill="#fff" fill-opacity=".78"><rect x="186" y="424" width="10" height="34" rx="2"/><rect x="204" y="424" width="5" height="34" rx="2"/><rect x="217" y="424" width="14" height="34" rx="2"/><rect x="239" y="424" width="6" height="34" rx="2"/><rect x="253" y="424" width="10" height="34" rx="2"/><rect x="271" y="424" width="5" height="34" rx="2"/><rect x="284" y="424" width="16" height="34" rx="2"/><rect x="308" y="424" width="6" height="34" rx="2"/><rect x="322" y="424" width="10" height="34" rx="2"/></g>
+<g fill="#1f4d2a" fill-opacity=".8"><rect x="186" y="424" width="10" height="34" rx="2"/><rect x="204" y="424" width="5" height="34" rx="2"/><rect x="217" y="424" width="14" height="34" rx="2"/><rect x="239" y="424" width="6" height="34" rx="2"/><rect x="253" y="424" width="10" height="34" rx="2"/><rect x="271" y="424" width="5" height="34" rx="2"/><rect x="284" y="424" width="16" height="34" rx="2"/><rect x="308" y="424" width="6" height="34" rx="2"/><rect x="322" y="424" width="10" height="34" rx="2"/></g>
 </g></svg>

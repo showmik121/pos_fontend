@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "বিপণি — বিক্রি ও স্টক",
   description: "ফার্মেসি ও কসমেটিক্স দোকানের বিক্রি, স্টক ও বাকির হিসাব",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icons/icon-v2-192.png", apple: "/icons/apple-touch-icon-v2.png" },
+  icons: { icon: "/icons/icon-v3-192.png", apple: "/icons/apple-touch-icon-v3.png" },
   appleWebApp: { capable: true, title: "বিপণি", statusBarStyle: "default" },
   formatDetection: { telephone: false },
 }
@@ -24,7 +24,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#1E4D36",
+  themeColor: "#2E6B3A",
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
