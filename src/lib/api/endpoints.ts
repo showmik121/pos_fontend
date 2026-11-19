@@ -6,6 +6,7 @@ import {
   PullResponseSchema,
   PushResponseSchema,
   StaffListSchema,
+  StoreResponseSchema,
   UserResponseSchema,
   type StoreKind,
 } from "./schemas"
@@ -31,6 +32,11 @@ export function registerStore(input: RegisterStoreInput) {
 
 export function getMe(token: string) {
   return apiRequest("/v1/me", (d) => MeResponseSchema.parse(d), { token })
+}
+
+/** দোকানের নাম বদলায় (শুধু মালিক) */
+export function renameStore(token: string, name: string) {
+  return apiRequest("/v1/store", (d) => StoreResponseSchema.parse(d).store, { method: "PATCH", token, body: { name } })
 }
 
 export function listStaff(token: string) {
