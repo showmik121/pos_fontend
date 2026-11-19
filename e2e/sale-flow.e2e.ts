@@ -41,6 +41,7 @@ async function mockApi(page: Page): Promise<Map<string, string>> {
       for (const e of body.events) pushed.set(e.id, e.kind)
       return json(200, { accepted: body.events.map((e) => e.id) })
     }
+    if (req.method() === "POST" && p === "/v1/client-errors") return json(200, { ok: true })
     if (req.method() === "GET" && p.startsWith("/v1/sync/pull")) return json(200, { events: [], lastSeq: 0, hasMore: false })
     return json(404, { error: { code: "not_found", message: "e2e: নকল সার্ভারে এই পথ নেই" } })
   })
@@ -236,4 +237,21 @@ test("লগআউটে ফোনের ডেটা মোছা: ব্যা
   await wipe.click()
   await expect(page).toHaveURL(/\/login\/$/)
   expect(await keys()).toEqual([])
+})
+
+test("ক্র্যাশ রিপোর্ট নিজের সার্ভারে যায়: পথ থেকে query কাটা, বার্তা ঠিক", async ({ page }) => {
+  await mockApi(page)
+  await page.goto("/?secret=1")
+  const sent = page.waitForRequest((r) => r.url().endsWith("/v1/client-errors") && r.method() === "POST")
+  const answered = page.waitForResponse((r) => r.url().endsWith("/v1/client-errors"))
+  await page.evaluate(() => {
+    setTimeout(() => {
+      throw new Error("e2e-ক্র্যাশ ০১৭১২৩৪৫৬৭৮ 01712345678")
+    }, 0)
+  })
+  const body = (await sent).postDataJSON() as { kind: string; message: string; path: string }
+  expect(body.kind).toBe("window")
+  expect(body.message).toBe("e2e-ক্র্যাশ # #")
+  expect(body.path).toBe("/")
+  expect((await answered).status()).toBe(200)
 })
