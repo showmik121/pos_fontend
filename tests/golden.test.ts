@@ -3,6 +3,9 @@ import { readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { computeCart, settlePayments } from "../src/lib/domain/cart"
+import { stockIn } from "../src/lib/store/actions"
+import { emptyDb } from "../src/lib/store/db"
+import type { Product } from "../src/lib/store/types"
 import { DomainError } from "../src/lib/domain/errors"
 import { classifyExpiry } from "../src/lib/domain/expiry"
 import { allocateFifo } from "../src/lib/domain/fifo"
@@ -26,6 +29,14 @@ const adapters: Record<string, (i: any) => unknown> = {
   computeCart: (i) => computeCart(i.lines, i.bill),
   settlePayments: (i) => settlePayments(i),
   allocateFifo: (i) => allocateFifo(i.batches, i.qtyNeeded, i.today),
+  // BE-র planStockIn(product, cmd) এর সমতুল্য: stockIn() চালিয়ে জন্মানো ব্যাচ ও পণ্য থেকে একই চার মান পড়ি
+  planStockIn: (i) => {
+    const product = { id: "p1", name: "পণ্য", barcodes: [], unit: "piece", minStock: 0, category: "", open: false, createdAt: "2026-01-01T00:00:00.000Z", costPoisha: 0, ...i.product } as Product
+    const { product: _p, ...cmd } = i
+    const db = stockIn({ ...emptyDb(), products: [product] }, { ...cmd, productId: "p1" }, new Date("2026-11-12T06:00:00.000Z"))
+    const batch = db.batches[0]!
+    return { pieces: batch.qtyRemaining, costPerPiece: batch.costPoisha, batchNo: batch.batchNo, pricePoisha: db.products[0]!.pricePoisha }
+  },
 }
 
 const files = readdirSync(DIR).filter((f) => f.endsWith(".json")).sort()
