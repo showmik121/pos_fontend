@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { downloadTextFile } from "@/lib/browser/download"
+import { downloadBackup } from "@/lib/browser/backup-download"
 import { requestPersistentStorage } from "@/lib/browser/persist"
 import { domainMessage } from "@/lib/domain/errors"
 import { toBanglaDigits } from "@/lib/format/bn"
-import { backupFileName, buildBackup, parseBackup, storageStatus, type ParsedBackup } from "@/lib/store/backup"
-import { markBackedUp } from "@/lib/store/backup-reminder"
+import { parseBackup, storageStatus, type ParsedBackup } from "@/lib/store/backup"
 import { dbStorageChars } from "@/lib/store/db"
 import { useDb } from "./db-provider"
 import { Banner } from "./ui/banner"
@@ -27,9 +26,7 @@ export function BackupSection({ storeId }: { storeId: string }) {
   }, [])
 
   const download = () => {
-    const now = new Date()
-    downloadTextFile(backupFileName(now), buildBackup(db, storeId, now))
-    markBackedUp(storeId, now)
+    downloadBackup(db, storeId)
     setMessage({ tone: "info", text: "ব্যাকআপ ফাইল নামানো হয়েছে। ফাইলটি নিরাপদ জায়গায় (গুগল ড্রাইভ বা অন্য ফোনে) রাখুন।" })
   }
 

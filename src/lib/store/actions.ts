@@ -7,7 +7,7 @@ import { normalizeBdPhone } from "../format/phone"
 import type { ImportRow } from "./csv"
 import { newId } from "./db"
 import { customerBalance, findByBarcode, findProduct } from "./selectors"
-import type { Batch, Customer, Db, Draft, LedgerEntry, Product, Sale, SaleLine, UnitLabel } from "./types"
+import type { Batch, Customer, Db, Draft, LedgerEntry, Product, RemovedBatch, Sale, SaleLine, UnitLabel } from "./types"
 
 // সব ফাংশন বিশুদ্ধ: পুরনো Db বদলায় না, নতুন Db ফেরত দেয়। ব্যর্থ হলে DomainError ছোঁড়ে।
 
@@ -111,8 +111,25 @@ export function stockIn(db: Db, input: StockInInput, now: Date): Db {
   return { ...db, batches, products }
 }
 
-export function removeBatch(db: Db, batchId: string): Db {
-  return { ...db, batches: db.batches.filter((b) => b.id !== batchId) }
+/** ব্যাচ স্টক থেকে সরায় এবং কে, কখন, কেন, কত পিস সরালো তা `removedBatches` খাতায় লেখে (স্টক চুপচাপ উধাও হয় না) */
+export function removeBatch(db: Db, batchId: string, input: { by: string; reason: string }, now: Date): Db {
+  const batch = db.batches.find((b) => b.id === batchId)
+  if (!batch) return db
+  const reason = input.reason.trim()
+  if (!reason) throw new DomainError("reason_required", "সরানোর কারণ বাছুন")
+  const entry: RemovedBatch = {
+    id: newId(),
+    at: now.toISOString(),
+    by: input.by,
+    productId: batch.productId,
+    productName: db.products.find((p) => p.id === batch.productId)?.name ?? "মুছে ফেলা পণ্য",
+    batchNo: batch.batchNo,
+    expiryDate: batch.expiryDate,
+    qty: batch.qtyRemaining,
+    costPoisha: batch.costPoisha,
+    reason,
+  }
+  return { ...db, batches: db.batches.filter((b) => b.id !== batchId), removedBatches: [...(db.removedBatches ?? []), entry] }
 }
 
 // ---- কার্ট (খসড়া বিল) ----

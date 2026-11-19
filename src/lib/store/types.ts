@@ -92,6 +92,20 @@ export interface LedgerEntry {
   by: string
 }
 
+/** স্টক থেকে সরানো ব্যাচের হিসাব (মেয়াদ শেষ, নষ্ট ইত্যাদি); মুছে গেলেও কত পিস ও কত টাকার ক্ষতি তা থাকে */
+export interface RemovedBatch {
+  id: string
+  at: string
+  by: string
+  productId: string
+  productName: string
+  batchNo: string
+  expiryDate: string | null
+  qty: number
+  costPoisha: number // প্রতি পিস
+  reason: string
+}
+
 export interface Settings {
   /** মেয়াদ অ্যালার্টের সময়সীমা (দিন) */
   expiryDays: number[]
@@ -120,6 +134,8 @@ export interface Db {
   settings: Settings
   draft: Draft
   billCounter: number
+  /** সরানো ব্যাচের খাতা; পুরনো ডেটায় নেই (ঐচ্ছিক), তাই মাইগ্রেশন লাগে না */
+  removedBatches?: RemovedBatch[]
 }
 
 export type { MobileMethod }

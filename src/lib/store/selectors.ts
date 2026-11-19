@@ -1,7 +1,7 @@
 import { addDays, localDateIso } from "../domain/dates"
 import { classifyExpiry, daysUntil } from "../domain/expiry"
 import { sellableBatches } from "../domain/fifo"
-import type { Batch, Customer, Db, Product, Sale } from "./types"
+import type { Batch, Customer, Db, Product, RemovedBatch, Sale } from "./types"
 
 export function findProduct(db: Db, id: string): Product | undefined {
   return db.products.find((p) => p.id === id)
@@ -83,6 +83,16 @@ export function expiryBuckets(db: Db, today: string): ExpiryBuckets {
 /** ৩০ দিনের মধ্যে মেয়াদ শেষ হবে এমন ব্যাচের সংখ্যা */
 export function expiringSoonCount(db: Db, today: string): number {
   return expiryBuckets(db, today).within30.length
+}
+
+/** সরানো ব্যাচের খাতা, নতুন আগে */
+export function removedBatchLog(db: Db): RemovedBatch[] {
+  return [...(db.removedBatches ?? [])].reverse()
+}
+
+/** সরানো ব্যাচগুলোর মোট ক্ষতি (পিস × কেনা দাম, পয়সায়) */
+export function removedBatchLoss(db: Db): number {
+  return (db.removedBatches ?? []).reduce((sum, r) => sum + r.qty * r.costPoisha, 0)
 }
 
 export function customerBalance(db: Db, customerId: string): number {

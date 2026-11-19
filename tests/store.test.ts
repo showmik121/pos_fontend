@@ -124,7 +124,7 @@ describe("অ্যালার্ট", () => {
     const seclo = db.products.find((p) => p.name.startsWith("সেকলো"))
     expect(seclo && sellableStock(db, seclo.id, TODAY)).toBe(20)
     const expired = b.expired[0]
-    expect(expired && removeBatch(db, expired.batch.id).batches.length).toBe(db.batches.length - 1)
+    expect(expired && removeBatch(db, expired.batch.id, { by: "মালিক", reason: "মেয়াদ শেষ" }, NOW).batches.length).toBe(db.batches.length - 1)
   })
 })
 
