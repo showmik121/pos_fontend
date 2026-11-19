@@ -25,6 +25,13 @@ describe("পণ্য ও স্টক-ইন", () => {
     expect(() => createProduct(db, { ...input, barcode: null, name: " " }, NOW)).toThrow()
     expect(() => createProduct(db, { ...input, barcode: null, pricePoisha: 0 }, NOW)).toThrow()
   })
+  it("স্টক তোলার সময় বিক্রয়মূল্য বদলানো যায়; ফাঁকা দিলে আগেরটাই থাকে", () => {
+    const { db, pondsId } = setup()
+    const changed = stockIn(db, { productId: pondsId, qty: 1, unit: "piece", batchNo: "B9", expiryDate: "2027-09-30", costPoisha: 21000, pricePoisha: 26000, requireBatchAndExpiry: true }, NOW)
+    expect(changed.products.find((p) => p.id === pondsId)?.pricePoisha).toBe(26000)
+    const same = stockIn(changed, { productId: pondsId, qty: 1, unit: "piece", batchNo: "B10", expiryDate: "2027-09-30", costPoisha: 21000, pricePoisha: null, requireBatchAndExpiry: true }, NOW)
+    expect(same.products.find((p) => p.id === pondsId)?.pricePoisha).toBe(26000)
+  })
   it("কার্টন পিসে বদলে স্টকে যোগ হয়, পিস প্রতি খরচ হিসাব হয়", () => {
     const { db, pondsId } = setup()
     expect(totalStock(db, pondsId)).toBe(30)
