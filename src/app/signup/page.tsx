@@ -1,6 +1,6 @@
 "use client"
 
-import { Logo } from "@/components/logo"
+import { AuthShell } from "@/components/auth-shell"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent } from "react"
@@ -64,12 +64,19 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-(--app-col) bg-white px-5 py-10">
-      <div className="mb-8"><Logo /></div>
-      <h1 className="text-2xl font-bold">দোকান খুলুন</h1>
-      <p className="mt-1 text-sm text-muted">দোকানের তথ্য দিয়ে আপনার অ্যাকাউন্ট তৈরি করুন।</p>
-
-      <form onSubmit={onSubmit} noValidate className="mt-8 space-y-4">
+    <AuthShell
+      title="দোকান খুলুন"
+      subtitle="দোকানের তথ্য দিয়ে আপনার অ্যাকাউন্ট তৈরি করুন।"
+      footer={
+        <>
+          আগেই অ্যাকাউন্ট আছে?{" "}
+          <Link href="/login" className="font-semibold text-brand">
+            লগইন করুন
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} noValidate className="space-y-4">
         <Field id="storeName" label="দোকানের নাম" autoComplete="organization" value={storeName} onChange={(e) => setStoreName(e.target.value)} error={errors.storeName} />
 
         <fieldset className="space-y-1.5">
@@ -113,13 +120,6 @@ export default function SignupPage() {
           দোকান খুলুন
         </Button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-muted">
-        আগেই অ্যাকাউন্ট আছে?{" "}
-        <Link href="/login" className="font-medium text-brand">
-          লগইন করুন
-        </Link>
-      </p>
-    </main>
+    </AuthShell>
   )
 }

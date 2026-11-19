@@ -1,6 +1,6 @@
 "use client"
 
-import { Logo } from "@/components/logo"
+import { AuthShell } from "@/components/auth-shell"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent } from "react"
@@ -52,12 +52,19 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-(--app-col) bg-white px-5 py-10">
-      <div className="mb-8"><Logo /></div>
-      <h1 className="text-2xl font-bold">লগইন</h1>
-      <p className="mt-1 text-sm text-muted">আপনার মোবাইল নম্বর ও পাসওয়ার্ড দিন।</p>
-
-      <form onSubmit={onSubmit} noValidate className="mt-8 space-y-4">
+    <AuthShell
+      title="লগইন"
+      subtitle="আপনার মোবাইল নম্বর ও পাসওয়ার্ড দিন।"
+      footer={
+        <>
+          নতুন দোকান?{" "}
+          <Link href="/signup" className="font-semibold text-brand">
+            দোকান খুলুন
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} noValidate className="space-y-4">
         <Field
           id="phone"
           label="মোবাইল নম্বর"
@@ -75,13 +82,6 @@ export default function LoginPage() {
           লগইন করুন
         </Button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-muted">
-        নতুন দোকান?{" "}
-        <Link href="/signup" className="font-medium text-brand">
-          দোকান খুলুন
-        </Link>
-      </p>
-    </main>
+    </AuthShell>
   )
 }

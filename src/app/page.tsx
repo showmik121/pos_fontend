@@ -1,12 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { AppShell } from "@/components/app-shell"
+import { AppShell, Splash } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
 import { useDb } from "@/components/db-provider"
 import { LinkButton } from "@/components/ui/button"
 import { Card, Pill, Row, RowList, SectionTitle } from "@/components/ui/card"
 import { Icon } from "@/components/ui/icons"
+import { Landing } from "@/components/landing/landing"
 import { todayIso } from "@/lib/domain/dates"
 import { formatTaka } from "@/lib/domain/money"
 import { formatTimeBn } from "@/lib/format/datetime"
@@ -14,7 +15,15 @@ import { formatBillNo } from "@/lib/domain/bill"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { daySummary, dueRows, expiringSoonCount, lowStockProducts, totalDue } from "@/lib/store/selectors"
 
+/** লগইন না থাকলে ল্যান্ডিং, থাকলে হোম */
 export default function HomePage() {
+  const { state } = useAuth()
+  if (state.status === "loading") return <Splash />
+  if (state.status === "anon") return <Landing />
+  return <Dashboard />
+}
+
+function Dashboard() {
   const { state } = useAuth()
   const { db } = useDb()
   const today = todayIso()
