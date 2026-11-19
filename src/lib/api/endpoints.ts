@@ -3,6 +3,8 @@ import {
   AuthResponseSchema,
   DeviceResponseSchema,
   MeResponseSchema,
+  PullResponseSchema,
+  PushResponseSchema,
   StaffListSchema,
   UserResponseSchema,
   type StoreKind,
@@ -54,4 +56,14 @@ export function registerDevice(token: string, deviceId: string) {
     token,
     body: { deviceId },
   })
+}
+
+/** ইভেন্ট পাঠায় (একই id আবার গেলে সার্ভার ডুপ্লিকেট রাখে না) */
+export function pushEvents(token: string, deviceId: string, events: unknown[]) {
+  return apiRequest("/v1/sync/push", (d) => PushResponseSchema.parse(d), { method: "POST", token, body: { deviceId, events } })
+}
+
+/** `after`-এর পরের ইভেন্ট টানে */
+export function pullEvents(token: string, after: number, limit: number) {
+  return apiRequest(`/v1/sync/pull?after=${after}&limit=${limit}`, (d) => PullResponseSchema.parse(d), { token })
 }

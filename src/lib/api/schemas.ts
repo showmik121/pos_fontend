@@ -31,3 +31,10 @@ export const ErrorEnvelopeSchema = z.object({
 })
 
 export const DeviceResponseSchema = z.object({ code: z.string().regex(/^[A-Z]$/) })
+
+export const PushResponseSchema = z.object({ accepted: z.array(z.string()) })
+export const PullResponseSchema = z.object({
+  events: z.array(z.object({ seq: z.number() }).passthrough()),
+  lastSeq: z.number(),
+  hasMore: z.boolean(),
+})
