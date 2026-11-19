@@ -21,7 +21,7 @@
   --color-ink2: #4a3f26;
   --color-amber: #a8660b;
   --color-line-strong: #bfaf85;
-  --font-sans: var(--font-bengali), system-ui, sans-serif;
+  --font-sans: "Noto Sans Bengali", system-ui, sans-serif;
   /* পর্দার কলামের প্রস্থ: ফোনে ৪৮০px, ট্যাবলেটে বড়, ডেস্কটপে আরও বড় */
   --app-col: 30rem;
 }

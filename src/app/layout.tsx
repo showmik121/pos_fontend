@@ -1,15 +1,12 @@
 import type { Metadata, Viewport } from "next"
-import { Noto_Sans_Bengali } from "next/font/google"
 import type { ReactNode } from "react"
 import { Providers } from "@/components/providers"
+// ফন্ট প্যাকেজ থেকেই আসে (বিল্ডে Google Fonts-এ নেটওয়ার্ক-ডাক নেই): আগে next/font/google বিল্ড-সময়ে ডাউনলোড করত,
+// নেটওয়ার্ক ঝামেলায় Netlify বিল্ড এলোমেলো ভাবে ভাঙত। আগের মতোই শুধু বাংলা সাবসেট, ওজন ৪০০/৫০০/৭০০, display: swap।
+import "@fontsource/noto-sans-bengali/bengali-400.css"
+import "@fontsource/noto-sans-bengali/bengali-500.css"
+import "@fontsource/noto-sans-bengali/bengali-700.css"
 import "./globals.css"
-
-const bengali = Noto_Sans_Bengali({
-  subsets: ["bengali"],
-  weight: ["400", "500", "700"],
-  display: "swap",
-  variable: "--font-bengali",
-})
 
 export const metadata: Metadata = {
   title: "Bipone — বিক্রি ও স্টক",
@@ -29,7 +26,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="bn" className={bengali.variable}>
+    <html lang="bn">
       <body>
         <Providers>{children}</Providers>
       </body>
