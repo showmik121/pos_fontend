@@ -189,13 +189,14 @@ test("লগআউটে ফোনের ডেটা মোছা: ব্যা
   await mockApi(page)
   const phone = REAL ? `019${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}` : PHONE
   await page.goto("/signup/")
-  await page.locator("#storeName").fill("মোছার দোকান")
+  const shopName = REAL ? "মোছার দোকান" : STORE.name // নকল সার্ভার সবসময় STORE.name ফেরত দেয়
+  await page.locator("#storeName").fill(shopName)
   await page.getByRole("radio", { name: "কসমেটিক্স" }).click()
   await page.locator("#ownerName").fill("রহিম")
   await page.locator("#phone").fill(toBn(phone))
   await page.locator("#password").fill(PASSWORD)
   await page.getByRole("button", { name: "দোকান খুলুন" }).click()
-  await expect(page.getByRole("heading", { name: "মোছার দোকান" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: shopName })).toBeVisible()
 
   await page.getByRole("link", { name: "প্রথম পণ্য যোগ করুন" }).click()
   await page.locator("#p-name").fill("ফেসওয়াশ")
