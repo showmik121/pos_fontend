@@ -1,16 +1,16 @@
 "use client"
 
-import Link from "next/link"
 import { AppShell, Splash } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
 import { useDb } from "@/components/db-provider"
 import { LinkButton } from "@/components/ui/button"
 import { Card, Pill, Row, RowList, SectionTitle } from "@/components/ui/card"
 import { Icon } from "@/components/ui/icons"
+import { HomeHeader } from "@/components/home-header"
 import { Landing } from "@/components/landing/landing"
 import { todayIso } from "@/lib/domain/dates"
 import { formatTaka } from "@/lib/domain/money"
-import { formatTimeBn } from "@/lib/format/datetime"
+import { formatTimeBn, greetingBn } from "@/lib/format/datetime"
 import { formatBillNo } from "@/lib/domain/bill"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { daySummary, dueRows, expiringSoonCount, lowStockProducts, totalDue } from "@/lib/store/selectors"
@@ -37,15 +37,7 @@ function Dashboard() {
   const alerts = low > 0 || soon > 0 || dueCount > 0
 
   return (
-    <AppShell
-      title={storeName}
-      nav
-      action={
-        <Link href="/settings" aria-label="সেটিংস" className="grid size-11 place-items-center rounded-lg text-ink active:bg-canvas">
-          <Icon name="sliders" size={22} />
-        </Link>
-      }
-    >
+    <AppShell title={storeName} nav hero={<HomeHeader storeName={storeName} greeting={greetingBn(new Date().getHours())} />}>
       <LinkButton href="/sell" full className="min-h-14 text-base">
         <Icon name="plus" /> নতুন বিল
       </LinkButton>
