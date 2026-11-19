@@ -56,7 +56,7 @@ body {
 .app-skyline {
   width: 100%;
   aspect-ratio: 480 / 230;
-  background: url("/skyline.svg") center bottom / 100% auto no-repeat;
+  background: url("/art/city-3shops.svg") center bottom / 100% auto no-repeat;
   pointer-events: none;
   user-select: none;
 }
