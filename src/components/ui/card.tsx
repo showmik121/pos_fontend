@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn"
 import { Icon } from "./icons"
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("overflow-hidden rounded-2xl border border-line bg-white", className)}>{children}</div>
+  return <div className={cn("card-surface overflow-hidden rounded-2xl border border-line/80 bg-white", className)}>{children}</div>
 }
 
 /** সারিগুলোর কার্ড: মাঝে পাতলা দাগ */
@@ -15,7 +15,7 @@ export function RowList({ children, className }: { children: ReactNode; classNam
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
     <div className="mt-1 flex items-center justify-between">
-      <h2 className="text-[15px] font-semibold">{children}</h2>
+      <h2 className="flex items-center gap-2 text-[15px] font-bold text-ink"><span aria-hidden="true" className="h-4 w-1 rounded-full bg-gold" />{children}</h2>
       {right}
     </div>
   )
@@ -84,9 +84,9 @@ export function KeyValue({ label, value, strong }: { label: ReactNode; value: Re
 export function StatBox({ label, value }: { label: string; value: ReactNode }) {
   return (
     <Card className="flex-1">
-      <div className="px-3.5 py-3">
+      <div className="border-l-4 border-gold px-3.5 py-3">
         <div className="text-[13px] text-muted">{label}</div>
-        <div className="text-[22px] font-semibold leading-snug">{value}</div>
+        <div className="text-[22px] font-bold leading-snug text-brand-dark">{value}</div>
       </div>
     </Card>
   )

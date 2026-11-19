@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
 import { useDb } from "@/components/db-provider"
 import { LinkButton } from "@/components/ui/button"
-import { Card, Pill, Row, RowList, SectionTitle, StatBox } from "@/components/ui/card"
+import { Card, Pill, Row, RowList, SectionTitle } from "@/components/ui/card"
 import { Icon } from "@/components/ui/icons"
 import { todayIso } from "@/lib/domain/dates"
 import { formatTaka } from "@/lib/domain/money"
@@ -41,10 +41,14 @@ export default function HomePage() {
         <Icon name="plus" /> নতুন বিল
       </LinkButton>
 
-      <div className="flex gap-3">
-        <StatBox label="আজকের বিক্রি" value={formatTaka(summary.total)} />
-        <StatBox label="বিল" value={`${toBanglaDigits(summary.bills)}টি`} />
-      </div>
+      <section className="hero-card rounded-3xl px-5 py-5" aria-label="আজকের সারসংক্ষেপ">
+        <div className="text-[13px] font-medium text-white/75">আজকের বিক্রি</div>
+        <div className="mt-0.5 text-[34px] font-extrabold leading-tight tracking-tight">{formatTaka(summary.total)}</div>
+        <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[13px] font-medium text-white/90">
+          <span aria-hidden="true" className="size-2 rounded-full bg-gold" />
+          {toBanglaDigits(summary.bills)}টি বিল
+        </div>
+      </section>
 
       {db.products.length === 0 ? (
         <Card className="space-y-3 px-4 py-5">

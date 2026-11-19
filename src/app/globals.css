@@ -91,3 +91,37 @@ textarea {
     background: #fff;
   }
 }
+
+/* ভিতরের নকশা: নরম ছায়া, সবুজ গ্রেডিয়েন্ট বোতাম, হিরো কার্ড */
+.card-surface {
+  box-shadow: 0 1px 2px rgb(30 77 54 / 0.05), 0 8px 18px -10px rgb(30 77 54 / 0.18);
+}
+.btn-primary-grad {
+  background-image: linear-gradient(180deg, #2b6549 0%, var(--color-brand) 100%);
+  box-shadow: 0 8px 16px -8px rgb(30 77 54 / 0.65), inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+.btn-primary-grad:active {
+  background-image: linear-gradient(180deg, var(--color-brand) 0%, var(--color-brand-dark) 100%);
+}
+.btn-primary-grad:disabled {
+  box-shadow: none;
+  opacity: 0.5;
+}
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background-image: radial-gradient(120% 90% at 100% 0%, rgb(232 181 23 / 0.28) 0%, rgb(232 181 23 / 0) 55%),
+    linear-gradient(135deg, #2b6549 0%, var(--color-brand) 55%, var(--color-brand-dark) 100%);
+  box-shadow: 0 14px 28px -14px rgb(20 56 38 / 0.7);
+}
+.hero-card::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  bottom: -34px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 22px solid rgb(255 255 255 / 0.06);
+}
