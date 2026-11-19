@@ -14,7 +14,7 @@ npm run lint        # eslint (next/core-web-vitals + next/typescript, eslint.con
 npm test            # vitest run
 npm run build       # স্ট্যাটিক সাইট -> out/
 ```
-CI (`.github/workflows/ci.yml`): `npm install` → typecheck → lint → test → build; আলাদা জব `audit` (`npm audit --omit=dev --audit-level=high`, লকফাইল শুধু CI-তে বানানো), `e2e`, `e2e-real`। কমিটের আগে typecheck, lint, test, build পাস করাতে হবে। লকফাইল নেই, তাই `npm ci` নয়, `npm install`।
+CI (`.github/workflows/ci.yml`): `npm ci` → typecheck → lint → test → build; আলাদা জব `audit` (`npm audit --omit=dev --audit-level=high`, কমিট করা `package-lock.json` থেকে), `e2e`, `e2e-real`। কমিটের আগে typecheck, lint, test, build পাস করাতে হবে। `package-lock.json` কমিট করা আছে; নতুন প্যাকেজ যোগ করলে `npm install <pkg>` চালিয়ে লকফাইলসহ কমিট করুন। `e2e-real` ব্যাকএন্ডেও `npm ci` চালায়, তাই ব্যাকএন্ড main-এ লকফাইল থাকতে হবে।
 
 ## আর্কিটেকচার
 পুরো অ্যাপ ক্লায়েন্ট-সাইড; কোনো সার্ভার রানটাইম নেই। Netlify-তে স্ট্যাটিক হোস্ট (`https://bipone.netlify.app/`)।

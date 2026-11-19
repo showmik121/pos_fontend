@@ -13,8 +13,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package.json
-      - run: npm install --no-audit --no-fund
+          cache-dependency-path: package-lock.json
+      - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
@@ -34,8 +34,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: লকফাইল তৈরি (রিপোতে নেই)
-        run: npm install --package-lock-only --no-fund --no-audit
       - run: npm audit --omit=dev --audit-level=high
 
   e2e:
@@ -48,8 +46,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package.json
-      - run: npm install --no-audit --no-fund
+          cache-dependency-path: package-lock.json
+      - run: npm ci --no-audit --no-fund
       - name: স্ট্যাটিক বিল্ড (একই origin-এর /api)
         run: npm run build
         env:
@@ -101,11 +99,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package.json
+          cache-dependency-path: package-lock.json
       - name: "ব্যাকএন্ড - ইনস্টল ও মাইগ্রেশন"
         working-directory: backend
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npm run db:migrate
       - name: "ব্যাকএন্ড চালু (পোর্ট ৩০০১)"
         working-directory: backend
@@ -121,7 +119,7 @@ jobs:
           JWT_SECRET: ci-only-jwt-secret-for-e2e-0123456789abcdef
           ALLOWED_ORIGINS: http://localhost:3210
           API_PORT: "3001"
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - name: ফ্রন্টএন্ড বিল্ড (আলাদা origin-এর আসল API)
         run: npm run build
         env:
