@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { afterCreateHref, newProductFromScanHref } from "@/lib/store/flow"
+import { afterCreateHref, newProductFromScanHref } from "../src/lib/store/flow"
 
 describe("স্ক্যান করে নতুন পণ্য ও স্টক", () => {
   it("না-পাওয়া বারকোড নতুন-পণ্য পেজে যায়, সঙ্গে স্টকে ফেরার চিহ্ন", () => {
