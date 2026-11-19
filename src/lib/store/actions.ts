@@ -86,6 +86,8 @@ export interface StockInInput {
   pricePoisha: number | null
   /** ফার্মেসিতে ব্যাচ ও মেয়াদ বাধ্যতামূলক */
   requireBatchAndExpiry: boolean
+  /** সিংক ইভেন্টের id; দিলে ব্যাচের `rcpt`-এ লেখা হয় */
+  receiptId?: string
 }
 
 export function stockIn(db: Db, input: StockInInput, now: Date): Db {
@@ -102,9 +104,10 @@ export function stockIn(db: Db, input: StockInInput, now: Date): Db {
   const nowIso = now.toISOString()
 
   const existing = db.batches.find((b) => b.productId === product.id && b.batchNo === batchNo && b.expiryDate === input.expiryDate && batchNo !== "")
+  const rid = input.receiptId
   const batches: Batch[] = existing
-    ? db.batches.map((b) => (b.id === existing.id ? { ...b, qtyRemaining: b.qtyRemaining + pieces, costPoisha: costPerPiece } : b))
-    : [...db.batches, { id: newId(), productId: product.id, batchNo, expiryDate: input.expiryDate, qtyRemaining: pieces, costPoisha: costPerPiece, receivedAt: nowIso }]
+    ? db.batches.map((b) => (b.id === existing.id ? { ...b, qtyRemaining: b.qtyRemaining + pieces, costPoisha: costPerPiece, ...(rid ? { rcpt: [...(b.rcpt ?? []), rid] } : {}) } : b))
+    : [...db.batches, { id: newId(), productId: product.id, batchNo, expiryDate: input.expiryDate, qtyRemaining: pieces, costPoisha: costPerPiece, receivedAt: nowIso, ...(rid ? { rcpt: [rid] } : {}) }]
 
   const price = input.pricePoisha != null && input.pricePoisha > 0 ? input.pricePoisha : product.pricePoisha
   const products = db.products.map((p) => (p.id === product.id ? { ...p, costPoisha: costPerPiece, pricePoisha: price } : p))
@@ -121,6 +124,7 @@ export function removeBatch(db: Db, batchId: string, input: { by: string; reason
     id: newId(),
     at: now.toISOString(),
     by: input.by,
+    batchId: batch.id,
     productId: batch.productId,
     productName: db.products.find((p) => p.id === batch.productId)?.name ?? "মুছে ফেলা পণ্য",
     batchNo: batch.batchNo,

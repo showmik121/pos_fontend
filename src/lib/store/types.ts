@@ -34,6 +34,8 @@ export interface Batch {
   qtyRemaining: number
   costPoisha: number // প্রতি পিস
   receivedAt: string
+  /** যেসব স্টক-জমা ইভেন্ট এই ব্যাচে পরিমাণ যোগ করেছে (সিংকে একই জমা দুবার না ধরার জন্য); সিংক-পূর্ব ডেটায় নেই */
+  rcpt?: string[]
 }
 
 export interface Customer {
@@ -97,6 +99,8 @@ export interface RemovedBatch {
   id: string
   at: string
   by: string
+  /** সরানো ব্যাচের id; সিংকে পরে আসা স্টক-জমা ইভেন্ট যেন ব্যাচ ফেরত না আনে; পুরনো ডেটায় নেই */
+  batchId?: string
   productId: string
   productName: string
   batchNo: string
@@ -136,6 +140,8 @@ export interface Db {
   billCounter: number
   /** সরানো ব্যাচের খাতা; পুরনো ডেটায় নেই (ঐচ্ছিক), তাই মাইগ্রেশন লাগে না */
   removedBatches?: RemovedBatch[]
+  /** সিংক-মেটা: শেষ-বদল-জেতে ঘড়ি। কী = এন্টিটি-গ্রুপ, মান = "<at>|<ইভেন্ট id>"; পুরনো ডেটায় নেই */
+  sync?: { clocks: Record<string, string> }
 }
 
 export type { MobileMethod }

@@ -23,6 +23,7 @@ src/app/            রাউট। ডায়নামিক সেগমে�
 src/components/     AppShell, BottomNav, providers, scanner, product-form, customer-picker, ui/
 src/lib/domain/     বিশুদ্ধ হিসাব: money, units, dates, expiry, fifo, cart, errors
 src/lib/store/      লোকাল ডেটা: types, db, actions, selectors, csv, seed, search
+src/lib/sync/       সিংক ইভেন্ট (events.ts: বিল্ডার) ও বিশুদ্ধ রিপ্লে (replay.ts: applyEvents, validateEvent); সার্ভার পুশ/পুল এখনো নেই
 src/lib/api/        ব্যাকএন্ড ক্লায়েন্ট (client, endpoints, zod schemas)
 src/lib/auth/       সেশন টোকেন সংরক্ষণ
 src/lib/format/     বাংলা অঙ্ক, ফোন, সময়
@@ -48,6 +49,14 @@ tests/              Vitest (domain, store, client, bn)
 - লগআউটে ডেটা ফোনে থাকে (ডিফল্ট); সেটিংসের লগআউট শিটে "ডেটা মুছুন" বিকল্প আছে (`store/wipe.ts`): ব্যাকআপ নামানো ও নিশ্চিতকরণ বাধ্যতামূলক, ডিভাইস কোডও মোছে (নইলে একই উপসর্গে বিল নম্বর আবার ১০০১ থেকে শুরু হতো)।
 - বাকিতে বিক্রিতে কাস্টমার বাধ্যতামূলক। পেমেন্ট: ক্যাশ ও মোবাইল (বিকাশ/নগদ/রকেট)।
 - মোবাইল নম্বর বাংলা বা ইংরেজি অঙ্কে নেওয়া যায়, API-তে ইংরেজি অঙ্ক যায় (`format/phone.ts`)।
+
+### সিংক ইভেন্ট ও রিপ্লে (ধাপ ২; সার্ভারে পাঠানো ধাপ ৩)
+- `applyEvents(db, events)` বিশুদ্ধ: `{db, deferred, ignored}` ফেরায়। একই ইভেন্ট আবার দিলে কিছু বদলায় না; ক্রম যাই হোক ফল এক (ইভেন্ট `at`, তারপর id দিয়ে সাজানো)।
+- ধরন: `product_upserted`, `stock_in`, `customer_upserted`, `sale_completed`, `sale_voided`, `due_received`, `batch_removed`, `settings_updated`। অচেনা ধরন `ignored` (ভবিষ্যৎ সামঞ্জস্য)।
+- পণ্য/কাস্টমার/সেটিংসে শেষ-বদল জেতে (`Db.sync.clocks`, মান `<at>|<id>`)। স্টক-জমা যোগাত্মক, ব্যাচের `rcpt`-এ ইভেন্ট id রেখে দুবার গোনা আটকায়। বিক্রি বিল id দিয়ে একবারই; ব্যাচ না আসা পর্যন্ত বিক্রি, আর বিল না আসা পর্যন্ত বাতিল `deferred` থাকে (ধাপ ৩-এ ডিভাইসে রেখে আবার দিতে হবে)।
+- বাতিলে বাকি-ফেরানো খাতার id স্থির `void:<saleId>`, তাই দুই ডিভাইসে বাতিল হলেও একবারই কমে। সরানো ব্যাচ (`RemovedBatch.batchId`) পরে আসা স্টক-জমায় ফেরে না।
+- জানা সীমা: দুই ডিভাইসে একই ব্যাচ থেকে বেশি বিক্রি হলে `qtyRemaining` ঋণাত্মক হতে পারে (ছাঁটা হয় না, নইলে ক্রম-নির্ভর হতো)। `billCounter` রিপ্লেতে বদলায় না। মালিক-মাত্র ধরন (`sale_voided`, `settings_updated`) সার্ভার আটকায়, ক্লায়েন্টে নয়। সিংক-পূর্ব পুরনো ব্যাচে `rcpt` নেই: আগের ডেটা ইভেন্টে তোলার সময় (ধাপ ৩) একই স্টক দুবার না ধরার ব্যবস্থা লাগবে।
+- `stockIn`-এ `receiptId` দিলে ব্যাচে `rcpt` লেখা হয়; UI এখনো ইভেন্ট বানায় না।
 
 ## কোড কনভেনশন
 - ফাইল kebab-case (`product-form.tsx`), কম্পোনেন্ট PascalCase। `@/*` = `src/*`।
