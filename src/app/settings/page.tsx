@@ -4,11 +4,9 @@ import { useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
 import { useDb } from "@/components/db-provider"
-import { BackupSection } from "@/components/backup-section"
-import { SyncStatus } from "@/components/sync-status"
 import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
-import { Row, RowList, SectionTitle } from "@/components/ui/card"
+import { Row, RowList, type DotTone } from "@/components/ui/card"
 import { Field } from "@/components/ui/field"
 import { Sheet } from "@/components/ui/sheet"
 import { ApiError, errorMessage } from "@/lib/api/client"
@@ -24,7 +22,7 @@ const KIND_LABEL = { pharmacy: "ফার্মেসি", cosmetics: "কসম
 
 export default function SettingsPage() {
   const { state, signOut, setStore } = useAuth()
-  const { db, update } = useDb()
+  const { db, update, syncInfo } = useDb()
   // লগআউটের ধাপ: null = বন্ধ, "choose" = ফোনে ডেটা রাখবেন নাকি মুছবেন, "wipe" = মোছার নিশ্চিতকরণ
   const [logoutStep, setLogoutStep] = useState<null | "choose" | "wipe">(null)
   const [backedUp, setBackedUp] = useState(false)
@@ -36,6 +34,14 @@ export default function SettingsPage() {
 
   if (state.status !== "authed") return <AppShell title="সেটিংস" backHref="/">{null}</AppShell>
   const { user, store } = state
+
+  // সেটিংসে ডেটার অবস্থা শুধু এক লাইনে; বিস্তারিত ও ব্যাকআপ "ডেটা ও ব্যাকআপ" পাতায়
+  const dataStatus: { text: string; dot: DotTone } =
+    syncInfo.status === "auth"
+      ? { text: "আবার লগইন করুন", dot: "amber" }
+      : syncInfo.pending > 0
+        ? { text: "ইন্টারনেট এলে নিজে সুরক্ষিত হবে", dot: "amber" }
+        : { text: "সব তথ্য সুরক্ষিত আছে", dot: "brand" }
 
   const closeRename = () => {
     setNameDraft(null)
@@ -95,10 +101,9 @@ export default function SettingsPage() {
         </RowList>
       ) : null}
 
-      <SectionTitle>তথ্য সংরক্ষণ</SectionTitle>
-      <SyncStatus />
-
-      <BackupSection storeId={store?.id ?? ""} />
+      <RowList>
+        <Row href="/settings/data" title="ডেটা ও ব্যাকআপ" subtitle={dataStatus.text} dot={dataStatus.dot} chevron />
+      </RowList>
 
       {DEMO_ENABLED && db.products.length === 0 ? (
         <Button variant="secondary" full onClick={() => update((d) => withDemoData(d, new Date()))}>
