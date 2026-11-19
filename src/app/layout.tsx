@@ -12,11 +12,11 @@ const bengali = Noto_Sans_Bengali({
 })
 
 export const metadata: Metadata = {
-  title: "বিপণি — বিক্রি ও স্টক",
+  title: "Bipone — বিক্রি ও স্টক",
   description: "ফার্মেসি ও কসমেটিক্স দোকানের বিক্রি, স্টক ও বাকির হিসাব",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icons/icon-v3-192.png", apple: "/icons/apple-touch-icon-v3.png" },
-  appleWebApp: { capable: true, title: "বিপণি", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Bipone", statusBarStyle: "default" },
   formatDetection: { telephone: false },
 }
 

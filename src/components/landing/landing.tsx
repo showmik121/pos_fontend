@@ -120,7 +120,7 @@ export function Landing() {
 
       <div className="app-skyline mx-auto max-w-5xl opacity-90" aria-hidden="true" />
       <footer className="bg-white py-6 text-center text-[13px] text-muted">
-        <p>© বিপণি — ফার্মেসি ও কসমেটিক্স দোকানের জন্য</p>
+        <p>© Bipone — ফার্মেসি ও কসমেটিক্স দোকানের জন্য</p>
       </footer>
     </div>
   )
