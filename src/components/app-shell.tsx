@@ -56,7 +56,7 @@ export function AppShell({ title, backHref, action, nav = false, footer, childre
   if (state.status !== "authed" || !ready) return <Splash />
 
   return (
-    <div className="app-watermark mx-auto flex min-h-dvh max-w-(--app-col) flex-col bg-canvas">
+    <div className="mx-auto flex min-h-dvh max-w-(--app-col) flex-col bg-canvas">
       <header className="no-print sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-line bg-white px-4">
         {backHref ? (
           <Link href={backHref} aria-label="পিছনে যান" className="-ml-2 grid size-11 place-items-center rounded-lg text-ink active:bg-canvas">
@@ -76,6 +76,7 @@ export function AppShell({ title, backHref, action, nav = false, footer, childre
         {nav ? <InstallBanner /> : null}
         {children}
       </main>
+      {nav ? <div aria-hidden="true" className="app-skyline no-print" /> : null}
       {footer ? (
         <div className="no-print sticky bottom-0 z-10 border-t border-line bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">{footer}</div>
       ) : nav ? (

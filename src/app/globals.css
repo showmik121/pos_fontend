@@ -52,28 +52,13 @@ body {
   padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
 }
 
-/* জলছাপ: নিচের দিকে শাপলা ও নকশি-হীরার হালকা নকশা (পর্দায় স্থির, কার্ডের পিছনে) */
-.app-watermark {
-  position: relative;
-  isolation: isolate;
-}
-.app-watermark::before {
-  content: "";
-  position: fixed;
-  inset-inline: 0;
-  bottom: calc(4.5rem + env(safe-area-inset-bottom));
-  height: min(46vw, 15rem);
-  max-width: var(--app-col);
-  margin-inline: auto;
-  background: url("/watermark.svg") center bottom / contain no-repeat;
-  opacity: 0.09;
+/* জলছাপ-ছবি: পাতার শেষে হালকা শহর-দৃশ্য (শাপলা-সবুজ ছোঁয়া, ফার্মেসি, রিকশা) */
+.app-skyline {
+  width: 100%;
+  aspect-ratio: 480 / 230;
+  background: url("/skyline.svg") center bottom / 100% auto no-repeat;
   pointer-events: none;
-  z-index: -1;
-}
-@media print {
-  .app-watermark::before {
-    display: none;
-  }
+  user-select: none;
 }
 
 button,
