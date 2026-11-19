@@ -176,6 +176,39 @@ describe("দুই ফোন সিংক", () => {
     expect(s.log).toHaveLength(1)
   })
 
+  it("সার্ভার বলে এই ব্যবহারকারীর এই ইভেন্ট পাঠানোর অনুমতি নেই (403 forbidden): ইভেন্টটি আটকে রাখা হয় (বাদ নয়), বাকিগুলো যায়, সারি আটকায় না; মালিক সিংক করলে যায়", async () => {
+    const s = server()
+    const a = phone()
+    a.act((db) => createProduct(db, prod, T(0)).db, 0)
+    a.act((db) => addCustomer(db, { name: "করিম", phone: "" }, T(1)).db, 1)
+    const heldId = a.p.sync.outbox[0]!.id
+    const staffOnly: Transport = {
+      push: async (events) => {
+        if (events.some((e) => e.id === heldId)) throw Object.assign(new Error("forbidden"), { status: 403, code: "forbidden" })
+        await s.t.push(events)
+      },
+      pull: s.t.pull,
+    }
+    expect(await sync(a, staffOnly)).toBe("ok")
+    // কর্মচারীর সিংকে মালিকের কিউ-করা ইভেন্ট হারায় না: কিউতে থেকে যায়, বাদ-গোনা বাড়ে না
+    expect(a.p.sync.outbox.map((e) => e.id)).toEqual([heldId])
+    expect(a.p.sync.dropped).toBe(0)
+    expect(s.log).toHaveLength(1)
+    // পরে মালিক (অনুমতি আছে) সিংক করলে ইভেন্টটি যায়
+    expect(await sync(a, s.t)).toBe("ok")
+    expect(a.p.sync.outbox).toHaveLength(0)
+    expect(s.log).toHaveLength(2)
+  })
+
+  it("অনুমতির ত্রুটি ছাড়া সাধারণ 403/401 (টোকেন সমস্যা) হলে ইভেন্ট বাদ যায় না, অবস্থা auth", async () => {
+    const a = phone()
+    a.act((db) => createProduct(db, prod, T(0)).db, 0)
+    const t: Transport = { push: async () => { throw Object.assign(new Error("x"), { status: 403 }) }, pull: async () => ({ events: [], lastSeq: 0, hasMore: false }) }
+    expect(await sync(a, t)).toBe("auth")
+    expect(a.p.sync.outbox).toHaveLength(1)
+    expect(a.p.sync.dropped).toBe(0)
+  })
+
   it("ডিভাইস নিবন্ধিত না থাকলে ইভেন্ট বাদ যায় না", async () => {
     const a = phone()
     a.act((db) => createProduct(db, prod, T(0)).db, 0)

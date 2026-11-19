@@ -30,6 +30,8 @@ function describe(row: ExpiryRow): string {
 export default function ExpiryPage() {
   const { db, update } = useDb()
   const { state } = useAuth()
+  // ব্যাচ সরানো শুধু মালিকের কাজ (সার্ভারের REST ও সিংক দুই জায়গাতেই মালিক-মাত্র); কর্মচারী করলে তার সিংক আটকাত
+  const isOwner = state.status === "authed" && state.user.role === "owner"
   const today = todayIso()
   const [range, setRange] = useState<Range>("90")
   const [removing, setRemoving] = useState<ExpiryRow | null>(null)
@@ -63,9 +65,11 @@ export default function ExpiryPage() {
                 title={r.product.name}
                 subtitle={describe(r)}
                 right={
-                  <Button variant="danger" className="min-h-11 px-3 text-sm" onClick={() => (setReason(REMOVE_REASONS[0]), setRemoving(r))}>
-                    সরান
-                  </Button>
+                  isOwner ? (
+                    <Button variant="danger" className="min-h-11 px-3 text-sm" onClick={() => (setReason(REMOVE_REASONS[0]), setRemoving(r))}>
+                      সরান
+                    </Button>
+                  ) : undefined
                 }
               />
             ))}

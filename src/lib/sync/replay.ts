@@ -1,5 +1,6 @@
 import type { Batch, Customer, Db, LedgerEntry, Product, RemovedBatch, Sale } from "../store/types"
 import { EVENT_KINDS, type SyncEvent } from "./events"
+import { accepts, customerSchema, ledgerEntrySchema, productSchema, removedBatchSchema, saleSchema, settingsSchema } from "./schemas"
 
 /** সার্ভারের সীমার সাথে মেলে */
 const KIND_RE = /^[a-z][a-z0-9_]{1,39}$/
@@ -52,7 +53,7 @@ function removedIds(db: Db): Set<string> {
 
 function applyProduct(db: Db, e: SyncEvent): Outcome {
   const product = e.payload.product as Product | undefined
-  if (!isObj(product) || typeof product.id !== "string") return "ignore"
+  if (!product || !accepts(productSchema, product)) return "ignore"
   const key = `product:${product.id}`
   if (!isNewer(db, key, e)) return { db }
   return { db: withClock({ ...db, products: upsertById(db.products, product) }, key, e) }
@@ -60,7 +61,7 @@ function applyProduct(db: Db, e: SyncEvent): Outcome {
 
 function applyCustomer(db: Db, e: SyncEvent): Outcome {
   const customer = e.payload.customer as Customer | undefined
-  if (!isObj(customer) || typeof customer.id !== "string") return "ignore"
+  if (!customer || !accepts(customerSchema, customer)) return "ignore"
   const key = `customer:${customer.id}`
   if (!isNewer(db, key, e)) return { db }
   return { db: withClock({ ...db, customers: upsertById(db.customers, customer) }, key, e) }
@@ -68,7 +69,7 @@ function applyCustomer(db: Db, e: SyncEvent): Outcome {
 
 function applySettings(db: Db, e: SyncEvent): Outcome {
   const settings = e.payload.settings as Db["settings"] | undefined
-  if (!isObj(settings)) return "ignore"
+  if (!settings || !accepts(settingsSchema, settings)) return "ignore"
   if (!isNewer(db, "settings", e)) return { db }
   return { db: withClock({ ...db, settings }, "settings", e) }
 }
@@ -106,7 +107,9 @@ function applyStockIn(db: Db, e: SyncEvent): Outcome {
 function applySale(db: Db, e: SyncEvent): Outcome {
   const sale = e.payload.sale as Sale | undefined
   const ledger = e.payload.ledger as LedgerEntry | null | undefined
-  if (!isObj(sale) || typeof sale.id !== "string" || !Array.isArray(sale.lines)) return "ignore"
+  if (!sale || !accepts(saleSchema, sale)) return "ignore"
+  // খাতা-এন্ট্রি থাকলে সেটিও ঠিক হতে হবে; নইলে বিল বসে বাকি হারাত (এই ডিভাইসে কাস্টমারের বাকি ভুল হতো)
+  if (ledger != null && !accepts(ledgerEntrySchema, ledger)) return "ignore"
   if (db.sales.some((s) => s.id === sale.id)) return { db }
   const gone = removedIds(db)
   const allocations = sale.lines.flatMap((l) => l.allocations)
@@ -116,7 +119,7 @@ function applySale(db: Db, e: SyncEvent): Outcome {
     const sold = allocations.filter((a) => a.batchId === b.id).reduce((n, a) => n + a.qty, 0)
     return sold > 0 ? { ...b, qtyRemaining: b.qtyRemaining - sold } : b
   })
-  const entries = isObj(ledger) && !db.ledger.some((l) => l.id === ledger.id) ? [ledger as LedgerEntry] : []
+  const entries = ledger && accepts(ledgerEntrySchema, ledger) && !db.ledger.some((l) => l.id === ledger.id) ? [ledger] : []
   return { db: { ...db, batches, sales: [...db.sales, sale], ledger: [...db.ledger, ...entries] } }
 }
 
@@ -124,7 +127,8 @@ function applyVoid(db: Db, e: SyncEvent): Outcome {
   const saleId = e.payload.saleId
   const voided = e.payload.voided as Sale["voided"] | undefined
   const ledger = e.payload.ledger as LedgerEntry | null | undefined
-  if (typeof saleId !== "string" || !isObj(voided)) return "ignore"
+  if (typeof saleId !== "string" || !isObj(voided) || typeof voided.at !== "string" || typeof voided.by !== "string" || typeof voided.reason !== "string") return "ignore"
+  if (ledger != null && !accepts(ledgerEntrySchema, ledger)) return "ignore"
   const sale = db.sales.find((s) => s.id === saleId)
   if (!sale) return "defer"
   if (sale.voided) {
@@ -137,21 +141,21 @@ function applyVoid(db: Db, e: SyncEvent): Outcome {
     const qty = back.filter((a) => a.batchId === b.id).reduce((n, a) => n + a.qty, 0)
     return qty > 0 ? { ...b, qtyRemaining: b.qtyRemaining + qty } : b
   })
-  const entries = isObj(ledger) && !db.ledger.some((l) => l.id === ledger.id) ? [ledger as LedgerEntry] : []
+  const entries = ledger && accepts(ledgerEntrySchema, ledger) && !db.ledger.some((l) => l.id === ledger.id) ? [ledger] : []
   const next = { ...db, batches, sales: db.sales.map((s) => (s.id === saleId ? { ...s, voided } : s)), ledger: [...db.ledger, ...entries] }
   return { db: withClock(next, `void:${saleId}`, e) }
 }
 
 function applyDue(db: Db, e: SyncEvent): Outcome {
   const entry = e.payload.entry as LedgerEntry | undefined
-  if (!isObj(entry) || typeof entry.id !== "string") return "ignore"
+  if (!entry || !accepts(ledgerEntrySchema, entry)) return "ignore"
   if (db.ledger.some((l) => l.id === entry.id)) return { db }
   return { db: { ...db, ledger: [...db.ledger, entry] } }
 }
 
 function applyBatchRemoved(db: Db, e: SyncEvent): Outcome {
   const removed = e.payload.removed as RemovedBatch | undefined
-  if (!isObj(removed) || typeof removed.id !== "string") return "ignore"
+  if (!removed || !accepts(removedBatchSchema, removed)) return "ignore"
   const log = db.removedBatches ?? []
   if (log.some((r) => r.id === removed.id)) return { db }
   const batches = removed.batchId ? db.batches.filter((b) => b.id !== removed.batchId) : db.batches
@@ -182,7 +186,13 @@ export function applyEvents(db: Db, events: readonly SyncEvent[]): ReplayResult 
     let progressed = false
     for (const e of queue) {
       const apply = APPLIERS[e.kind]
-      const out: Outcome = apply ? apply(current, e) : "ignore"
+      // একটি বিকৃত ইভেন্ট যেন পুরো সিংক থামাতে না পারে: ছুঁড়লে ওটি বাদ, বাকিগুলো চলে
+      let out: Outcome
+      try {
+        out = apply ? apply(current, e) : "ignore"
+      } catch {
+        out = "ignore"
+      }
       if (out === "ignore") ignored.push(e)
       else if (out === "defer") waiting.push(e)
       else {

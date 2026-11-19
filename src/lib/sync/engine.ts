@@ -57,6 +57,12 @@ function chunk(events: readonly SyncEvent[]): SyncEvent[][] {
 const codeOf = (err: unknown): unknown => (err as { code?: unknown } | null)?.code
 /** সার্ভার ইভেন্টটিই নেয়নি (বদ আকার/বিষয়বস্তু)। ডিভাইস নিবন্ধিত না থাকার মতো ত্রুটিতে ইভেন্ট বাদ দেওয়া চলবে না। */
 const isRejected = (err: unknown) => (statusOf(err) === 400 || statusOf(err) === 413) && codeOf(err) !== "device_unregistered"
+/**
+ * এই ব্যবহারকারীর এই ধরনের ইভেন্ট পাঠানোর অনুমতি নেই (যেমন কর্মচারীর সেশনে মালিকের কিউ-করা বাতিল/ব্যাচ সরানো)।
+ * ফোনের কিউ দোকান-ভিত্তিক, ব্যবহারকারী-ভিত্তিক নয়; তাই এটি বাদ দেওয়া চলবে না (মালিক পরে সিংক করলে যাবে),
+ * শুধু আটকে রেখে বাকিগুলো পাঠাই, যাতে এই একটি ইভেন্ট সিংক আটকে না দেয়।
+ */
+const isForbidden = (err: unknown) => statusOf(err) === 403 && codeOf(err) === "forbidden"
 
 /**
  * Db ও অবস্থা পড়া/লেখার পথ। রান চলার মাঝে ব্যবহারকারী নতুন বদল করতে পারে, তাই
@@ -80,13 +86,14 @@ async function pushAll(io: SyncIo, transport: Transport): Promise<SyncStatus> {
       await transport.push(part)
       drop(part)
     } catch (err) {
-      if (!isRejected(err)) return classify(err)
+      if (!isRejected(err) && !isForbidden(err)) return classify(err)
       // সার্ভার এই দলটি নেয়নি: একটি একটি করে পাঠিয়ে খারাপটি আলাদা করি, যাতে সারি আটকে না থাকে
       for (const one of part) {
         try {
           await transport.push([one])
           drop([one])
         } catch (e) {
+          if (isForbidden(e)) continue // কিউতে থাকে, বাদ নয়
           if (!isRejected(e)) return classify(e)
           drop([one], 1)
         }
