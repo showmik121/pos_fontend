@@ -2,4 +2,21 @@
 <circle cx="0" cy="0" r="11"/><circle cx="44" cy="0" r="12"/>
 <path d="M0 0L6 -22M6 -22L24 -22L34 -10M24 -22L44 0M34 -10h12"/>
 <path d="M28 -20h36v-4"/><path d="M30 -22a21 22 0 0 1 38 -2z" fill="#2e6b3a" fill-opacity=".28"/></g>
-<g transform="translate(60 214)" fill="#e4d3a0"><circle cx="2" cy="-38" r="5"/><path d="M-3 -32h10l4 12h-8l-3 -4z"/><circle cx="48" cy="-28" r="5"/><rect x="42" y="-23" width="12" height="12" rx="5"/></g><g transform="translate(186 190)"><circle cy="-32" r="5" fill="#e4d3a0"/><rect x="-5" y="-26" width="10" height="26" rx="4" fill="#e4d3a0"/></g><g transform="translate(284 190)"><circle cy="-30" r="5" fill="#2e6b3a"/><rect x="-5" y="-24" width="10" height="24" rx="4" fill="#2e6b3a"/></g><g transform="translate(386 190)"><circle cy="-34" r="5" fill="#e4d3a0"/><rect x="-5" y="-28" width="10" height="28" rx="4" fill="#e4d3a0"/></g></svg>
+<g transform="translate(60 214)" fill="#e4d3a0"><circle cx="2" cy="-38" r="5"/><path d="M-3 -32h10l4 12h-8l-3 -4z"/><circle cx="48" cy="-28" r="5"/><rect x="42" y="-23" width="12" height="12" rx="5"/></g><g transform="translate(186 190)"><circle cy="-32" r="5" fill="#e4d3a0"/><rect x="-5" y="-26" width="10" height="26" rx="4" fill="#e4d3a0"/></g><g transform="translate(284 190)"><circle cy="-30" r="5" fill="#2e6b3a"/><rect x="-5" y="-24" width="10" height="24" rx="4" fill="#2e6b3a"/></g><g transform="translate(386 190)"><circle cy="-34" r="5" fill="#e4d3a0"/><rect x="-5" y="-28" width="10" height="28" rx="4" fill="#e4d3a0"/></g><g id="billboard"><g fill="#1f4d2a"><rect x="332" y="48" width="4" height="12"/><rect x="368" y="48" width="4" height="12"/></g><g stroke="#1f4d2a" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M318 12v-4h-4"/><path d="M352 12v-5"/><path d="M386 12v-4h4"/></g><g fill="#ffd45a"><circle cx="314" cy="8" r="2"/><circle cx="352" cy="7" r="2"/><circle cx="390" cy="8" r="2"/></g><rect x="304" y="12" width="96" height="38" rx="4" fill="#1f4d2a"/><rect x="307" y="15" width="90" height="32" rx="2.5" fill="#2e6b3a"/><svg x="311" y="19" width="24" height="24" viewBox="0 0 512 512">
+<defs>
+<linearGradient id="bb-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffc61f"/><stop offset=".55" stop-color="#f2a900"/><stop offset="1" stop-color="#d98a00"/></linearGradient>
+<radialGradient id="bb-glow"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="bb-wh" gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="440"><stop offset="0" stop-color="#3b7f49"/><stop offset="1" stop-color="#1f4d2a"/></linearGradient>
+<linearGradient id="bb-gold" gradientUnits="userSpaceOnUse" x1="124" y1="0" x2="396" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#fff3c9"/></linearGradient>
+</defs><rect width="512" height="512" rx="112" fill="url(#bb-bg)"/>
+<rect x="6" y="6" width="500" height="500" rx="106" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3"/>
+<circle cx="400" cy="96" r="190" fill="url(#bb-glow)"/><g transform="translate(256 256) scale(1.0) translate(-256 -256) translate(-2 -36)">
+<g stroke-linecap="round" stroke-linejoin="round" fill="none">
+<path d="M320 206L158 270C238 262 308 306 320 372" stroke="#7a4b00" stroke-opacity=".28" stroke-width="40" transform="translate(0 8)"/>
+<path d="M320 160V392" stroke="#7a4b00" stroke-opacity=".28" stroke-width="40" transform="translate(0 8)"/>
+<path d="M320 206L158 270C238 262 308 306 320 372" stroke="url(#bb-wh)" stroke-width="38"/>
+<path d="M320 160V392" stroke="url(#bb-wh)" stroke-width="38"/>
+<path d="M124 160H396" stroke="url(#bb-gold)" stroke-width="30"/>
+</g>
+<g fill="#1f4d2a" fill-opacity=".8"><rect x="186" y="424" width="10" height="34" rx="2"/><rect x="204" y="424" width="5" height="34" rx="2"/><rect x="217" y="424" width="14" height="34" rx="2"/><rect x="239" y="424" width="6" height="34" rx="2"/><rect x="253" y="424" width="10" height="34" rx="2"/><rect x="271" y="424" width="5" height="34" rx="2"/><rect x="284" y="424" width="16" height="34" rx="2"/><rect x="308" y="424" width="6" height="34" rx="2"/><rect x="322" y="424" width="10" height="34" rx="2"/></g>
+</g></svg><text x="339.5" y="37" font-family="Roboto, Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#fff3c9" letter-spacing=".2">Bipone</text></g></svg>
