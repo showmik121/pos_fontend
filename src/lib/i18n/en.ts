@@ -723,4 +723,5 @@ export const EN: Record<string, string> = {
   "হিসাব পুরো মেটানো থাকলে তবেই ডিলার মোছা যায়।": "A dealer can be deleted only when the account is fully settled.",
   "হিসাব মেটানো": "Settled",
   "হিসাব মেটার আগে ডিলার মোছা যায় না": "A dealer cannot be deleted before the account is settled",
+  "প্রোফাইল ও সেটিংস": "Profile and settings",
 }
