@@ -43,7 +43,9 @@ export default function SettingsPage() {
   const dataStatus: { text: string; dot: DotTone } =
     syncInfo.status === "auth"
       ? { text: tr("আবার লগইন করুন"), dot: "amber" }
-      : syncInfo.pending > 0
+      : syncInfo.problems > 0
+        ? { text: tr("সিংকে সমস্যা আছে — দেখুন"), dot: "amber" }
+        : syncInfo.pending > 0
         ? { text: tr("ইন্টারনেট এলে নিজে সুরক্ষিত হবে"), dot: "amber" }
         : { text: tr("সব তথ্য সুরক্ষিত আছে"), dot: "brand" }
 

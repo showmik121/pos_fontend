@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
 import { BackupSection } from "@/components/backup-section"
 import { ReportDownloads } from "@/components/report-downloads"
+import { SyncProblems } from "@/components/sync-problems"
 import { SyncStatus } from "@/components/sync-status"
 import { SectionTitle } from "@/components/ui/card"
 
@@ -15,6 +16,7 @@ export default function DataPage() {
   return (
     <AppShell title={tr("ডেটা ও ব্যাকআপ")} backHref="/settings">
       <SyncStatus />
+      <SyncProblems />
       <SectionTitle>{tr("আপনার হিসাব Excel-এ নামান")}</SectionTitle>
       <ReportDownloads />
       <SectionTitle>{tr("উন্নত: পুরো ডেটার ব্যাকআপ")}</SectionTitle>

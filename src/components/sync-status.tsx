@@ -17,6 +17,9 @@ export function SyncStatus() {
   const n = toBanglaDigits(String(pending))
   if (status === "auth")
     return <Banner tone="warn">{tr("সিংক থেমে আছে — লগআউট করে আবার লগইন করুন।")} {pending > 0 ? tf("{p0}টি বদল পাঠানো বাকি; ডেটা ফোনে নিরাপদ আছে।", { p0: (n) }) : ""}</Banner>
+  if (status === "device_limit") return <Banner tone="warn">{tr("এই দোকানে ২৬টি ডিভাইসের সীমা পূর্ণ — এই ফোন সিংক করতে পারছে না। ডেটা ফোনে নিরাপদ আছে; সাপোর্টে জানান।")}</Banner>
+  if (status === "error") return <Banner tone="warn">{tr("সিংকে অপ্রত্যাশিত সমস্যা হয়েছে; ডেটা ফোনে নিরাপদ আছে। আবার চেষ্টা হবে।")}</Banner>
+  if (status === "server") return <Banner tone="warn">{tr("সার্ভারে সমস্যা — পরে আবার চেষ্টা হবে; ডেটা ফোনে নিরাপদ আছে।")}</Banner>
   if (pending > 0)
     return (
       <Banner tone="warn">

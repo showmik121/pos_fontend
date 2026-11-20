@@ -1,6 +1,7 @@
 "use client"
 
-import { tr } from "@/lib/i18n"
+import { toBanglaDigits } from "@/lib/format/bn"
+import { tf, tr } from "@/lib/i18n"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, type ReactNode } from "react"
@@ -51,7 +52,7 @@ export function Ready({ children }: { children: ReactNode }) {
 /** লগইন করা ইউজারের পর্দার কাঠামো: হেডার, মূল অংশ, নিচের মেনু বা অ্যাকশন বার। লগইন না থাকলে /login-এ পাঠায়। */
 export function AppShell({ title, backHref, action, nav = false, footer, art = nav, hero, children }: AppShellProps) {
   const { state } = useAuth()
-  const { ready, saveFailed, queueFailed } = useDb()
+  const { ready, saveFailed, queueFailed, syncSaveFailed, readOnlyTab, takeOverTab, syncInfo } = useDb()
   const router = useRouter()
 
   useEffect(() => {
@@ -82,6 +83,24 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
         <div role="alert" className="bg-warn-bg px-4 py-2 text-sm text-warn">
           {tr("কিছু বদল সার্ভারে পাঠানোর লাইনে তোলা যায়নি। ডেটা ফোনে নিরাপদ আছে; অ্যাপ আবার খুললে নিজে থেকেই তোলা হবে। ততক্ষণ ব্যাকআপ নিয়ে রাখুন।")}
         </div>
+      ) : null}
+      {readOnlyTab ? (
+        <div role="alert" className="flex items-center gap-3 bg-warn-bg px-4 py-2 text-sm text-warn">
+          <span className="flex-1">{tr("অ্যাপটি আরেকটি ট্যাবে খোলা আছে, তাই এখানে বিক্রি বা বদল বন্ধ। দুই ট্যাবে একসাথে কাজ করলে বিল হারাতে পারে।")}</span>
+          <button type="button" onClick={takeOverTab} className="min-h-11 shrink-0 rounded-lg border border-warn/40 bg-white px-3 font-semibold text-ink">
+            {tr("এই ট্যাবে কাজ করুন")}
+          </button>
+        </div>
+      ) : null}
+      {syncSaveFailed ? (
+        <div role="alert" className="bg-danger-bg px-4 py-2 text-sm font-semibold text-danger">
+          {tr("সিংকের লাইন ফোনে সেভ হচ্ছে না — সার্ভারে পাঠানো বাকি বদলগুলো এখন শুধু খোলা অ্যাপে আছে। পাতা বন্ধ করবেন না; ব্যাকআপ নামান।")}
+        </div>
+      ) : null}
+      {syncInfo.problems > 0 ? (
+        <Link href="/settings/data" className="block bg-warn-bg px-4 py-2 text-sm text-warn">
+          {tf("সিংকে {p0}টি সমস্যা আছে: কিছু তথ্য সার্ভারে যায়নি বা এই ফোনে বসেনি। সেটিংস › ডেটা ও ব্যাকআপে দেখুন।", { p0: toBanglaDigits(String(syncInfo.problems)) })}
+        </Link>
       ) : null}
       <main className="flex-1 space-y-4 p-4">
         {nav ? <BackupReminder /> : null}
