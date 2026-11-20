@@ -86,7 +86,7 @@ add(f'<g id="billboard"><g fill="{DKGREEN}"><rect x="332" y="48" width="4" heigh
 
 # ---------- গাছ, ঝোপ, বাতি ----------
 tree(8, 1.0); tree(474, .95); bush(60, .9); bush(432, 1.0, "#d6dfae"); bush(456, .7, "#cfd9a0")
-lamp(88, -1); lamp(392, 1)
+lamp(404, 1)
 
 # ---------- ফুটপাত ও রাস্তা ----------
 add(f'<rect x="0" y="190" width="480" height="7" fill="{T3}"/><rect x="0" y="197" width="480" height="33" fill="{T2}"/><rect x="0" y="197" width="480" height="2" fill="{T4}" opacity=".5"/>')
@@ -132,22 +132,78 @@ ICON_MED = '<path d="M0 -6.5V6.5M-6.5 0H6.5"/>'
 ICON_GEN = '<path d="M-6 -2h12l-1.2 9h-9.6z"/><path d="M-3 -2v-2a3 3 0 0 1 6 0v2"/>'
 ICON_COS = '<rect x="-3" y="-1" width="6" height="8" rx="1" fill="currentColor" fill-opacity=".25" stroke-width="2"/><path d="M-2.2 -1l1 -6l3 1.5v4.5"/>'
 ICON_COS = ICON_COS.replace("currentColor", PINK)
-for x, c1, c2, icon, kind in [(96, GREEN, "#cfe0d2", ICON_MED, "med"), (193, GOLD, "#fde9b0", ICON_GEN, "gen"), (290, PINK, "#f3d3dd", ICON_COS, "cos")]:
+for x, c1, c2, icon, kind in [(108, GREEN, "#cfe0d2", ICON_MED, "med"), (205, GOLD, "#fde9b0", ICON_GEN, "gen"), (302, PINK, "#f3d3dd", ICON_COS, "cos")]:
     shop(x, c1, c2, icon)
     display(x, kind)
 
-# ---------- মানুষ ----------
-person(190.5, GREEN, s=.9)
-person(287.5, "#d9c48c", s=.92, bag=GOLD)
-person(386, GREEN, s=.85, bag="#d9c48c")
+# ---------- মানুষ (চামড়া, চুল, জামা, প্যান্ট, জুতা; দু-হাত) ----------
+def human(x, s=1.0, facing=1, skin="#d9a982", hair="#3b2a20", top=GREEN, bottom="#5b4a35", style="short", dress=False, arms="down", extra=""):
+    g = [f'<g transform="translate({x} 191) scale({facing * s} {s})">']
+    g.append(f'<ellipse cy="0" rx="8" ry="1.7" fill="{T4}" opacity=".55"/>')
+    if style == "long":
+        g.append(f'<rect x="-5.9" y="-39" width="4.6" height="13" rx="2.3" fill="{hair}"/>')
+    if dress:
+        g.append(f'<rect x="-3.6" y="-10" width="2.8" height="8" fill="{skin}"/><rect x="0.8" y="-10" width="2.8" height="8" fill="{skin}"/>')
+        g.append(f'<path d="M-5 -30h10l3.2 21h-16.4z" fill="{top}"/>')
+    else:
+        g.append(f'<rect x="-4.8" y="-18" width="4.2" height="16.5" rx="1.6" fill="{bottom}"/><rect x="0.6" y="-18" width="4.2" height="16.5" rx="1.6" fill="{bottom}"/>')
+        g.append(f'<rect x="-5.5" y="-31" width="11" height="15" rx="4.5" fill="{top}"/>')
+    g.append('<ellipse cx="-2.6" cy="-1.1" rx="3.3" ry="1.6" fill="#3b3028"/><ellipse cx="3" cy="-1.1" rx="3.3" ry="1.6" fill="#3b3028"/>')
+    g.append(f'<rect x="-1.6" y="-33" width="3.2" height="3" fill="{skin}"/><circle cy="-37" r="5" fill="{skin}"/>')
+    if style == "cap":
+        g.append(f'<path d="M-5.6 -38a5.6 5.6 0 0 1 11.2 0z" fill="{GREEN}"/><rect x="1.5" y="-38.2" width="7" height="2" rx="1" fill="{GREEN}"/>')
+    else:
+        g.append(f'<path d="M-5.3 -37.4a5.3 5.3 0 0 1 10.6 0q-5.3 -3 -10.6 0z" fill="{hair}"/>')
+    if arms == "down":
+        for sx in (-1, 1):
+            g.append(f'<path d="M{sx * 5} -29l{sx * 1.4} 10" stroke="{top}" stroke-width="3.4" stroke-linecap="round" fill="none"/><circle cx="{sx * 6.4}" cy="-18.5" r="1.8" fill="{skin}"/>')
+    g.append(extra)
+    g.append('</g>')
+    add("".join(g))
 
-# ---------- রিকশা ----------
-add(f'<g transform="translate(10 -2)" stroke="{GREEN}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">'
-    f'<circle cx="26" cy="214" r="9"/><circle cx="78" cy="214" r="10"/>'
-    f'<path d="M26 214L33 196L50 214L55 194L33 196M50 214H78"/><path d="M30 190l5 6"/>'
-    f'<path d="M60 198Q63 178 90 180V198Z" fill="#cfe0d2"/><rect x="62" y="198" width="28" height="8" rx="2" fill="{GREEN}"/>'
-    f'<path d="M90 198L82 214" /></g>'
-    f'<g transform="translate(10 -2)"><circle cx="52" cy="181" r="4.6" fill="{T4}"/><path d="M48 186q4 -2 8 0l2 9l-12 1z" fill="{GREEN}"/><circle cx="74" cy="190" r="3.6" fill="{T3}"/><rect x="70" y="194" width="8" height="8" rx="3" fill="{T4}"/></g>')
+
+BOX, TAPE = "#d9a766", "#c28d4e"
+# ডেলিভারির লোক: ভ্যান থেকে কার্টন নামিয়ে এগিয়ে ধরেছে
+human(80, facing=1, top=GREEN, bottom="#4a4030", style="cap", skin="#c99a73", arms="custom", extra=(
+    f'<path d="M3 -29l6 6M-2 -29l8 8" stroke="{GREEN}" stroke-width="3.4" stroke-linecap="round" fill="none"/>'
+    f'<rect x="6" y="-29" width="10" height="11" rx="1" fill="{BOX}"/><rect x="9.8" y="-29" width="2.4" height="11" fill="{TAPE}"/>'
+    '<circle cx="9" cy="-22" r="1.7" fill="#c99a73"/><circle cx="6.5" cy="-20" r="1.7" fill="#c99a73"/>'))
+# দোকানি: কাগজ-কলম হাতে মাল মেলাচ্ছেন (ভ্যানের দিকে মুখ)
+human(108, facing=-1, top=GOLD, bottom="#6b5a3c", skin="#d9a982", hair="#2b2118", arms="custom", extra=(
+    f'<path d="M3 -29l5 8" stroke="{GOLD}" stroke-width="3.4" stroke-linecap="round" fill="none"/>'
+    '<rect x="5" y="-28" width="8.4" height="12.5" rx="1.2" fill="#b78b52"/><rect x="6.2" y="-26.4" width="6" height="10" rx=".6" fill="#fff"/>'
+    f'<path d="M7.2 -23.8h3.8M7.2 -21.4h3.8M7.2 -19h2.6" stroke="{T4}" stroke-width=".9" stroke-linecap="round"/>'
+    '<rect x="7.6" y="-29.3" width="3.2" height="2" rx=".8" fill="#8a6a3c"/>'
+    f'<path d="M-1 -29l8 3.5" stroke="{GOLD}" stroke-width="3.4" stroke-linecap="round" fill="none"/>'
+    '<circle cx="8" cy="-25.2" r="1.7" fill="#d9a982"/><path d="M8.6 -25.4l3.8 -4" stroke="#2b2b2b" stroke-width="1.1" stroke-linecap="round"/>'))
+# কাস্টমার
+human(202.5, s=.95, facing=1, top=PINK, dress=True, style="long", hair="#2b2118", skin="#c99a73", arms="custom", extra=(
+    f'<path d="M-5 -29l-1.4 10" stroke="{PINK}" stroke-width="3.4" stroke-linecap="round" fill="none"/><circle cx="-6.4" cy="-18.5" r="1.8" fill="#c99a73"/>'
+    f'<path d="M5 -29l3 9" stroke="{PINK}" stroke-width="3.4" stroke-linecap="round" fill="none"/><circle cx="8" cy="-19.5" r="1.8" fill="#c99a73"/>'
+    f'<rect x="6" y="-19" width="8" height="9" rx="1.5" fill="{GOLD}"/><path d="M8 -19q2 -5 4 0" stroke="{GOLD}" fill="none" stroke-width="1.3"/>'))
+human(299.5, s=.95, facing=-1, top="#d9c48c", bottom="#4d6b52", skin="#b98a63", hair="#2b2118", arms="down")
+human(398, s=.92, facing=-1, top="#6f9a7a", dress=True, style="long", hair="#3b2a20", skin="#d9a982", arms="down", extra=(
+    f'<rect x="-14" y="-20" width="8" height="9" rx="1.5" fill="{GOLD}"/><path d="M-12 -20q2 -5 4 0" stroke="{GOLD}" fill="none" stroke-width="1.3"/>'))
+
+# ---------- কার্গো ভ্যান (পাশ থেকে, সামনে বাঁয়ে; পেছনের দরজা খোলা) ----------
+vinner = inner
+for i in ["bg", "glow", "wh", "gold"]:
+    vinner = vinner.replace(f"bb-{i}", f"vn-{i}")
+add(f'<ellipse cx="40" cy="227" rx="40" ry="2.6" fill="{T4}" opacity=".5"/>')
+# পেছনে নামানো কার্টন
+add(f'<g><rect x="74" y="208" width="10" height="10" rx="1" fill="{BOX}"/><rect x="77.4" y="208" width="2.4" height="10" fill="{TAPE}"/><rect x="76" y="199" width="8" height="9" rx="1" fill="#e6b676"/><rect x="79" y="199" width="2" height="9" fill="{TAPE}"/></g>')
+# মাল রাখার বাক্স ও খোলা দরজা
+add(f'<path d="M72 185l7 -3v33l-7 3z" fill="#f3ead0" stroke="{T4}" stroke-width="1"/>')
+add(f'<rect x="30" y="184" width="42" height="34" rx="2.5" fill="#fff" stroke="{T4}" stroke-width="1.2"/>')
+add(f'<rect x="30" y="207" width="42" height="5" fill="{GREEN}"/>')
+add(f'<svg x="41" y="190" width="12" height="12" viewBox="0 0 512 512">{vinner}</svg>')
+add(f'<text x="55" y="199" font-family="Roboto, Arial, Helvetica, sans-serif" font-size="6.2" font-weight="800" fill="{DKGREEN}">Bipone</text>')
+# কেবিন
+add(f'<path d="M6 218v-14q0 -3 3 -4l9 -7q2 -1 5 -1h7v26z" fill="{GREEN}"/>')
+add(f'<path d="M11 203l7 -6h9v9h-16z" fill="#cfe0d2"/><rect x="5" y="212" width="3" height="4" rx="1" fill="#ffd45a"/><rect x="4" y="216" width="30" height="3" rx="1.2" fill="{DKGREEN}"/>')
+# চাকা
+for cx in (19, 58):
+    add(f'<circle cx="{cx}" cy="220" r="7.4" fill="{DKGREEN}"/><circle cx="{cx}" cy="220" r="3.2" fill="{T1}"/><circle cx="{cx}" cy="220" r="1.2" fill="{T4}"/>')
 
 svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 230">{"".join(out)}</svg>\n'
 (ROOT / "public/art/city-3shops.svg").write_text(svg, encoding="utf8")
