@@ -68,6 +68,21 @@ export function loadDb(storeId: string): Db {
   return emptyDb()
 }
 
+/**
+ * সংরক্ষিত ডেটা পড়ে; না থাকলে, পড়া না গেলে বা নষ্ট হলে `null` (ফাঁকা ডেটা নয়, কপিও বানায় না)।
+ * অন্য ট্যাবের বদল নেওয়ার সময় ব্যবহার: `loadDb`-এর মতো ফাঁকা ডেটা ফেরালে চলমান ডেটা মুছে যেত।
+ */
+export function readDb(storeId: string): Db | null {
+  try {
+    const raw = window.localStorage.getItem(key(storeId))
+    if (!raw) return null
+    const parsed: unknown = JSON.parse(raw)
+    return isDb(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
 export function saveDb(storeId: string, db: Db): boolean {
   try {
     window.localStorage.setItem(key(storeId), JSON.stringify(db))
