@@ -157,7 +157,7 @@ describe("দুই ফোন সিংক", () => {
     expect(a.p.sync.outbox).toHaveLength(1)
   })
 
-  it("সার্ভার একটি খারাপ ইভেন্ট নিতে না চাইলে (400) বাকিগুলো যায়, খারাপটি বাদ", async () => {
+  it("সার্ভার একটি খারাপ ইভেন্ট নিতে না চাইলে (400) বাকিগুলো যায়; খারাপটি কিউ থেকে সরে rejected-এ থাকে (মুছে যায় না, #10)", async () => {
     const s = server()
     const a = phone()
     a.act((db) => createProduct(db, prod, T(0)).db, 0)
@@ -172,7 +172,8 @@ describe("দুই ফোন সিংক", () => {
     }
     expect(await sync(a, picky)).toBe("ok")
     expect(a.p.sync.outbox).toHaveLength(0)
-    expect(a.p.sync.dropped).toBe(1)
+    expect(a.p.sync.dropped).toBe(0)
+    expect(a.p.sync.rejected.map((r) => r.event.id)).toEqual([badId])
     expect(s.log).toHaveLength(1)
   })
 

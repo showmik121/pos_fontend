@@ -1,7 +1,8 @@
 import type { Db } from "../store/types"
 import type { SyncEvent } from "./events"
 import { applyEvents, validateEvent } from "./replay"
-import type { SyncState } from "./state"
+import { MAX_KEPT_EVENTS, capKept, type SyncState } from "./state"
+import { mergeSkipped, trackDeferred } from "./tracking"
 
 export interface PulledPage {
   events: unknown[]
@@ -15,7 +16,8 @@ export interface Transport {
   pull(after: number, limit: number): Promise<PulledPage>
 }
 
-export type SyncStatus = "ok" | "offline" | "auth" | "server"
+/** ok = সফল; offline/auth/server = ব্যর্থতার ধরন; device_limit = দোকানের ২৬টি ডিভাইসের সীমা পূর্ণ; error = অপ্রত্যাশিত ত্রুটি */
+export type SyncStatus = "ok" | "offline" | "auth" | "server" | "device_limit" | "error"
 
 /** সার্ভারের বডি সীমা ৬০০ KB; নিরাপদ থাকতে এর নিচে ভাগ করে পাঠাই */
 export const PUSH_CHUNK_BYTES = 300_000
@@ -27,21 +29,32 @@ const statusOf = (err: unknown): number => {
   const s = (err as { status?: unknown } | null)?.status
   return typeof s === "number" ? s : 0
 }
+const codeOf = (err: unknown): unknown => (err as { code?: unknown } | null)?.code
+const messageOf = (err: unknown): string => {
+  const m = (err as { message?: unknown } | null)?.message
+  return typeof m === "string" ? m.slice(0, 300) : ""
+}
 
-function classify(err: unknown): SyncStatus {
-  if (codeOf(err) === "device_unregistered") return "auth"
+/** সিংকের ব্যর্থতাকে ধরনে ভাগ করে (পর্দায় কী বলা হবে তা এর ওপর নির্ভর করে) */
+export function classifyError(err: unknown): SyncStatus {
+  const code = codeOf(err)
+  if (code === "device_unregistered") return "auth"
+  if (code === "device_limit") return "device_limit"
   const s = statusOf(err)
   if (s === 401 || s === 403) return "auth"
   if (s === 0) return "offline"
   return "server"
 }
 
+const encoder = new TextEncoder()
+
+/** সার্ভার বাইটে মাপে (বাংলা অক্ষর ৩ বাইট), তাই এখানেও বাইটে মাপি; অক্ষর গুনলে বাংলা পেলোডে সীমা ছাড়িয়ে ৪১৩ আসত */
 function chunk(events: readonly SyncEvent[]): SyncEvent[][] {
   const out: SyncEvent[][] = []
   let cur: SyncEvent[] = []
   let bytes = 0
   for (const e of events) {
-    const size = JSON.stringify(e).length
+    const size = encoder.encode(JSON.stringify(e)).length
     if (cur.length > 0 && (cur.length >= PUSH_CHUNK_EVENTS || bytes + size > PUSH_CHUNK_BYTES)) {
       out.push(cur)
       cur = []
@@ -54,8 +67,7 @@ function chunk(events: readonly SyncEvent[]): SyncEvent[][] {
   return out
 }
 
-const codeOf = (err: unknown): unknown => (err as { code?: unknown } | null)?.code
-/** সার্ভার ইভেন্টটিই নেয়নি (বদ আকার/বিষয়বস্তু)। ডিভাইস নিবন্ধিত না থাকার মতো ত্রুটিতে ইভেন্ট বাদ দেওয়া চলবে না। */
+/** সার্ভার ইভেন্টটিই নেয়নি (বদ আকার/বিষয়বস্তু)। ডিভাইস নিবন্ধিত না থাকার মতো ত্রুটিতে ইভেন্ট সরানো চলবে না। */
 const isRejected = (err: unknown) => (statusOf(err) === 400 || statusOf(err) === 413) && codeOf(err) !== "device_unregistered"
 /**
  * এই ব্যবহারকারীর এই ধরনের ইভেন্ট পাঠানোর অনুমতি নেই (যেমন কর্মচারীর সেশনে মালিকের কিউ-করা বাতিল/ব্যাচ সরানো)।
@@ -75,27 +87,34 @@ export interface SyncIo {
   setState(state: SyncState): void
 }
 
-async function pushAll(io: SyncIo, transport: Transport): Promise<SyncStatus> {
+async function pushAll(io: SyncIo, transport: Transport, now: Date): Promise<SyncStatus> {
   const patch = (fn: (s: SyncState) => SyncState) => io.setState(fn(io.state()))
-  const drop = (sent: readonly SyncEvent[], rejected = 0) => {
-    const ids = new Set(sent.map((e) => e.id))
-    patch((s) => ({ ...s, outbox: s.outbox.filter((e) => !ids.has(e.id)), dropped: s.dropped + rejected }))
+  const sent = (events: readonly SyncEvent[]) => {
+    const ids = new Set(events.map((e) => e.id))
+    patch((s) => ({ ...s, outbox: s.outbox.filter((e) => !ids.has(e.id)) }))
   }
+  // সার্ভার নেয়নি: কিউ থেকে সরিয়ে `rejected`-এ রাখি (মুছি না), যাতে সারি আটকে না থাকে অথচ মালিক দেখতে ও আবার পাঠাতে পারেন
+  const reject = (event: SyncEvent, err: unknown) =>
+    patch((s) => {
+      const code = codeOf(err)
+      const kept = capKept([...s.rejected, { event, status: statusOf(err), code: typeof code === "string" ? code : "", message: messageOf(err), rejectedAt: now.toISOString() }], MAX_KEPT_EVENTS)
+      return { ...s, outbox: s.outbox.filter((e) => e.id !== event.id), rejected: kept.list, evicted: s.evicted + kept.evicted }
+    })
   for (const part of chunk(io.state().outbox)) {
     try {
       await transport.push(part)
-      drop(part)
+      sent(part)
     } catch (err) {
-      if (!isRejected(err) && !isForbidden(err)) return classify(err)
-      // সার্ভার এই দলটি নেয়নি: একটি একটি করে পাঠিয়ে খারাপটি আলাদা করি, যাতে সারি আটকে না থাকে
+      if (!isRejected(err) && !isForbidden(err)) return classifyError(err)
+      // সার্ভার এই দলটি নেয়নি: একটি একটি করে পাঠিয়ে খারাপটি আলাদা করি
       for (const one of part) {
         try {
           await transport.push([one])
-          drop([one])
+          sent([one])
         } catch (e) {
           if (isForbidden(e)) continue // কিউতে থাকে, বাদ নয়
-          if (!isRejected(e)) return classify(e)
-          drop([one], 1)
+          if (!isRejected(e)) return classifyError(e)
+          reject(one, e)
         }
       }
     }
@@ -105,8 +124,8 @@ async function pushAll(io: SyncIo, transport: Transport): Promise<SyncStatus> {
 
 /** একবার সিংক: আগে কিউ পাঠায়, তারপর সার্ভারের নতুন ইভেন্ট টেনে Db-তে বসায়। ব্যর্থ হলে যতটা হয়েছে ততটা রেখে থামে। */
 export async function runSync(input: { io: SyncIo; transport: Transport; now: Date }): Promise<SyncStatus> {
-  const { io, transport } = input
-  const pushed = await pushAll(io, transport)
+  const { io, transport, now } = input
+  const pushed = await pushAll(io, transport, now)
   if (pushed !== "ok") return pushed
 
   for (let page = 0; page < MAX_PULL_PAGES; page++) {
@@ -114,18 +133,32 @@ export async function runSync(input: { io: SyncIo; transport: Transport; now: Da
     try {
       got = await transport.pull(io.state().cursor, PULL_LIMIT)
     } catch (err) {
-      return classify(err)
+      return classifyError(err)
     }
-    const valid = got.events.flatMap((x) => {
+    const valid: SyncEvent[] = []
+    let malformed = 0
+    for (const x of got.events) {
       const e = validateEvent(x)
-      return e ? [e] : []
-    })
+      if (e) valid.push(e)
+      else malformed++
+    }
     // পড়া ও লেখার মাঝে await নেই, তাই এর মধ্যে স্থানীয় বদল হারায় না
-    const applied = applyEvents(io.db(), [...io.state().deferred, ...valid])
+    const st = io.state()
+    // আগে বসাতে না পারা (skipped) ইভেন্টও প্রতিবার আবার চেষ্টা হয়: অ্যাপ হালনাগাদের পর নিজে ঠিক হয়ে যায়
+    const applied = applyEvents(io.db(), [...st.deferred, ...st.skipped.map((s) => s.event), ...valid])
+    const skipped = mergeSkipped(st.skipped, applied.ignored, now)
     io.setDb(applied.db)
-    io.setState({ ...io.state(), cursor: Math.max(io.state().cursor, got.lastSeq), deferred: applied.deferred })
+    io.setState({
+      ...io.state(),
+      cursor: Math.max(io.state().cursor, got.lastSeq),
+      deferred: applied.deferred,
+      deferredSince: trackDeferred(st.deferredSince, applied.deferred, now),
+      skipped: skipped.list,
+      malformed: st.malformed + malformed,
+      evicted: io.state().evicted + skipped.evicted,
+    })
     if (!got.hasMore) break
   }
-  io.setState({ ...io.state(), lastSyncAt: input.now.toISOString() })
+  io.setState({ ...io.state(), lastSyncAt: now.toISOString() })
   return "ok"
 }

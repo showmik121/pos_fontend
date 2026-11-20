@@ -220,6 +220,9 @@ const APPLIERS: Record<string, (db: Db, e: SyncEvent) => Outcome> = {
   [EVENT_KINDS.dealerEntry]: applyDealerEntry,
 }
 
+/** এই অ্যাপ সংস্করণ ধরনটি চেনে কি না (না চিনলে অ্যাপ পুরনো হওয়ার সম্ভাবনা) */
+export const isKnownKind = (kind: string): boolean => Object.prototype.hasOwnProperty.call(APPLIERS, kind)
+
 /**
  * ইভেন্ট চালিয়ে নতুন Db ফেরায় (পুরনোটা বদলায় না)। একই ইভেন্ট আবার দিলে কিছু বদলায় না;
  * নির্ভরতা না মিললে (যেমন বিলের আগে বাতিল) `deferred`-এ থাকে, পরের দফায় আবার দিতে হবে।
