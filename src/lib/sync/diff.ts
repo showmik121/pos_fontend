@@ -1,5 +1,5 @@
 import type { Batch, Db, LedgerEntry, Sale } from "../store/types"
-import { batchRemovedEvent, customerEvent, dueEvent, expenseCategoryEvent, expenseEvent, noteEvent, productEvent, saleEvent, settingsEvent, stockInEvent, voidEvent, type SyncEvent } from "./events"
+import { batchRemovedEvent, customerEvent, dealerEntryEvent, dealerEvent, dueEvent, expenseCategoryEvent, expenseEvent, noteEvent, productEvent, saleEvent, settingsEvent, stockInEvent, voidEvent, type SyncEvent } from "./events"
 import { withClock } from "./replay"
 
 const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b)
@@ -45,6 +45,16 @@ export function eventsFromChange(before: Db, after: Db, newId: () => string, now
     for (const x of after.expenses ?? []) {
       const prev = (before.expenses ?? []).find((y) => y.id === x.id)
       if (!prev || !same(prev, x)) clock(`exp:${x.id}`, expenseEvent(newId(), x, at))
+    }
+  if (after.dealers !== before.dealers)
+    for (const d of after.dealers ?? []) {
+      const prev = (before.dealers ?? []).find((x) => x.id === d.id)
+      if (!prev || !same(prev, d)) clock(`dealer:${d.id}`, dealerEvent(newId(), d, at))
+    }
+  if (after.dealerEntries !== before.dealerEntries)
+    for (const x of after.dealerEntries ?? []) {
+      const prev = (before.dealerEntries ?? []).find((y) => y.id === x.id)
+      if (!prev || !same(prev, x)) clock(`dealerentry:${x.id}`, dealerEntryEvent(newId(), x, at))
     }
   if (!same(before.settings, after.settings)) clock("settings", settingsEvent(newId(), after.settings, at))
 

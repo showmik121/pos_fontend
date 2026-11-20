@@ -1,4 +1,4 @@
-import type { Batch, Customer, Db, Expense, ExpenseCategory, LedgerEntry, Note, Product, RemovedBatch, Sale } from "../store/types"
+import type { Batch, Customer, Db, Dealer, DealerEntry, Expense, ExpenseCategory, LedgerEntry, Note, Product, RemovedBatch, Sale } from "../store/types"
 
 /** সার্ভারের ইভেন্ট চুক্তি: id (UUID), kind, at (ISO), payload (JSON অবজেক্ট) */
 export interface SyncEvent {
@@ -20,6 +20,8 @@ export const EVENT_KINDS = {
   note: "note_upserted",
   expenseCategory: "expense_category_upserted",
   expense: "expense_upserted",
+  dealer: "dealer_upserted",
+  dealerEntry: "dealer_entry_upserted",
 } as const
 
 const make = (id: string, kind: string, at: Date | string, payload: Record<string, unknown>): SyncEvent => ({
@@ -77,3 +79,9 @@ export const expenseCategoryEvent = (id: string, category: ExpenseCategory, at: 
 
 /** খরচ তৈরি/বদল/মোছা; শেষ-বদল জেতে */
 export const expenseEvent = (id: string, expense: Expense, at: Date | string) => make(id, EVENT_KINDS.expense, at, { expense })
+
+/** ডিলার তৈরি/বদল/মোছা; শেষ-বদল জেতে */
+export const dealerEvent = (id: string, dealer: Dealer, at: Date | string) => make(id, EVENT_KINDS.dealer, at, { dealer })
+
+/** ডিলারের খাতার লেনদেন তৈরি/বদল/মোছা; শেষ-বদল জেতে (প্রতিটি লেনদেন আলাদা রেকর্ড, তাই দুই ফোনের এন্ট্রি যোগ হয়) */
+export const dealerEntryEvent = (id: string, entry: DealerEntry, at: Date | string) => make(id, EVENT_KINDS.dealerEntry, at, { entry })
