@@ -20,13 +20,13 @@ for (const lang of ["en", "bn"] as const) {
       await page.locator("form, body").first().getByRole("button", { name: lang === "en" ? "Save product" : "পণ্য সেভ করুন" }).click()
       await expect(page).toHaveURL(/\/products\/detail\/\?id=/)
       await page.waitForTimeout(500)
-      expect(await page.getByRole("alert").count(), `বিবরণ পাতা ক্র্যাশ: ${errors.join(" | ")}`).toBe(0)
+      expect(await page.locator("[role=alert]:not(#__next-route-announcer__)").count(), `বিবরণ পাতা ক্র্যাশ: ${errors.join(" | ")}`).toBe(0)
       expect(errors).toEqual([])
 
       await page.getByRole("link", { name: lang === "en" ? "Edit" : "সম্পাদনা" }).click()
       await expect(page).toHaveURL(/\/products\/edit\/\?id=/)
       await page.waitForTimeout(500)
-      expect(await page.getByRole("alert").count(), `সম্পাদনা পাতা ক্র্যাশ: ${errors.join(" | ")}`).toBe(0)
+      expect(await page.locator("[role=alert]:not(#__next-route-announcer__)").count(), `সম্পাদনা পাতা ক্র্যাশ: ${errors.join(" | ")}`).toBe(0)
       expect(errors).toEqual([])
     })
   }
