@@ -1,7 +1,9 @@
 import { daysBetween, localDateIso } from "../domain/dates"
 import { formatTaka } from "../domain/money"
 import { toAsciiDigits } from "../format/bn"
+import { formatDateTimeBn } from "../format/datetime"
 import type { DueRow } from "./selectors"
+import type { LedgerEntry } from "./types"
 
 /** এত দিন কোনো লেনদেন না থাকলে বাকিকে "পুরনো" ধরা হয় */
 export const OLD_DUE_DAYS = 30
@@ -82,4 +84,22 @@ export function duePromises(rows: readonly DueRow[], today: string): PromiseRow[
     out.push({ row, date: p.date, note: p.note, lateDays: daysBetween(p.date, today) })
   }
   return out.sort((a, b) => b.lateDays - a.lateDays)
+}
+
+/** একটি জমার পরের বাকি (ওই এন্ট্রি পর্যন্ত সব লেনদেন ধরে) */
+export function balanceAfter(ledger: readonly LedgerEntry[], customerId: string, entryId: string): number {
+  const mine = ledger.filter((e) => e.customerId === customerId).sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0))
+  let sum = 0
+  for (const e of mine) {
+    sum += e.kind === "payment" || e.kind === "void" ? -e.amount : e.amount
+    if (e.id === entryId) break
+  }
+  return sum
+}
+
+/** জমার রসিদের লেখা (শেয়ার/কপির জন্য) */
+export function depositReceiptText(opts: { storeName: string; customerName: string; at: string; amount: number; balanceAfter: number }): string {
+  const out = [opts.storeName.trim() || "জমার রসিদ", "টাকা জমার রসিদ", `${opts.customerName} · ${formatDateTimeBn(opts.at)}`, "", `জমা: ${formatTaka(opts.amount)}`]
+  out.push(opts.balanceAfter > 0 ? `এখনো বাকি: ${formatTaka(opts.balanceAfter)}` : "বাকি শোধ হয়েছে", "", "ধন্যবাদ!")
+  return out.join("\n")
 }
