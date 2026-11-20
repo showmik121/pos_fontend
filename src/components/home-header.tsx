@@ -7,7 +7,7 @@ interface HomeHeaderProps {
   greeting: string
 }
 
-/** হোমের ছবিওয়ালা হেডার: শুভেচ্ছা, দোকানের নাম, প্রোফাইল (সেটিংসে যায়, ব্যাকগ্রাউন্ড স্বচ্ছ); নিচে বাংলার বাজারের দৃশ্য */
+/** হোমের ছবিওয়ালা হেডার: শুভেচ্ছা, দোকানের নাম, প্রোফাইল বোতাম (সেটিংসে যায়); নিচে বাংলার বাজারের দৃশ্য */
 export function HomeHeader({ storeName, greeting }: HomeHeaderProps) {
   return (
     <header className="home-hero no-print">
@@ -24,9 +24,9 @@ export function HomeHeader({ storeName, greeting }: HomeHeaderProps) {
         <Link
           href="/settings"
           aria-label={tr("প্রোফাইল ও সেটিংস")}
-          className="grid size-11 shrink-0 place-items-center rounded-full text-ink [filter:drop-shadow(0_0_3px_rgb(255_255_255/0.95))] active:bg-white/40"
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-white/70 text-ink shadow-sm active:bg-white"
         >
-          <Icon name="user" size={28} />
+          <Icon name="user" size={22} />
         </Link>
       </div>
       <div aria-hidden="true" className="home-hero-space" />
