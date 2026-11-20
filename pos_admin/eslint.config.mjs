@@ -1,0 +1,19 @@
+import { FlatCompat } from "@eslint/eslintrc"
+import { dirname } from "node:path"
+import { fileURLToPath } from "node:url"
+
+const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)) })
+
+const config = [
+  { ignores: [".next/**", "out/**", "node_modules/**", "playwright-report/**", "test-results/**", "next-env.d.ts"] },
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_", ignoreRestSiblings: true }],
+      // operators must never see raw JSON or stack traces; keep debug output out of the bundle
+      "no-console": "error",
+    },
+  },
+]
+
+export default config

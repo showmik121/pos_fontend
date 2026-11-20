@@ -1,0 +1,45 @@
+name: admin-ci
+# CI for the platform admin panel that lives in pos_admin/ (separate package, its own lockfile).
+on:
+  push:
+    branches: [main]
+    paths: ["pos_admin/**", ".github/workflows/admin-ci.yml"]
+  pull_request:
+    paths: ["pos_admin/**", ".github/workflows/admin-ci.yml"]
+
+defaults:
+  run:
+    working-directory: pos_admin
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: pos_admin/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_ADMIN_API_URL: https://api.example.invalid/api
+          ADMIN_API_ORIGIN: https://api.example.invalid
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  # The contract copy must match the backend's: compare contract.lock with the one on the backend repo's main.
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: showmik121/pos_backend
+          path: backend
+      - name: contract.lock matches the backend
+        run: diff -q contract.lock ../backend/contract.lock
