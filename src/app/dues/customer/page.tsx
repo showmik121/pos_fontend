@@ -18,6 +18,8 @@ import { formatBillNo } from "@/lib/domain/bill"
 import { receiveDue, setCartCustomer, setCreditLimit, setPromise } from "@/lib/store/actions"
 import { addDays, formatDayMonthBn, todayIso } from "@/lib/domain/dates"
 import { customerBalance } from "@/lib/store/selectors"
+import { buildStatement, ledgerTitle } from "@/lib/store/statement"
+import { drawStatementPng } from "@/lib/share/statement-image"
 import { balanceAfter, depositReceiptText, reminderText, smsHref } from "@/lib/store/dues-view"
 
 function CustomerDues() {
@@ -28,6 +30,7 @@ function CustomerDues() {
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [statementNote, setStatementNote] = useState<string | null>(null)
   const [limitOpen, setLimitOpen] = useState(false)
   const [limitInput, setLimitInput] = useState("")
   const [limitError, setLimitError] = useState<string | null>(null)
@@ -126,6 +129,28 @@ function CustomerDues() {
     }
   }
 
+  const shareStatement = async () => {
+    setStatementNote(null)
+    const blob = await drawStatementPng({ storeName, customerName: customer.name, statement: buildStatement(db.ledger, customer.id), dateText: formatDayMonthBn(todayIso()) })
+    if (!blob) return setStatementNote("ছবি বানানো গেল না — আবার চেষ্টা করুন।")
+    const file = new File([blob], `khata-${customer.name}.png`, { type: "image/png" })
+    try {
+      if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: `${customer.name}-এর খাতা` })
+        return
+      }
+    } catch {
+      return // শেয়ার বাতিল
+    }
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = file.name
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    setStatementNote("খাতার ছবি নামানো হয়েছে — গ্যালারি থেকে পাঠান।")
+  }
+
   const sellOnCredit = () => {
     update((d) => ({ ...d, draft: setCartCustomer(d.draft, customer.id) }))
     router.push("/sell")
@@ -193,7 +218,18 @@ function CustomerDues() {
         </div>
       ) : null}
 
-      <SectionTitle>খাতা</SectionTitle>
+      <SectionTitle
+        right={
+          entries.length > 0 ? (
+            <Button variant="ghost" className="min-h-9 px-2 text-sm" onClick={shareStatement}>
+              ছবি করে পাঠান
+            </Button>
+          ) : undefined
+        }
+      >
+        খাতা
+      </SectionTitle>
+      {statementNote ? <Banner tone="info">{statementNote}</Banner> : null}
       {entries.length === 0 ? (
         <Card className="px-4 py-5 text-center text-muted">কোনো লেনদেন নেই।</Card>
       ) : (
@@ -202,7 +238,7 @@ function CustomerDues() {
             <Row
               key={e.id}
               onClick={e.kind === "payment" ? () => { setShareNote(null); setReceiptId(e.id) } : undefined}
-              title={e.kind === "payment" ? "জমা" : e.kind === "opening" ? "আগের বাকি" : e.kind === "void" ? `বিল #${e.saleNo != null ? formatBillNo({ no: e.saleNo, prefix: e.salePrefix }) : ""} বাতিল` : `বিল #${e.saleNo != null ? formatBillNo({ no: e.saleNo, prefix: e.salePrefix }) : ""}`}
+              title={ledgerTitle(e)}
               subtitle={`${formatDateTimeBn(e.at)}${e.by ? ` · ${e.by}` : ""}`}
               right={<span className={e.kind === "payment" || e.kind === "void" ? "font-semibold text-brand-dark" : "font-semibold"}>{e.kind === "payment" || e.kind === "void" ? `−${formatTaka(e.amount)}` : `+${formatTaka(e.amount)}`}</span>}
             />
