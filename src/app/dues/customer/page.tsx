@@ -18,16 +18,18 @@ import { formatBillNo } from "@/lib/domain/bill"
 import { receiveDue, setCartCustomer, setPromise } from "@/lib/store/actions"
 import { addDays, formatDayMonthBn, todayIso } from "@/lib/domain/dates"
 import { customerBalance } from "@/lib/store/selectors"
-import { reminderText, smsHref } from "@/lib/store/dues-view"
+import { balanceAfter, depositReceiptText, reminderText, smsHref } from "@/lib/store/dues-view"
 
 function CustomerDues() {
   const id = useSearchParams().get("id")
   const router = useRouter()
-  const { db, update } = useDb()
+  const { db, update, run } = useDb()
   const { actor, storeName } = useSessionInfo()
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [receiptId, setReceiptId] = useState<string | null>(null)
+  const [shareNote, setShareNote] = useState<string | null>(null)
   const [promiseOpen, setPromiseOpen] = useState(false)
   const [promiseDate, setPromiseDate] = useState("")
   const [promiseNote, setPromiseNote] = useState("")
@@ -50,9 +52,14 @@ function CustomerDues() {
     const poisha = parseTaka(amount)
     if (poisha == null || poisha <= 0) return setError("জমার পরিমাণ সঠিকভাবে দিন")
     try {
-      update((d) => receiveDue(d, customer.id, poisha, actor, new Date()))
+      const entryId = run((d) => {
+        const next = receiveDue(d, customer.id, poisha, actor, new Date())
+        return { db: next, value: next.ledger.find((e) => !d.ledger.some((x) => x.id === e.id))?.id ?? null }
+      })
       setOpen(false)
       setAmount("")
+      setShareNote(null)
+      setReceiptId(entryId)
     } catch (err) {
       setError(domainMessage(err))
     }
@@ -73,6 +80,24 @@ function CustomerDues() {
       setPromiseOpen(false)
     } catch (err) {
       setPromiseError(domainMessage(err))
+    }
+  }
+
+  const receiptEntry = receiptId ? db.ledger.find((e) => e.id === receiptId && e.kind === "payment") : undefined
+  const receiptText = receiptEntry
+    ? depositReceiptText({ storeName, customerName: customer.name, at: receiptEntry.at, amount: receiptEntry.amount, balanceAfter: balanceAfter(db.ledger, customer.id, receiptEntry.id) })
+    : ""
+
+  const shareReceipt = async () => {
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ text: receiptText })
+        return
+      }
+      await navigator.clipboard.writeText(receiptText)
+      setShareNote("রসিদের লেখা কপি হয়েছে — মেসেজে পেস্ট করে পাঠান।")
+    } catch {
+      // শেয়ার বাতিল করলে কিছু করার নেই
     }
   }
 
@@ -134,6 +159,7 @@ function CustomerDues() {
           {entries.map((e) => (
             <Row
               key={e.id}
+              onClick={e.kind === "payment" ? () => { setShareNote(null); setReceiptId(e.id) } : undefined}
               title={e.kind === "payment" ? "জমা" : e.kind === "opening" ? "আগের বাকি" : e.kind === "void" ? `বিল #${e.saleNo != null ? formatBillNo({ no: e.saleNo, prefix: e.salePrefix }) : ""} বাতিল` : `বিল #${e.saleNo != null ? formatBillNo({ no: e.saleNo, prefix: e.salePrefix }) : ""}`}
               subtitle={`${formatDateTimeBn(e.at)}${e.by ? ` · ${e.by}` : ""}`}
               right={<span className={e.kind === "payment" || e.kind === "void" ? "font-semibold text-brand-dark" : "font-semibold"}>{e.kind === "payment" || e.kind === "void" ? `−${formatTaka(e.amount)}` : `+${formatTaka(e.amount)}`}</span>}
@@ -141,6 +167,18 @@ function CustomerDues() {
           ))}
         </RowList>
       )}
+
+      <Sheet open={receiptEntry !== undefined} onClose={() => setReceiptId(null)} label="জমার রসিদ">
+        <h2 className="text-lg font-bold">জমা নেওয়া হয়েছে</h2>
+        <pre className="whitespace-pre-wrap rounded-xl bg-canvas px-3 py-3 font-[inherit] text-[15px] leading-relaxed">{receiptText}</pre>
+        {shareNote ? <Banner tone="info">{shareNote}</Banner> : null}
+        <Button full onClick={shareReceipt}>
+          রসিদ পাঠান
+        </Button>
+        <Button full variant="secondary" onClick={() => setReceiptId(null)}>
+          বন্ধ করুন
+        </Button>
+      </Sheet>
 
       <Sheet open={promiseOpen} onClose={() => setPromiseOpen(false)} label="আদায়ের তারিখ">
         <h2 className="text-lg font-bold">কবে দেবে?</h2>

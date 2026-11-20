@@ -13,7 +13,7 @@ import { formatTaka } from "@/lib/domain/money"
 import { formatTimeBn, greetingBn } from "@/lib/format/datetime"
 import { formatBillNo } from "@/lib/domain/bill"
 import { toBanglaDigits } from "@/lib/format/bn"
-import { duePromises } from "@/lib/store/dues-view"
+import { duePromises, reminderText, smsHref } from "@/lib/store/dues-view"
 import { daySummary, dueRows, expiringSoonCount, lowStockProducts, totalDue } from "@/lib/store/selectors"
 
 /** লগইন না থাকলে ল্যান্ডিং, থাকলে হোম */
@@ -36,6 +36,7 @@ function Dashboard() {
   const dueCount = dueRows(db).length
   const recent = [...db.sales].reverse().slice(0, 5)
   const promises = duePromises(dueRows(db), today)
+  const shopName = state.status === "authed" ? (state.store?.name ?? "") : ""
   const alerts = low > 0 || soon > 0 || dueCount > 0
 
   return (
@@ -65,17 +66,31 @@ function Dashboard() {
         <>
           <SectionTitle>আজ আদায়ের কথা</SectionTitle>
           <RowList>
-            {promises.map((p) => (
-              <Row
-                key={p.row.customer.id}
-                href={`/dues/customer?id=${p.row.customer.id}`}
-                dot={p.lateDays > 0 ? "danger" : "amber"}
-                title={p.row.customer.name}
-                subtitle={`${p.lateDays > 0 ? `${toBanglaDigits(p.lateDays)} দিন পেরিয়েছে` : "আজ দেওয়ার কথা"}${p.note ? ` · ${p.note}` : ""}`}
-                right={<span className="font-semibold text-warn">{formatTaka(p.row.balance)}</span>}
-                chevron
-              />
-            ))}
+            {promises.map((p) => {
+              const c = p.row.customer
+              return (
+                <div key={c.id} className="flex items-center">
+                  <div className="min-w-0 flex-1">
+                    <Row
+                      href={`/dues/customer?id=${c.id}`}
+                      dot={p.lateDays > 0 ? "danger" : "amber"}
+                      title={c.name}
+                      subtitle={`${p.lateDays > 0 ? `${toBanglaDigits(p.lateDays)} দিন পেরিয়েছে` : "আজ দেওয়ার কথা"}${p.note ? ` · ${p.note}` : ""}`}
+                      right={<span className="font-semibold text-warn">{formatTaka(p.row.balance)}</span>}
+                    />
+                  </div>
+                  {c.phone ? (
+                    <a
+                      href={smsHref(c.phone, reminderText({ customerName: c.name, balance: p.row.balance, storeName: shopName }))}
+                      aria-label={`${c.name}-কে এসএমএস পাঠান`}
+                      className="mr-3 flex min-h-10 flex-none items-center rounded-xl border border-line-strong bg-white px-3 text-sm font-medium active:bg-canvas"
+                    >
+                      এসএমএস
+                    </a>
+                  ) : null}
+                </div>
+              )
+            })}
           </RowList>
         </>
       ) : null}

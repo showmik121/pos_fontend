@@ -52,3 +52,20 @@ describe("আদায়ের প্রতিশ্রুতি", () => {
     expect(out.map((p) => [p.row.customer.id, p.lateDays])).toEqual([["b", 3], ["a", 0]])
   })
 })
+
+import { balanceAfter, depositReceiptText } from "../src/lib/store/dues-view"
+import type { LedgerEntry } from "../src/lib/store/types"
+
+describe("জমার রসিদ", () => {
+  const e = (id: string, kind: LedgerEntry["kind"], amount: number, at: string): LedgerEntry => ({ id, customerId: "c", at, kind, amount, saleNo: null, by: "" })
+  const ledger = [e("1", "sale", 100000, "2026-11-01T10:00:00Z"), e("2", "payment", 30000, "2026-11-05T10:00:00Z"), e("3", "payment", 70000, "2026-11-10T10:00:00Z")]
+  it("জমার পরের বাকি ওই এন্ট্রি পর্যন্ত ধরে", () => {
+    expect(balanceAfter(ledger, "c", "2")).toBe(70000)
+    expect(balanceAfter(ledger, "c", "3")).toBe(0)
+  })
+  it("আংশিক জমায় বাকি লেখে, পুরো শোধে শোধ লেখে", () => {
+    const base = { storeName: "বিপণি", customerName: "রহিম", at: "2026-11-05T10:00:00Z", amount: 30000 }
+    expect(depositReceiptText({ ...base, balanceAfter: 70000 })).toContain("এখনো বাকি")
+    expect(depositReceiptText({ ...base, balanceAfter: 0 })).toContain("বাকি শোধ হয়েছে")
+  })
+})
