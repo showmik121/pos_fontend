@@ -1,10 +1,11 @@
 "use client"
 
-import { AuthShell } from "@/components/auth-shell"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import { useAuth } from "@/components/auth-provider"
+import { Logo } from "@/components/logo"
+import { BagIcon, LockIcon, PersonIcon, PhoneIcon, PillIcon, StoreIcon } from "@/components/signup-icons"
 import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -16,12 +17,28 @@ import { cn } from "@/lib/cn"
 import { normalizeBdPhone } from "@/lib/format/phone"
 
 // নতুন দোকানে দুটি বিকল্প। "রিটেইল" সংরক্ষিত হয় `other` হিসেবে; পুরনো `cosmetics` দোকানও সেটিংসে "রিটেইল" দেখায়।
-const KINDS: Array<{ value: StoreKind; label: string }> = [
-  { value: "pharmacy", label: "ফার্মেসি" },
-  { value: "other", label: "রিটেইল" },
+const KINDS: Array<{ value: StoreKind; label: string; hint: string; icon: ReactNode }> = [
+  { value: "pharmacy", label: "ফার্মেসি", hint: "ওষুধ — ব্যাচ ও মেয়াদের হিসাবসহ", icon: <PillIcon /> },
+  { value: "other", label: "রিটেইল", hint: "কসমেটিক্স, কাপড়, মুদি ইত্যাদি", icon: <BagIcon /> },
 ]
 
 type Errors = Partial<Record<"storeName" | "ownerName" | "phone" | "password", string>>
+
+/** ক্রমিক সংখ্যাসহ ফর্মের একটি ধাপ */
+function Step({ n, title, children }: { n: string; title: string; children: ReactNode }) {
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center gap-3">
+        <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-full bg-gold text-[15px] font-extrabold text-ink">
+          {n}
+        </span>
+        <h2 className="text-[17px] font-bold text-ink">{title}</h2>
+        <span aria-hidden="true" className="h-px flex-1 bg-line" />
+      </div>
+      {children}
+    </section>
+  )
+}
 
 export default function SignupPage() {
   const { state, signIn } = useAuth()
@@ -64,62 +81,80 @@ export default function SignupPage() {
   }
 
   return (
-    <AuthShell
-      title="দোকান খুলুন"
-      subtitle="দোকানের তথ্য দিয়ে আপনার অ্যাকাউন্ট তৈরি করুন।"
-      footer={
-        <>
+    <main className="relative flex min-h-dvh flex-col overflow-x-clip bg-canvas">
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-gold to-canvas" />
+      <div className="relative mx-auto w-full max-w-md flex-1 px-5 pb-6 pt-6">
+        <Link href="/login" className="mb-5 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white/70 px-3.5 text-sm font-medium text-ink2 active:bg-white">
+          <span aria-hidden="true">←</span> লগইনে ফিরুন
+        </Link>
+        <Logo size={44} />
+        <h1 className="mt-5 text-[26px] font-extrabold leading-tight tracking-tight text-ink">আপনার দোকান খুলুন</h1>
+        <p className="mt-1 text-[15px] text-ink2">মিনিটখানেকেই তৈরি — নাম, ধরন আর আপনার মোবাইল নম্বর হলেই চলবে।</p>
+
+        <form onSubmit={onSubmit} noValidate className="card-surface mt-5 space-y-7 rounded-3xl border border-line bg-white p-5">
+          <Step n="১" title="দোকানের তথ্য">
+            <Field id="storeName" label="দোকানের নাম" leading={<StoreIcon />} autoComplete="organization" hint="রসিদে ও অ্যাপে এই নাম দেখাবে" value={storeName} onChange={(e) => setStoreName(e.target.value)} error={errors.storeName} />
+
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">দোকানের ধরন</legend>
+              <div role="radiogroup" aria-label="দোকানের ধরন" className="grid grid-cols-2 gap-3">
+                {KINDS.map((k) => {
+                  const on = storeKind === k.value
+                  return (
+                    <button
+                      key={k.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      aria-label={k.label}
+                      onClick={() => setStoreKind(k.value)}
+                      className={cn("flex min-h-[132px] flex-col items-start gap-2 rounded-2xl border-[1.5px] p-3.5 text-left transition-colors", on ? "border-brand bg-brand-soft" : "border-line bg-white active:bg-canvas")}
+                    >
+                      <span className={cn("grid size-11 place-items-center rounded-xl", on ? "bg-brand text-white" : "bg-chip text-brand-dark")}>{k.icon}</span>
+                      <span className="text-[16px] font-bold text-ink">{k.label}</span>
+                      <span className="text-[13px] leading-snug text-muted">{k.hint}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
+          </Step>
+
+          <Step n="২" title="আপনার তথ্য">
+            <Field id="ownerName" label="আপনার নাম" leading={<PersonIcon />} autoComplete="name" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} error={errors.ownerName} />
+            <Field
+              id="phone"
+              label="মোবাইল নম্বর"
+              leading={<PhoneIcon />}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="০১৭১২৩৪৫৬৭৮"
+              hint="এটাই আপনার লগইন আইডি"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              error={errors.phone}
+            />
+            <PasswordField id="password" label="পাসওয়ার্ড" leading={<LockIcon />} autoComplete="new-password" hint="কমপক্ষে ৮ অক্ষর" value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} />
+          </Step>
+
+          {error ? <Banner tone="danger">{error}</Banner> : null}
+          <div className="space-y-2.5">
+            <Button type="submit" full loading={busy} className="min-h-14 text-base">
+              দোকান খুলুন
+            </Button>
+            <p className="text-center text-[13px] text-muted">সব ঘর পূরণ করা লাগবে। দোকানের নাম পরে সেটিংসে বদলানো যাবে।</p>
+          </div>
+        </form>
+
+        <p className="mt-6 text-center text-sm text-muted">
           আগেই অ্যাকাউন্ট আছে?{" "}
           <Link href="/login" className="font-semibold text-brand">
             লগইন করুন
           </Link>
-        </>
-      }
-    >
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
-        <Field id="storeName" label="দোকানের নাম" autoComplete="organization" value={storeName} onChange={(e) => setStoreName(e.target.value)} error={errors.storeName} />
-
-        <fieldset className="space-y-1.5">
-          <legend className="text-sm font-medium">দোকানের ধরন</legend>
-          <div role="radiogroup" aria-label="দোকানের ধরন" className="grid grid-cols-2 gap-2">
-            {KINDS.map((k) => (
-              <button
-                key={k.value}
-                type="button"
-                role="radio"
-                aria-checked={storeKind === k.value}
-                onClick={() => setStoreKind(k.value)}
-                className={cn(
-                  "min-h-12 rounded-xl border text-[15px] font-medium",
-                  storeKind === k.value ? "border-brand bg-brand-soft text-brand-dark" : "border-line bg-white text-ink",
-                )}
-              >
-                {k.label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-
-        <Field id="ownerName" label="আপনার নাম" autoComplete="name" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} error={errors.ownerName} />
-        <Field
-          id="phone"
-          label="মোবাইল নম্বর"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          placeholder="০১৭১২৩৪৫৬৭৮"
-          hint="এটাই আপনার লগইন আইডি"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          error={errors.phone}
-        />
-        <PasswordField id="password" label="পাসওয়ার্ড" autoComplete="new-password" hint="কমপক্ষে ৮ অক্ষর" value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} />
-
-        {error ? <Banner tone="danger">{error}</Banner> : null}
-        <Button type="submit" full loading={busy}>
-          দোকান খুলুন
-        </Button>
-      </form>
-    </AuthShell>
+        </p>
+      </div>
+      <div className="app-skyline relative mx-auto max-w-md opacity-90" aria-hidden="true" />
+    </main>
   )
 }

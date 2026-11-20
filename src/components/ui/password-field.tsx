@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type InputHTMLAttributes } from "react"
+import { useState, type InputHTMLAttributes, type ReactNode } from "react"
 import { Field } from "./field"
 
 interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
@@ -8,6 +8,7 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
   label: string
   hint?: string
   error?: string | null
+  leading?: ReactNode
 }
 
 export function PasswordField(props: Props) {
