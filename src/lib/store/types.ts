@@ -172,6 +172,34 @@ export interface Expense {
   deleted?: boolean
 }
 
+/** ডিলার/সাপ্লায়ার, যার কাছ থেকে দোকানি মাল কেনে */
+export interface Dealer {
+  id: string
+  name: string
+  /** ঐচ্ছিক; ফাঁকা হলে "" */
+  phone: string
+  createdAt: string
+  /** মুছলে true (সিংকে শেষ-বদল জেতার জন্য আসল মোছা হয় না) */
+  deleted?: boolean
+}
+
+/** ডিলারের খাতার একটি লেনদেন: purchase = বাকিতে মাল নেওয়া (পাওনা বাড়ে), payment = টাকা দেওয়া (পাওনা কমে); amount পয়সায় */
+export interface DealerEntry {
+  id: string
+  dealerId: string
+  kind: "purchase" | "payment"
+  amount: number
+  /** লেনদেনের তারিখ YYYY-MM-DD */
+  date: string
+  /** শুধু purchase-এ: কবে টাকা দিতে হবে (ঐচ্ছিক) */
+  dueDate?: string
+  note: string
+  /** এন্ট্রি করার সময় */
+  at: string
+  by: string
+  deleted?: boolean
+}
+
 export interface Db {
   v: 1
   products: Product[]
@@ -189,6 +217,9 @@ export interface Db {
   /** খরচের ক্যাটেগরি ও খরচ; পুরনো ডেটায় নেই (ক্যাটেগরি undefined = এখনো ডিফল্ট বসেনি) */
   expenseCategories?: ExpenseCategory[]
   expenses?: Expense[]
+  /** ডিলারের পাওনা খাতা; পুরনো ডেটায় নেই */
+  dealers?: Dealer[]
+  dealerEntries?: DealerEntry[]
   /** সিংক-মেটা: শেষ-বদল-জেতে ঘড়ি। কী = এন্টিটি-গ্রুপ, মান = "<at>|<ইভেন্ট id>"; পুরনো ডেটায় নেই */
   sync?: { clocks: Record<string, string> }
 }

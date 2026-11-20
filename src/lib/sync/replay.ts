@@ -1,4 +1,4 @@
-import type { Batch, Customer, Db, Expense, ExpenseCategory, LedgerEntry, Note, Product, RemovedBatch, Sale } from "../store/types"
+import type { Batch, Customer, Db, Dealer, DealerEntry, Expense, ExpenseCategory, LedgerEntry, Note, Product, RemovedBatch, Sale } from "../store/types"
 import { EVENT_KINDS, type SyncEvent } from "./events"
 import { accepts, customerSchema, ledgerEntrySchema, productSchema, removedBatchSchema, saleSchema, settingsSchema } from "./schemas"
 
@@ -89,6 +89,24 @@ function applyExpense(db: Db, e: SyncEvent): Outcome {
   const key = `exp:${expense.id}`
   if (!isNewer(db, key, e)) return { db }
   return { db: withClock({ ...db, expenses: upsertById(db.expenses ?? [], expense) }, key, e) }
+}
+
+function applyDealer(db: Db, e: SyncEvent): Outcome {
+  const dealer = e.payload.dealer as Dealer | undefined
+  if (!isObj(dealer) || typeof dealer.id !== "string" || typeof dealer.name !== "string") return "ignore"
+  const key = `dealer:${dealer.id}`
+  if (!isNewer(db, key, e)) return { db }
+  return { db: withClock({ ...db, dealers: upsertById(db.dealers ?? [], dealer) }, key, e) }
+}
+
+function applyDealerEntry(db: Db, e: SyncEvent): Outcome {
+  const entry = e.payload.entry as DealerEntry | undefined
+  if (!isObj(entry) || typeof entry.id !== "string" || typeof entry.dealerId !== "string") return "ignore"
+  if (entry.kind !== "purchase" && entry.kind !== "payment") return "ignore"
+  if (!Number.isInteger(entry.amount) || entry.amount <= 0) return "ignore"
+  const key = `dealerentry:${entry.id}`
+  if (!isNewer(db, key, e)) return { db }
+  return { db: withClock({ ...db, dealerEntries: upsertById(db.dealerEntries ?? [], entry) }, key, e) }
 }
 
 function applySettings(db: Db, e: SyncEvent): Outcome {
@@ -198,6 +216,8 @@ const APPLIERS: Record<string, (db: Db, e: SyncEvent) => Outcome> = {
   [EVENT_KINDS.note]: applyNote,
   [EVENT_KINDS.expenseCategory]: applyExpenseCategory,
   [EVENT_KINDS.expense]: applyExpense,
+  [EVENT_KINDS.dealer]: applyDealer,
+  [EVENT_KINDS.dealerEntry]: applyDealerEntry,
 }
 
 /**
