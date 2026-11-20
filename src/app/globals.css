@@ -128,11 +128,18 @@ textarea {
 
 /* হোমের হেডার: ওপরে নরম আমের আভা, নিচে বাজারের দৃশ্য (রং ওপরের স্ট্যাটাস-বার ও ক্যানভাসের সাথে মেলানো) */
 .home-hero {
+  --hero-art: url("/art/home-hero.webp");
   position: relative;
   overflow: hidden;
   background: linear-gradient(180deg, #e8dccb 0, #e8dccb 70px, var(--color-canvas) 100%);
 }
 /* জলরঙের শহুরে ছবি (2:1); ওপরে হেডারের রঙে মিশে যায়, নিচে ক্যানভাসের রঙে */
+.home-hero[data-kind="cosmetics"] {
+  --hero-art: url("/art/home-hero-cosmetics.webp");
+}
+.home-hero[data-kind="retail"] {
+  --hero-art: url("/art/home-hero-retail.webp");
+}
 .home-hero::after {
   content: "";
   position: absolute;
@@ -140,7 +147,7 @@ textarea {
   aspect-ratio: 2 / 1;
   background:
     linear-gradient(180deg, transparent 90%, var(--color-canvas) 100%),
-    url("/art/home-hero.webp") center bottom / 100% 100% no-repeat;
+    var(--hero-art) center bottom / 100% 100% no-repeat;
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16%);
   mask-image: linear-gradient(180deg, transparent 0, #000 16%);
   pointer-events: none;
