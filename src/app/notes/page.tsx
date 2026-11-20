@@ -97,7 +97,7 @@ export default function NotesPage() {
           ))}
         </Card>
       )}
-      <p className="text-center text-sm text-muted">টিক দিলে "আনা হয়েছে" ধরা হয়, তালিকার নিচে চলে যায়।</p>
+      <p className="text-center text-sm text-muted">টিক দিলে আনা হয়েছে ধরা হয়, তালিকার নিচে চলে যায়।</p>
     </AppShell>
   )
 }
