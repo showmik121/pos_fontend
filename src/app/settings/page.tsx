@@ -18,7 +18,7 @@ import { STORE_NAME_MAX, cleanStoreName } from "@/lib/store-name"
 import { withDemoData } from "@/lib/store/seed"
 import { wipeStoreData } from "@/lib/store/wipe"
 
-const KIND_LABEL = { pharmacy: "ফার্মেসি", cosmetics: "কসমেটিক্স", other: "রিটেইল" } as const
+const KIND_LABEL = { pharmacy: "ফার্মেসি", cosmetics: "রিটেইল", other: "রিটেইল" } as const
 
 export default function SettingsPage() {
   const { state, signOut, setStore } = useAuth()

@@ -15,7 +15,7 @@ import type { StoreKind } from "@/lib/api/schemas"
 import { cn } from "@/lib/cn"
 import { normalizeBdPhone } from "@/lib/format/phone"
 
-// নতুন দোকানে দুটি বিকল্প। "রিটেইল" সংরক্ষিত হয় `other` হিসেবে; পুরনো `cosmetics` দোকান সেটিংসে আগের নামেই দেখায়।
+// নতুন দোকানে দুটি বিকল্প। "রিটেইল" সংরক্ষিত হয় `other` হিসেবে; পুরনো `cosmetics` দোকানও সেটিংসে "রিটেইল" দেখায়।
 const KINDS: Array<{ value: StoreKind; label: string }> = [
   { value: "pharmacy", label: "ফার্মেসি" },
   { value: "other", label: "রিটেইল" },
