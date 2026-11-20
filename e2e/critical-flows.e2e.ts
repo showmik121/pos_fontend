@@ -61,7 +61,7 @@ test("অফলাইনে বিক্রি: বিল হয়, বদল �
   await expect(page.getByText("A-১০০১").first()).toBeVisible() // ডিভাইস কোড অফলাইনেও আছে (আগে নিবন্ধিত)
 
   // বদল জমে আছে, সার্ভারে কিছু যায়নি, ডেটা ফোনে নিরাপদ
-  await page.goto("/settings/")
+  await page.goto("/settings/data/")
   await expect(page.getByText(/বদল সার্ভারে পাঠানো বাকি/)).toBeVisible({ timeout: 15_000 })
   expect(mock.count("sale_completed")).toBe(0)
   expect((await storedDb(page))?.sales).toHaveLength(1)
@@ -90,7 +90,7 @@ test("ব্যাকআপ → ফোনের ডেটা মোছা → �
   await seedStore(page, { role: "owner", kind: "cosmetics", db: sold.db })
 
   // ১) ব্যাকআপ নামানো ও ফাইল যাচাই
-  await page.goto("/settings/")
+  await page.goto("/settings/data/")
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "ব্যাকআপ ফাইল নামান" }).click()])
   const file = testInfo.outputPath("backup.json")
   await download.saveAs(file)
@@ -100,6 +100,7 @@ test("ব্যাকআপ → ফোনের ডেটা মোছা → �
   expect(backup.db.sales).toHaveLength(1)
   expect(backup.db.products).toHaveLength(1)
 
+  await page.goto("/settings/")
   // ২) লগআউট ও ফোনের ডেটা মোছা (ব্যাকআপ-নিশ্চিতকরণসহ)
   await page.getByRole("button", { name: "লগআউট", exact: true }).click()
   await page.getByRole("button", { name: "লগআউট ও এই ফোনের ডেটা মুছুন" }).click()
@@ -117,7 +118,7 @@ test("ব্যাকআপ → ফোনের ডেটা মোছা → �
   await expect(page.getByText("প্রথম পণ্য যোগ করুন").first()).toBeVisible()
 
   // ৪) ভুল ফাইল আটকায় (অন্য দোকানের; নষ্ট), ডেটা বদলায় না
-  await page.goto("/settings/")
+  await page.goto("/settings/data/")
   const otherStore = testInfo.outputPath("other-store.json")
   writeFileSync(otherStore, JSON.stringify({ ...backup, storeId: "99999999-9999-4999-8999-999999999999" }))
   await page.locator('input[type="file"]').setInputFiles(otherStore)
