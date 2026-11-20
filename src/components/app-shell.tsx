@@ -10,6 +10,7 @@ import { BottomNav } from "./bottom-nav"
 import { useDb } from "./db-provider"
 import { BackupReminder } from "./backup-reminder"
 import { InstallBanner } from "./install-banner"
+import { TenantBanner } from "./tenant-notice"
 import { Icon } from "./ui/icons"
 
 interface AppShellProps {
@@ -74,6 +75,7 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
           {action}
         </header>
       )}
+      <TenantBanner />
       {saveFailed ? (
         <div role="alert" className="bg-danger-bg px-4 py-2 text-sm font-semibold text-danger">
           {tr("ফোনের জায়গা ভরা বা সেভ বন্ধ — সর্বশেষ বিল/বদল ফোনে সেভ হয়নি, শুধু এই খোলা অ্যাপে আছে। পাতা বন্ধ বা রিলোড করবেন না; এখনই সেটিংস থেকে ব্যাকআপ নামান ও জায়গা খালি করুন।")}
@@ -95,6 +97,7 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
           </div>
         </div>
       ) : null}
+      {/* suspended / read_only ওপরের TenantBanner-এ আলাদা বার্তায় বলা হয়, তাই এখানে "লগইন করুন" দেখানো ভুল হতো */}
       {syncInfo.status === "device_limit" || syncInfo.status === "error" || syncInfo.status === "auth" ? (
         // সিংক থেমে থাকলে শুধু সেটিংসের ভেতরে নয়, সব পর্দায় জানাই (আগে কেউ সেটিংসে না গেলে দিনের পর দিন বোঝা যেত না)
         <div role="alert" className="bg-warn-bg px-4 py-2 text-sm text-warn">

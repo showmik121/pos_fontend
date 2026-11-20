@@ -1,5 +1,6 @@
 import { apiRequest } from "./client"
 import {
+  AccountActivitySchema,
   AuthResponseSchema,
   DeviceResponseSchema,
   MeResponseSchema,
@@ -32,6 +33,11 @@ export function registerStore(input: RegisterStoreInput) {
 
 export function getMe(token: string) {
   return apiRequest("/v1/me", (d) => MeResponseSchema.parse(d), { token })
+}
+
+/** অ্যাকাউন্টে অপারেটর কী করেছে (সাসপেন্ড অবস্থাতেও চলে); ভেতরের কারণ আসে না */
+export function getAccountActivity(token: string) {
+  return apiRequest("/v1/account-activity", (d) => AccountActivitySchema.parse(d).activity, { token })
 }
 
 /** দোকানের নাম বদলায় (শুধু মালিক) */

@@ -200,6 +200,9 @@ describe("classifyError: সিংকের ব্যর্থতার ধর�
     [{ status: 500 }, "server"],
     [{ status: 400, code: "device_unregistered" }, "auth"],
     [{ status: 400, code: "device_limit" }, "device_limit"],
+    // admin panel (PRD 17.4): a restricted shop is NOT a login problem; it needs its own message and must keep the queue
+    [{ status: 403, code: "tenant_suspended" }, "suspended"],
+    [{ status: 403, code: "tenant_read_only" }, "read_only"],
   ])("%j -> %s", (err, want) => {
     expect(classifyError(err)).toBe(want)
   })

@@ -2,6 +2,7 @@
 
 import { tr, tf } from "@/lib/i18n"
 import { useState } from "react"
+import { AccountActivity } from "@/components/account-activity"
 import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
 import { useDb } from "@/components/db-provider"
@@ -99,6 +100,8 @@ export default function SettingsPage() {
         <Row title={tr("মোবাইল")} right={<span className="font-medium">{formatPhoneBn(user.phone)}</span>} />
         <Row title={tr("ভূমিকা")} right={<span className="font-medium">{user.role === "owner" ? tr("মালিক") : tr("কর্মচারী")}</span>} />
       </RowList>
+
+      <AccountActivity />
 
       <div className="space-y-2">
         <h2 className="px-1 text-[15px] font-semibold">{tr("ভাষা / Language")}</h2>

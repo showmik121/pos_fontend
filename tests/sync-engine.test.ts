@@ -225,20 +225,39 @@ describe("দুই ফোন সিংক", () => {
       push: async () => { throw Object.assign(new Error(code), { status: 403, code, details: { status: code === "tenant_suspended" ? "suspended" : "read_only" } }) },
       pull: s.t.pull,
     }
-    expect(await sync(a, restricted)).toBe("auth")
+    const expected = code === "tenant_suspended" ? "suspended" : "read_only"
+    expect(await sync(a, restricted)).toBe(expected)
     expect(a.p.sync.outbox.map((e) => e.id)).toEqual(queued) // nothing removed
     expect(a.p.sync.dropped).toBe(0)
     expect(a.p.sync.rejected).toHaveLength(0) // and not parked as "rejected" either
     expect(s.log).toHaveLength(0)
 
     // still restricted on later attempts: same outcome, still nothing lost
-    expect(await sync(a, restricted)).toBe("auth")
+    expect(await sync(a, restricted)).toBe(expected)
     expect(a.p.sync.outbox.map((e) => e.id)).toEqual(queued)
 
     // reactivated: the whole queue arrives
     expect(await sync(a, s.t)).toBe("ok")
     expect(a.p.sync.outbox).toHaveLength(0)
     expect(s.log.map((e) => e.id).sort()).toEqual([...queued].sort())
+  })
+
+  // The server keeps pull open in read_only (ADR 0003), so a second device must still receive its shop's changes; only the push is refused.
+  it("tenant_read_only হলে পুশ আটকে থাকে কিন্তু পুল চলে; ফল read_only, কিউ অক্ষত", async () => {
+    const a = phone()
+    a.act((db) => createProduct(db, prod, T(0)).db, 0)
+    let pulls = 0
+    const t: Transport = {
+      push: async () => { throw Object.assign(new Error("x"), { status: 403, code: "tenant_read_only" }) },
+      pull: async () => { pulls++; return { events: [], lastSeq: 0, hasMore: false } },
+    }
+    expect(await sync(a, t)).toBe("read_only")
+    expect(pulls).toBe(1)
+    expect(a.p.sync.outbox).toHaveLength(1)
+    // suspended stays fully stopped: no pull
+    const susp: Transport = { push: async () => { throw Object.assign(new Error("x"), { status: 403, code: "tenant_suspended" }) }, pull: async () => { pulls++; return { events: [], lastSeq: 0, hasMore: false } } }
+    expect(await sync(a, susp)).toBe("suspended")
+    expect(pulls).toBe(1)
   })
 
   it("ডিভাইস নিবন্ধিত না থাকলে ইভেন্ট বাদ যায় না", async () => {

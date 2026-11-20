@@ -17,7 +17,7 @@ export interface Transport {
 }
 
 /** ok = সফল; offline/auth/server = ব্যর্থতার ধরন; device_limit = দোকানের ২৬টি ডিভাইসের সীমা পূর্ণ; error = অপ্রত্যাশিত ত্রুটি */
-export type SyncStatus = "ok" | "offline" | "auth" | "server" | "device_limit" | "error"
+export type SyncStatus = "ok" | "offline" | "auth" | "server" | "device_limit" | "suspended" | "read_only" | "error"
 
 /** সার্ভারের বডি সীমা ৬০০ KB; নিরাপদ থাকতে এর নিচে ভাগ করে পাঠাই */
 export const PUSH_CHUNK_BYTES = 300_000
@@ -40,6 +40,9 @@ export function classifyError(err: unknown): SyncStatus {
   const code = codeOf(err)
   if (code === "device_unregistered") return "auth"
   if (code === "device_limit") return "device_limit"
+  // প্ল্যাটফর্ম অপারেটর দোকান সাসপেন্ড/রিড-অনলি করলে সার্ভার ৪০৩ দেয় (৪০০/৪১৩ নয়, নইলে ইভেন্ট বাদ যেত): লগইনের সমস্যা নয়, আলাদা বার্তা; কিউ অক্ষত থাকে
+  if (code === "tenant_suspended") return "suspended"
+  if (code === "tenant_read_only") return "read_only"
   const s = statusOf(err)
   if (s === 401 || s === 403) return "auth"
   if (s === 0) return "offline"
@@ -135,7 +138,8 @@ async function pushAll(io: SyncIo, transport: Transport, now: Date): Promise<Syn
 export async function runSync(input: { io: SyncIo; transport: Transport; now: Date }): Promise<SyncStatus> {
   const { io, transport, now } = input
   const pushed = await pushAll(io, transport, now)
-  if (pushed !== "ok") return pushed
+  // read_only: সার্ভার শুধু পুশ আটকায়, পুল খোলা (ADR 0003); দ্বিতীয় ফোন যেন দোকানের বদল পেতে থাকে। সাসপেন্ডে সবই বন্ধ।
+  if (pushed !== "ok" && pushed !== "read_only") return pushed
 
   for (let page = 0; page < MAX_PULL_PAGES; page++) {
     let got: PulledPage
@@ -173,5 +177,5 @@ export async function runSync(input: { io: SyncIo; transport: Transport; now: Da
     if (!got.hasMore) break
   }
   io.setState({ ...io.state(), lastSyncAt: now.toISOString() })
-  return "ok"
+  return pushed
 }

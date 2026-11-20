@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { AppShell, Splash } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
+import { useReadOnlyShop } from "@/components/tenant-notice"
 import { Scanner } from "@/components/scanner"
 import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
@@ -33,6 +34,8 @@ function StockInForm() {
   const params = useSearchParams()
   const router = useRouter()
   const { db, update, ready } = useDb()
+  // শুধু-দেখা মোডে নতুন স্টক-জমা বন্ধ; ব্যানার কারণ বলে
+  const readOnlyShop = useReadOnlyShop()
   const { isPharmacy } = useSessionInfo()
   const [productId, setProductId] = useState<string | null>(params.get("product"))
   const [query, setQuery] = useState("")
@@ -131,7 +134,7 @@ function StockInForm() {
 
   const perCarton = product.cartonSize > 1
   return (
-    <AppShell title={tr("স্টক যোগ")} backHref="/stock" footer={<Button full onClick={submit}>{tr("স্টকে যোগ করুন")}</Button>}>
+    <AppShell title={tr("স্টক যোগ")} backHref="/stock" footer={<Button full onClick={submit} disabled={readOnlyShop}>{tr("স্টকে যোগ করুন")}</Button>}>
       <Card className="px-4 py-3">
         <div className="font-medium">{product.name}</div>
         <div className="text-[13px] text-muted">

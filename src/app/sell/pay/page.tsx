@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { AppShell, Ready } from "@/components/app-shell"
 import { CustomerPicker } from "@/components/customer-picker"
 import { useDb } from "@/components/db-provider"
+import { useReadOnlyShop } from "@/components/tenant-notice"
 import { Banner } from "@/components/ui/banner"
 import { Button, LinkButton } from "@/components/ui/button"
 import { Card, KeyValue, Row, RowList } from "@/components/ui/card"
@@ -29,6 +30,8 @@ const METHODS = [
 
 function PayScreen() {
   const { db, update, run } = useDb()
+  // শুধু-দেখা মোডে নতুন বিক্রি বন্ধ (সার্ভারও ৪০৩ দিত); ব্যানার কারণ বলে
+  const readOnlyShop = useReadOnlyShop()
   const router = useRouter()
   const { actor, storeId } = useSessionInfo()
   const [picking, setPicking] = useState(false)
@@ -98,7 +101,7 @@ function PayScreen() {
       title={tr("পেমেন্ট")}
       backHref="/sell"
       footer={
-        <Button full onClick={confirm} disabled={Boolean(settled.error) || lines.length === 0}>
+        <Button full onClick={confirm} disabled={Boolean(settled.error) || lines.length === 0 || readOnlyShop}>
           {tr("বিল সম্পন্ন করুন")}
         </Button>
       }
