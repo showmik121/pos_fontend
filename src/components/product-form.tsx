@@ -54,9 +54,9 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
   const [scanning, setScanning] = useState(false)
   const [stockQty, setStockQty] = useState("")
   const [expiry, setExpiry] = useState("")
-  // বারকোড/একক/কার্টন/সর্বনিম্ন স্টক/ক্যাটেগরি ডিফল্টে লুকানো; ডিফল্টের বাইরে কিছু থাকলে (সম্পাদনা, স্ক্যান থেকে আসা বারকোড) খোলা
+  // একক/কার্টন/সর্বনিম্ন স্টক/ক্যাটেগরি ডিফল্টে লুকানো; ডিফল্টের বাইরে কিছু থাকলে (সম্পাদনা) খোলা
   const [more, setMore] = useState(
-    Boolean(initialBarcode) || (initial !== undefined && (initial.unit !== "piece" || initial.cartonSize !== 1 || initial.minStock !== defaultMinStock || Boolean(initial.category))),
+    (initial !== undefined && (initial.unit !== "piece" || initial.cartonSize !== 1 || initial.minStock !== defaultMinStock || Boolean(initial.category))),
   )
 
   const submit = () => {
@@ -93,6 +93,20 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
     <div className="space-y-4">
       {open ? <Banner tone="info">{tr("বারকোড ছাড়া পণ্য (যেমন খোলা ওষুধ, লুজ আইটেম)। নাম দিয়ে খুঁজে বিক্রি হবে।")}</Banner> : null}
       <Field id="p-name" label={tr("পণ্যের নাম")} hint={tr("ইংরেজি বা বাংলা — যেভাবে লেখা সহজ, যেমন Pond's Cream")} lang="en" autoCapitalize="words" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+      {!open && !editing ? (
+        <Field
+          id="p-barcode"
+          label={tr("বারকোড (ঐচ্ছিক)")}
+          inputMode="numeric"
+          value={barcode}
+          onChange={(e) => setBarcode(e.target.value)}
+          trailing={
+            <button type="button" onClick={() => setScanning(true)} aria-label={tr("বারকোড স্ক্যান করুন")} className="grid size-11 place-items-center rounded-lg text-brand active:bg-brand-soft">
+              <Icon name="scan" />
+            </button>
+          }
+        />
+      ) : null}
       <div className="grid grid-cols-2 gap-3">
         <Field id="p-cost" label={tr("ক্রয়মূল্য (ঐচ্ছিক)")} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
         <Field id="p-price" label={tr("বিক্রয়মূল্য")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
@@ -111,25 +125,11 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
         onClick={() => setMore((v) => !v)}
         className="flex min-h-11 w-full items-center justify-between rounded-xl px-1 text-sm font-medium text-brand-dark active:bg-brand-soft"
       >
-        <span>{more ? tr("কম দেখান") : tr("আরও তথ্য (বারকোড, একক, ক্যাটেগরি)")}</span>
+        <span>{more ? tr("কম দেখান") : tr("আরও তথ্য (একক, কার্টন, ক্যাটেগরি)")}</span>
         <Icon name="chevron" size={18} className={more ? "rotate-90" : ""} />
       </button>
       {more ? (
         <div id="p-more" className="space-y-4">
-          {!open && !editing ? (
-            <Field
-              id="p-barcode"
-              label={tr("বারকোড (ঐচ্ছিক)")}
-              inputMode="numeric"
-              value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-              trailing={
-                <button type="button" onClick={() => setScanning(true)} aria-label={tr("বারকোড স্ক্যান করুন")} className="grid size-11 place-items-center rounded-lg text-brand active:bg-brand-soft">
-                  <Icon name="scan" />
-                </button>
-              }
-            />
-          ) : null}
           <div className="space-y-1.5">
             <span className="block text-sm font-medium">{tr("একক")}</span>
             <Segmented label={tr("একক")} options={UNIT_OPTIONS} value={unit} onChange={setUnit} />
