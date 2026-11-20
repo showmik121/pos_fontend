@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { LangToggle } from "./lang-toggle"
 import { Logo } from "./logo"
 
 interface AuthShellProps {
@@ -15,8 +16,9 @@ export function AuthShell({ title, subtitle, footer, children }: AuthShellProps)
     <main className="relative flex min-h-dvh flex-col overflow-x-clip bg-canvas">
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-gold/35 to-transparent" />
       <div className="relative mx-auto w-full max-w-md flex-1 px-5 pb-6 pt-8">
-        <div className="mb-7">
+        <div className="mb-7 flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
           <Logo />
+          <LangToggle />
         </div>
         <div className="card-surface rounded-3xl border border-line bg-white p-6">
           <h1 className="text-2xl font-extrabold tracking-tight text-ink">{title}</h1>

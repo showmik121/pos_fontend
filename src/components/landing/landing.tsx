@@ -4,6 +4,7 @@ import { tr } from "@/lib/i18n"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { LangToggle } from "@/components/lang-toggle"
 import { Logo } from "@/components/logo"
 import { Icon } from "@/components/ui/icons"
 import { LinkButton } from "@/components/ui/button"
@@ -26,9 +27,10 @@ export function Landing() {
 
   return (
     <div className="min-h-dvh overflow-x-clip bg-canvas">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
+      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-2 px-5 py-4">
         <Logo size={44} />
         <div className="flex items-center gap-1">
+          <LangToggle />
           <div className="hidden sm:block">
             <InstallButton variant="secondary" className="min-h-11 px-3 text-[14px]" />
           </div>
