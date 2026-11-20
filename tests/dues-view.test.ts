@@ -69,3 +69,23 @@ describe("জমার রসিদ", () => {
     expect(depositReceiptText({ ...base, balanceAfter: 0 })).toContain("বাকি শোধ হয়েছে")
   })
 })
+
+import { setCreditLimit } from "../src/lib/store/actions"
+import { limitStatus } from "../src/lib/store/dues-view"
+
+describe("বাকির সীমা", () => {
+  const made = addCustomer(emptyDb(), { name: "রহিম", phone: "" }, NOW)
+  const id = made.customer.id
+  it("সীমা বসে ও তোলা যায়, ০ বা ভুল মান আটকায়", () => {
+    const d = setCreditLimit(made.db, id, 500000)
+    expect(d.customers[0]?.creditLimit).toBe(500000)
+    expect(setCreditLimit(d, id, null).customers[0]?.creditLimit).toBeNull()
+    expect(() => setCreditLimit(made.db, id, 0)).toThrow()
+    expect(() => setCreditLimit(made.db, "x", 100)).toThrow()
+  })
+  it("নতুন বাকি যোগ করে সীমা ছাড়ালে over", () => {
+    expect(limitStatus(null, 100, 100)).toBeNull()
+    expect(limitStatus(1000, 600, 400)).toEqual({ limit: 1000, after: 1000, over: false })
+    expect(limitStatus(1000, 600, 401)?.over).toBe(true)
+  })
+})

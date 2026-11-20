@@ -15,6 +15,8 @@ import { computeCart, settlePayments, type MobileMethod } from "@/lib/domain/car
 import { domainMessage } from "@/lib/domain/errors"
 import { formatTaka, parseTaka, takaInputValue } from "@/lib/domain/money"
 import { completeSale, setCartCustomer } from "@/lib/store/actions"
+import { limitStatus } from "@/lib/store/dues-view"
+import { customerBalance } from "@/lib/store/selectors"
 import { loadDevice } from "@/lib/store/device"
 import { findProduct } from "@/lib/store/selectors"
 
@@ -87,6 +89,7 @@ function PayScreen() {
   }
 
   const due = settled.error ? 0 : (settled as { due: number }).due
+  const limit = customer && due > 0 ? limitStatus(customer.creditLimit, customerBalance(db, customer.id), due) : null
   const change = settled.error ? 0 : (settled as { change: number }).change
 
   return (
@@ -128,6 +131,10 @@ function PayScreen() {
       ) : (
         <Banner tone="info">হিসাব মিলেছে</Banner>
       )}
+
+      {limit?.over ? (
+        <Banner tone="danger">বাকির সীমা {formatTaka(limit.limit)}। এই বিলের পর {customer?.name}-এর বাকি হবে {formatTaka(limit.after)}। চাইলে তবুও বিল করতে পারেন।</Banner>
+      ) : null}
 
       <h2 className="text-[15px] font-semibold">কাস্টমার {due > 0 ? "(বাকির জন্য দরকার)" : "(ঐচ্ছিক)"}</h2>
       <RowList>

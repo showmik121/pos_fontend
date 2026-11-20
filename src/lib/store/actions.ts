@@ -305,6 +305,13 @@ export function addCustomer(db: Db, input: { name: string; phone: string }, now:
   return { db: { ...db, customers: [...db.customers, customer] }, customer }
 }
 
+/** কাস্টমারের বাকির সীমা বসায় (পয়সায়, > ০); null হলে সীমা তুলে দেয় */
+export function setCreditLimit(db: Db, customerId: string, limit: number | null): Db {
+  if (!db.customers.some((c) => c.id === customerId)) throw new DomainError("customer_not_found", "কাস্টমার পাওয়া যায়নি")
+  if (limit !== null) requirePositiveInt(limit, "বাকির সীমা")
+  return { ...db, customers: db.customers.map((c) => (c.id === customerId ? { ...c, creditLimit: limit } : c)) }
+}
+
 /** আদায়ের প্রতিশ্রুতির তারিখ বসায় (আজ বা পরে); date = null হলে মুছে দেয় */
 export function setPromise(db: Db, customerId: string, date: string | null, note: string, now: Date): Db {
   const customer = db.customers.find((c) => c.id === customerId)
