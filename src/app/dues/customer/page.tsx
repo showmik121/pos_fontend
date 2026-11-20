@@ -17,12 +17,13 @@ import { formatPhoneBn } from "@/lib/format/phone"
 import { formatBillNo } from "@/lib/domain/bill"
 import { receiveDue, setCartCustomer } from "@/lib/store/actions"
 import { customerBalance } from "@/lib/store/selectors"
+import { reminderText, smsHref } from "@/lib/store/dues-view"
 
 function CustomerDues() {
   const id = useSearchParams().get("id")
   const router = useRouter()
   const { db, update } = useDb()
-  const { actor } = useSessionInfo()
+  const { actor, storeName } = useSessionInfo()
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -73,6 +74,15 @@ function CustomerDues() {
           বাকিতে বিক্রি
         </Button>
       </div>
+
+      {customer.phone ? (
+        <div className="grid grid-cols-2 gap-3">
+          <a href={`tel:${customer.phone}`} className="flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-white font-medium active:bg-canvas">কল করুন</a>
+          {balance > 0 ? (
+            <a href={smsHref(customer.phone, reminderText({ customerName: customer.name, balance, storeName }))} className="flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-white font-medium active:bg-canvas">এসএমএসে তাগাদা</a>
+          ) : null}
+        </div>
+      ) : null}
 
       <SectionTitle>খাতা</SectionTitle>
       {entries.length === 0 ? (
