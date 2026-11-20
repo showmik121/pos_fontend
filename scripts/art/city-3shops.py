@@ -85,8 +85,7 @@ add(f'<g id="billboard"><g fill="{DKGREEN}"><rect x="332" y="48" width="4" heigh
     f'<text x="339.5" y="37" font-family="Roboto, Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#fff3c9" letter-spacing=".2">Bipone</text></g>')
 
 # ---------- গাছ, ঝোপ, বাতি ----------
-tree(8, 1.0); tree(474, .95); bush(60, .9); bush(432, 1.0, "#d6dfae"); bush(456, .7, "#cfd9a0")
-lamp(404, 1)
+tree(8, 1.0); tree(474, .95); bush(60, .9); bush(462, .8, "#cfd9a0")
 
 # ---------- ফুটপাত ও রাস্তা ----------
 add(f'<rect x="0" y="190" width="480" height="7" fill="{T3}"/><rect x="0" y="197" width="480" height="33" fill="{T2}"/><rect x="0" y="197" width="480" height="2" fill="{T4}" opacity=".5"/>')
@@ -132,7 +131,7 @@ ICON_MED = '<path d="M0 -6.5V6.5M-6.5 0H6.5"/>'
 ICON_GEN = '<path d="M-6 -2h12l-1.2 9h-9.6z"/><path d="M-3 -2v-2a3 3 0 0 1 6 0v2"/>'
 ICON_COS = '<rect x="-3" y="-1" width="6" height="8" rx="1" fill="currentColor" fill-opacity=".25" stroke-width="2"/><path d="M-2.2 -1l1 -6l3 1.5v4.5"/>'
 ICON_COS = ICON_COS.replace("currentColor", PINK)
-for x, c1, c2, icon, kind in [(108, GREEN, "#cfe0d2", ICON_MED, "med"), (205, GOLD, "#fde9b0", ICON_GEN, "gen"), (302, PINK, "#f3d3dd", ICON_COS, "cos")]:
+for x, c1, c2, icon, kind in [(168, GREEN, "#cfe0d2", ICON_MED, "med"), (265, GOLD, "#fde9b0", ICON_GEN, "gen"), (362, PINK, "#f3d3dd", ICON_COS, "cos")]:
     shop(x, c1, c2, icon)
     display(x, kind)
 
@@ -164,12 +163,12 @@ def human(x, s=1.0, facing=1, skin="#d9a982", hair="#3b2a20", top=GREEN, bottom=
 
 BOX, TAPE = "#d9a766", "#c28d4e"
 # ডেলিভারির লোক: ভ্যান থেকে কার্টন নামিয়ে এগিয়ে ধরেছে
-human(80, facing=1, top=GREEN, bottom="#4a4030", style="cap", skin="#c99a73", arms="custom", extra=(
+human(134, facing=1, top=GREEN, bottom="#4a4030", style="cap", skin="#c99a73", arms="custom", extra=(
     f'<path d="M3 -29l6 6M-2 -29l8 8" stroke="{GREEN}" stroke-width="3.4" stroke-linecap="round" fill="none"/>'
     f'<rect x="6" y="-29" width="10" height="11" rx="1" fill="{BOX}"/><rect x="9.8" y="-29" width="2.4" height="11" fill="{TAPE}"/>'
     '<circle cx="9" cy="-22" r="1.7" fill="#c99a73"/><circle cx="6.5" cy="-20" r="1.7" fill="#c99a73"/>'))
 # দোকানি: কাগজ-কলম হাতে মাল মেলাচ্ছেন (ভ্যানের দিকে মুখ)
-human(108, facing=-1, top=GOLD, bottom="#6b5a3c", skin="#d9a982", hair="#2b2118", arms="custom", extra=(
+human(168, facing=-1, top=GOLD, bottom="#6b5a3c", skin="#d9a982", hair="#2b2118", arms="custom", extra=(
     f'<path d="M3 -29l5 8" stroke="{GOLD}" stroke-width="3.4" stroke-linecap="round" fill="none"/>'
     '<rect x="5" y="-28" width="8.4" height="12.5" rx="1.2" fill="#b78b52"/><rect x="6.2" y="-26.4" width="6" height="10" rx=".6" fill="#fff"/>'
     f'<path d="M7.2 -23.8h3.8M7.2 -21.4h3.8M7.2 -19h2.6" stroke="{T4}" stroke-width=".9" stroke-linecap="round"/>'
@@ -177,33 +176,35 @@ human(108, facing=-1, top=GOLD, bottom="#6b5a3c", skin="#d9a982", hair="#2b2118"
     f'<path d="M-1 -29l8 3.5" stroke="{GOLD}" stroke-width="3.4" stroke-linecap="round" fill="none"/>'
     '<circle cx="8" cy="-25.2" r="1.7" fill="#d9a982"/><path d="M8.6 -25.4l3.8 -4" stroke="#2b2b2b" stroke-width="1.1" stroke-linecap="round"/>'))
 # কাস্টমার
-human(202.5, s=.95, facing=1, top=PINK, dress=True, style="long", hair="#2b2118", skin="#c99a73", arms="custom", extra=(
+human(262.5, s=.95, facing=1, top=PINK, dress=True, style="long", hair="#2b2118", skin="#c99a73", arms="custom", extra=(
     f'<path d="M-5 -29l-1.4 10" stroke="{PINK}" stroke-width="3.4" stroke-linecap="round" fill="none"/><circle cx="-6.4" cy="-18.5" r="1.8" fill="#c99a73"/>'
     f'<path d="M5 -29l3 9" stroke="{PINK}" stroke-width="3.4" stroke-linecap="round" fill="none"/><circle cx="8" cy="-19.5" r="1.8" fill="#c99a73"/>'
     f'<rect x="6" y="-19" width="8" height="9" rx="1.5" fill="{GOLD}"/><path d="M8 -19q2 -5 4 0" stroke="{GOLD}" fill="none" stroke-width="1.3"/>'))
-human(299.5, s=.95, facing=-1, top="#d9c48c", bottom="#4d6b52", skin="#b98a63", hair="#2b2118", arms="down")
-human(398, s=.92, facing=-1, top="#6f9a7a", dress=True, style="long", hair="#3b2a20", skin="#d9a982", arms="down", extra=(
+human(359.5, s=.95, facing=-1, top="#d9c48c", bottom="#4d6b52", skin="#b98a63", hair="#2b2118", arms="down")
+human(462, s=.92, facing=-1, top="#6f9a7a", dress=True, style="long", hair="#3b2a20", skin="#d9a982", arms="down", extra=(
     f'<rect x="-14" y="-20" width="8" height="9" rx="1.5" fill="{GOLD}"/><path d="M-12 -20q2 -5 4 0" stroke="{GOLD}" fill="none" stroke-width="1.3"/>'))
 
-# ---------- কার্গো ভ্যান (পাশ থেকে, সামনে বাঁয়ে; পেছনের দরজা খোলা) ----------
-vinner = inner
-for i in ["bg", "glow", "wh", "gold"]:
-    vinner = vinner.replace(f"bb-{i}", f"vn-{i}")
-add(f'<ellipse cx="40" cy="227" rx="40" ry="2.6" fill="{T4}" opacity=".5"/>')
-# পেছনে নামানো কার্টন
-add(f'<g><rect x="74" y="208" width="10" height="10" rx="1" fill="{BOX}"/><rect x="77.4" y="208" width="2.4" height="10" fill="{TAPE}"/><rect x="76" y="199" width="8" height="9" rx="1" fill="#e6b676"/><rect x="79" y="199" width="2" height="9" fill="{TAPE}"/></g>')
-# মাল রাখার বাক্স ও খোলা দরজা
-add(f'<path d="M72 185l7 -3v33l-7 3z" fill="#f3ead0" stroke="{T4}" stroke-width="1"/>')
+# ---------- কার্গো ভ্যান (ব্র্যান্ডিংহীন ডিলারের ভ্যান; নতুন মাল নামছে) ----------
+CAB, CABD = "#7d9a96", "#5d7a76"
+add('<g transform="translate(2 230) scale(1.4) translate(-2 -230)">')
+add(f'<ellipse cx="44" cy="227" rx="46" ry="2.8" fill="{T4}" opacity=".5"/>')
+# পেছনে নামানো কার্টনের স্তূপ; ওপরের কার্টনের মুখ খোলা, ভেতরে পণ্য উঁকি দিচ্ছে
+add(f'<rect x="83" y="208" width="11" height="10" rx="1" fill="{BOX}"/><rect x="86.8" y="208" width="2.4" height="10" fill="{TAPE}"/>')
+add(f'<rect x="84" y="199" width="9" height="9" rx="1" fill="#e6b676"/><rect x="87.3" y="199" width="2.4" height="9" fill="{TAPE}"/>')
+add(f'<rect x="85.5" y="195" width="2.4" height="4.5" rx="1" fill="{GREEN}"/><rect x="89" y="196" width="2.4" height="3.5" rx="1" fill="#e3a9bb"/><rect x="82" y="214" width="0" height="0"/>')
+# মাল রাখার বাক্স, খোলা পেছনের দরজা (ভেতরের কালো ছায়া সহ)
+add(f'<path d="M72 185l8 -3v33l-8 3z" fill="#f3ead0" stroke="{T4}" stroke-width="1"/><rect x="72" y="186" width="1.6" height="30" fill="{T4}" opacity=".6"/>')
 add(f'<rect x="30" y="184" width="42" height="34" rx="2.5" fill="#fff" stroke="{T4}" stroke-width="1.2"/>')
-add(f'<rect x="30" y="207" width="42" height="5" fill="{GREEN}"/>')
-add(f'<svg x="41" y="190" width="12" height="12" viewBox="0 0 512 512">{vinner}</svg>')
-add(f'<text x="55" y="199" font-family="Roboto, Arial, Helvetica, sans-serif" font-size="6.2" font-weight="800" fill="{DKGREEN}">Bipone</text>')
-# কেবিন
-add(f'<path d="M6 218v-14q0 -3 3 -4l9 -7q2 -1 5 -1h7v26z" fill="{GREEN}"/>')
-add(f'<path d="M11 203l7 -6h9v9h-16z" fill="#cfe0d2"/><rect x="5" y="212" width="3" height="4" rx="1" fill="#ffd45a"/><rect x="4" y="216" width="30" height="3" rx="1.2" fill="{DKGREEN}"/>')
+add(f'<path d="M30 199h42M30 211h42" stroke="{T3}" stroke-width="1"/><rect x="66" y="198" width="3" height="5" rx="1" fill="{T4}"/>')
+# কেবিন (দরজা, জানালা, আয়না, হেডলাইট)
+add(f'<path d="M6 218v-14q0 -3 3 -4l9 -7q2 -1 5 -1h7v26z" fill="{CAB}"/>')
+add(f'<path d="M11 203l7 -6h9v9h-16z" fill="#dfeceb"/><path d="M19 197v21" stroke="{CABD}" stroke-width="1"/>')
+add(f'<rect x="12" y="209" width="5" height="1.6" rx=".8" fill="{CABD}"/><rect x="5" y="211" width="3" height="4" rx="1" fill="#ffd45a"/><rect x="4" y="216" width="30" height="3" rx="1.2" fill="{CABD}"/>')
+add(f'<rect x="8" y="200" width="3" height="5" rx="1" fill="{CABD}"/>')
 # চাকা
 for cx in (19, 58):
-    add(f'<circle cx="{cx}" cy="220" r="7.4" fill="{DKGREEN}"/><circle cx="{cx}" cy="220" r="3.2" fill="{T1}"/><circle cx="{cx}" cy="220" r="1.2" fill="{T4}"/>')
+    add(f'<circle cx="{cx}" cy="220" r="7.6" fill="#3b4a48"/><circle cx="{cx}" cy="220" r="3.4" fill="{T1}"/><circle cx="{cx}" cy="220" r="1.3" fill="{T4}"/>')
+add('</g>')
 
 svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 230">{"".join(out)}</svg>\n'
 (ROOT / "public/art/city-3shops.svg").write_text(svg, encoding="utf8")
