@@ -185,3 +185,25 @@ export function topProducts(db: Db, from: string, to: string, limit = 10): TopRo
 export function rangeStart(today: string, days: number): string {
   return addDays(today, -(days - 1))
 }
+
+export interface PeriodSummary {
+  bills: number
+  total: number
+  profit: number
+}
+
+/** from..to (দুটোই অন্তর্ভুক্ত) সময়ের বিক্রি ও আনুমানিক লাভ (বাতিল বিল বাদ) */
+export function periodSummary(db: Db, from: string, to: string): PeriodSummary {
+  const out: PeriodSummary = { bills: 0, total: 0, profit: 0 }
+  for (const s of db.sales) {
+    if (s.voided) continue
+    const d = saleDate(s)
+    if (d < from || d > to) continue
+    out.bills += 1
+    out.total += s.total
+    let cost = 0
+    for (const l of s.lines) for (const a of l.allocations) cost += a.costPoisha * a.qty
+    out.profit += s.total - cost
+  }
+  return out
+}

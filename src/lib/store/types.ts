@@ -147,6 +147,31 @@ export interface Note {
   createdAt: string
 }
 
+/** খরচের ক্যাটেগরি (বেতন, ভাড়া ইত্যাদি) */
+export interface ExpenseCategory {
+  id: string
+  name: string
+  /** একটি ইমোজি */
+  icon: string
+  /** মুছলে true (সিংকে শেষ-বদল জেতার জন্য আসল মোছা হয় না); পুরনো খরচ খাতায় থাকে */
+  deleted?: boolean
+  createdAt: string
+}
+
+/** দোকানের একটি খরচ; amount পয়সায় */
+export interface Expense {
+  id: string
+  categoryId: string
+  amount: number
+  note: string
+  /** খরচের তারিখ YYYY-MM-DD */
+  date: string
+  /** এন্ট্রি করার সময় */
+  at: string
+  by: string
+  deleted?: boolean
+}
+
 export interface Db {
   v: 1
   products: Product[]
@@ -161,6 +186,9 @@ export interface Db {
   removedBatches?: RemovedBatch[]
   /** বিক্রেতার নোট; পুরনো ডেটায় নেই */
   notes?: Note[]
+  /** খরচের ক্যাটেগরি ও খরচ; পুরনো ডেটায় নেই (ক্যাটেগরি undefined = এখনো ডিফল্ট বসেনি) */
+  expenseCategories?: ExpenseCategory[]
+  expenses?: Expense[]
   /** সিংক-মেটা: শেষ-বদল-জেতে ঘড়ি। কী = এন্টিটি-গ্রুপ, মান = "<at>|<ইভেন্ট id>"; পুরনো ডেটায় নেই */
   sync?: { clocks: Record<string, string> }
 }
