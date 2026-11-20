@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
@@ -46,9 +47,9 @@ export default function StaffPage() {
     if (!token) return
     setFormError(null)
     const normalized = normalizeBdPhone(phone)
-    if (!name.trim()) return setFormError("কর্মচারীর নাম দিন")
-    if (!normalized) return setFormError("মোবাইল নম্বর সঠিক নয় (যেমন ০১৭১২৩৪৫৬৭৮)")
-    if (password.length < 8) return setFormError("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে")
+    if (!name.trim()) return setFormError(tr("কর্মচারীর নাম দিন"))
+    if (!normalized) return setFormError(tr("মোবাইল নম্বর সঠিক নয় (যেমন ০১৭১২৩৪৫৬৭৮)"))
+    if (password.length < 8) return setFormError(tr("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে"))
     setBusy(true)
     try {
       const created = await createStaff(token, { name: name.trim(), phone: normalized, password })
@@ -75,21 +76,21 @@ export default function StaffPage() {
 
   if (me && me.role !== "owner") {
     return (
-      <AppShell title="কর্মচারী" backHref="/settings">
-        <Banner tone="warn">এই পাতা শুধু মালিক দেখতে পারেন।</Banner>
+      <AppShell title={tr("কর্মচারী")} backHref="/settings">
+        <Banner tone="warn">{tr("এই পাতা শুধু মালিক দেখতে পারেন।")}</Banner>
       </AppShell>
     )
   }
 
   return (
-    <AppShell title="কর্মচারী" backHref="/settings">
+    <AppShell title={tr("কর্মচারী")} backHref="/settings">
       {loadError ? <Banner tone="danger">{loadError}</Banner> : null}
 
       <section className="rounded-2xl border border-line bg-white">
         {staff === null ? (
-          <p className="p-4 text-sm text-muted">লোড হচ্ছে…</p>
+          <p className="p-4 text-sm text-muted">{tr("লোড হচ্ছে…")}</p>
         ) : staff.length === 0 ? (
-          <p className="p-4 text-sm text-muted">এখনো কোনো কর্মচারী যোগ করা হয়নি।</p>
+          <p className="p-4 text-sm text-muted">{tr("এখনো কোনো কর্মচারী যোগ করা হয়নি।")}</p>
         ) : (
           <ul className="divide-y divide-line">
             {staff.map((s) => (
@@ -100,7 +101,7 @@ export default function StaffPage() {
                 </div>
                 {s.id !== me?.id ? (
                   <Button variant={s.active ? "secondary" : "primary"} className="min-h-11" onClick={() => toggle(s)}>
-                    {s.active ? "বন্ধ করুন" : "চালু করুন"}
+                    {s.active ? tr("বন্ধ করুন") : tr("চালু করুন")}
                   </Button>
                 ) : null}
               </li>
@@ -110,13 +111,13 @@ export default function StaffPage() {
       </section>
 
       <form onSubmit={onAdd} noValidate className="space-y-4 rounded-2xl border border-line bg-white p-4">
-        <h2 className="font-bold">নতুন কর্মচারী</h2>
-        <Field id="staffName" label="নাম" value={name} onChange={(e) => setName(e.target.value)} />
-        <Field id="staffPhone" label="মোবাইল নম্বর" type="tel" inputMode="tel" placeholder="০১৭১২৩৪৫৬৭৮" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        <PasswordField id="staffPassword" label="পাসওয়ার্ড" autoComplete="new-password" hint="কমপক্ষে ৮ অক্ষর" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <h2 className="font-bold">{tr("নতুন কর্মচারী")}</h2>
+        <Field id="staffName" label={tr("নাম")} value={name} onChange={(e) => setName(e.target.value)} />
+        <Field id="staffPhone" label={tr("মোবাইল নম্বর")} type="tel" inputMode="tel" placeholder={tr("০১৭১২৩৪৫৬৭৮")} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <PasswordField id="staffPassword" label={tr("পাসওয়ার্ড")} autoComplete="new-password" hint={tr("কমপক্ষে ৮ অক্ষর")} value={password} onChange={(e) => setPassword(e.target.value)} />
         {formError ? <Banner tone="danger">{formError}</Banner> : null}
         <Button type="submit" full loading={busy}>
-          যোগ করুন
+          {tr("যোগ করুন")}
         </Button>
       </form>
     </AppShell>

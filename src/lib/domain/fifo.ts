@@ -1,3 +1,4 @@
+import { tf } from "../i18n"
 import { DomainError, requirePositiveInt } from "./errors"
 import { classifyExpiry } from "./expiry"
 
@@ -31,7 +32,7 @@ export function allocateFifo(batches: readonly FifoBatch[], qtyNeeded: number, t
   const usable = sellableBatches(batches, today)
   const available = usable.reduce((s, b) => s + b.qtyRemaining, 0)
   if (available < qtyNeeded) {
-    throw new DomainError("insufficient_stock", `স্টকে মাত্র ${available} পিস আছে`, { available, requested: qtyNeeded })
+    throw new DomainError("insufficient_stock", tf("স্টকে মাত্র {p0} পিস আছে", { p0: available }), { available, requested: qtyNeeded })
   }
   const out: Allocation[] = []
   let left = qtyNeeded

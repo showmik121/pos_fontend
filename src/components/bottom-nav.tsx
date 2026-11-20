@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/cn"
@@ -20,7 +21,7 @@ function isActive(pathname: string, href: string): boolean {
 export function BottomNav() {
   const pathname = usePathname()
   return (
-    <nav aria-label="প্রধান মেনু" className="no-print sticky bottom-0 z-10 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label={tr("প্রধান মেনু")} className="no-print sticky bottom-0 z-10 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
       <ul className="mx-auto grid max-w-(--app-col) grid-cols-5">
         {TABS.map((tab) => {
           const active = isActive(pathname, tab.href)
@@ -34,7 +35,7 @@ export function BottomNav() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d={tab.icon} />
                 </svg>
-                {tab.label}
+                {tr(tab.label)}
                 {active ? <span aria-hidden="true" className="absolute inset-x-6 top-0 h-[3px] rounded-b-full bg-gold" /> : null}
               </Link>
             </li>

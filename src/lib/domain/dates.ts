@@ -1,8 +1,16 @@
+import { getLang, tr } from "../i18n"
 import { toAsciiDigits, toBanglaDigits } from "../format/bn"
 import { DomainError } from "./errors"
 
 const DAY_MS = 86_400_000
 export const BN_MONTHS = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"] as const
+
+const EN_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as const
+
+/** চলতি ভাষায় মাসের নাম (m = ১–১২) */
+export function monthName(m: number): string {
+  return (getLang() === "en" ? EN_MONTHS : BN_MONTHS)[m - 1] ?? ""
+}
 
 /** ডিভাইসের স্থানীয় তারিখ YYYY-MM-DD আকারে */
 export function localDateIso(d: Date): string {
@@ -17,10 +25,10 @@ export function todayIso(now: Date = new Date()): string {
 }
 
 function parseIso(s: string): number {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new DomainError("invalid_date", "তারিখ YYYY-MM-DD আকারে হতে হবে")
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new DomainError("invalid_date", tr("তারিখ YYYY-MM-DD আকারে হতে হবে"))
   const t = Date.parse(`${s}T00:00:00Z`)
   if (Number.isNaN(t) || new Date(t).toISOString().slice(0, 10) !== s) {
-    throw new DomainError("invalid_date", "তারিখ সঠিক নয়")
+    throw new DomainError("invalid_date", tr("তারিখ সঠিক নয়"))
   }
   return t
 }
@@ -37,13 +45,13 @@ export function addDays(iso: string, days: number): string {
 /** "১২ নভেম্বর ২০২৬" */
 export function formatDateBn(iso: string): string {
   const [y = "", m = "1", d = "1"] = iso.split("-")
-  return toBanglaDigits(`${Number(d)} ${BN_MONTHS[Number(m) - 1] ?? ""} ${y}`)
+  return toBanglaDigits(`${Number(d)} ${monthName(Number(m))} ${y}`)
 }
 
 /** "১২ নভেম্বর" */
 export function formatDayMonthBn(iso: string): string {
   const [, m = "1", d = "1"] = iso.split("-")
-  return toBanglaDigits(`${Number(d)} ${BN_MONTHS[Number(m) - 1] ?? ""}`)
+  return toBanglaDigits(`${Number(d)} ${monthName(Number(m))}`)
 }
 
 /** মেয়াদ "06/2027" বা "০৬/২০২৭" লেখাকে মাসের শেষ তারিখে (YYYY-MM-DD) বদলায়। ভুল হলে null। */

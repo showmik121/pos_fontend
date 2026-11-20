@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useMemo, useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
@@ -39,43 +40,43 @@ export default function StockPage() {
 
   return (
     <AppShell
-      title="স্টক"
+      title={tr("স্টক")}
       nav
       action={
         <LinkButton href="/stock/in" className="min-h-10 px-3 text-sm">
-          <Icon name="plus" size={18} /> স্টক যোগ
+          <Icon name="plus" size={18} /> {tr("স্টক যোগ")}
         </LinkButton>
       }
     >
-      <SearchBox id="stock-search" label="স্টকে পণ্য খুঁজুন" placeholder="নাম বা বারকোড" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <SearchBox id="stock-search" label={tr("স্টকে পণ্য খুঁজুন")} placeholder={tr("নাম বা বারকোড")} value={query} onChange={(e) => setQuery(e.target.value)} />
       <Chips
         value={filter}
         onChange={setFilter}
         options={[
-          { value: "all", label: "সব" },
-          { value: "low", label: `স্টক কম · ${toBanglaDigits(lowCount)}` },
-          { value: "expiry", label: `মেয়াদ কাছে · ${toBanglaDigits(soonCount)}` },
+          { value: "all", label: tr("সব") },
+          { value: "low", label: tf("স্টক কম · {p0}", { p0: (toBanglaDigits(lowCount)) }) },
+          { value: "expiry", label: tf("মেয়াদ কাছে · {p0}", { p0: (toBanglaDigits(soonCount)) }) },
         ]}
       />
 
       {db.products.length === 0 ? (
         <Card className="space-y-3 px-4 py-6 text-center">
-          <p className="font-medium">এখনো কোনো পণ্য নেই</p>
-          <p className="text-sm text-muted">নতুন পণ্য যোগ করুন, অথবা CSV ফাইল থেকে একসাথে আনুন।</p>
+          <p className="font-medium">{tr("এখনো কোনো পণ্য নেই")}</p>
+          <p className="text-sm text-muted">{tr("নতুন পণ্য যোগ করুন, অথবা CSV ফাইল থেকে একসাথে আনুন।")}</p>
           <div className="flex flex-col gap-2">
-            <LinkButton href="/products/new">নতুন পণ্য যোগ করুন</LinkButton>
+            <LinkButton href="/products/new">{tr("নতুন পণ্য যোগ করুন")}</LinkButton>
             <LinkButton href="/products/import" variant="secondary">
-              CSV থেকে আনুন
+              {tr("CSV থেকে আনুন")}
             </LinkButton>
             {DEMO_ENABLED ? (
               <Button variant="ghost" onClick={() => import("@/lib/store/seed").then((m) => update((d) => m.withDemoData(d, new Date())))}>
-                নমুনা তথ্য দিয়ে দেখুন
+                {tr("নমুনা তথ্য দিয়ে দেখুন")}
               </Button>
             ) : null}
           </div>
         </Card>
       ) : rows.length === 0 ? (
-        <Card className="px-4 py-6 text-center text-muted">এই ফিল্টারে কোনো পণ্য নেই</Card>
+        <Card className="px-4 py-6 text-center text-muted">{tr("এই ফিল্টারে কোনো পণ্য নেই")}</Card>
       ) : (
         <RowList>
           {rows.map((p) => {
@@ -87,9 +88,9 @@ export default function StockPage() {
                 key={p.id}
                 href={`/products/detail?id=${p.id}`}
                 title={p.name}
-                subtitle={`${formatTaka(p.pricePoisha)} · স্টক ${formatCount(sellable)}`}
+                subtitle={tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: (formatCount(sellable)) })}
                 right={
-                  days != null && days <= 30 ? <Pill tone="warn">মেয়াদ {toBanglaDigits(days)} দিন</Pill> : low ? <Pill tone="danger">স্টক কম</Pill> : undefined
+                  days != null && days <= 30 ? <Pill tone="warn">{tr("মেয়াদ")} {toBanglaDigits(days)} {tr("দিন")}</Pill> : low ? <Pill tone="danger">{tr("স্টক কম")}</Pill> : undefined
                 }
                 chevron
               />
@@ -100,14 +101,14 @@ export default function StockPage() {
 
       <div className="grid grid-cols-2 gap-3">
         <LinkButton href="/products/new" variant="secondary">
-          নতুন পণ্য
+          {tr("নতুন পণ্য")}
         </LinkButton>
         <LinkButton href="/products/open" variant="secondary">
-          খোলা পণ্য
+          {tr("খোলা পণ্য")}
         </LinkButton>
       </div>
       <LinkButton href="/products/import" variant="ghost" full>
-        CSV থেকে পণ্য আনুন
+        {tr("CSV থেকে পণ্য আনুন")}
       </LinkButton>
     </AppShell>
   )

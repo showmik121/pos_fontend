@@ -1,3 +1,4 @@
+import { tr } from "@/lib/i18n"
 import Link from "next/link"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 import { cn } from "@/lib/cn"
@@ -31,7 +32,7 @@ export function Button({ variant = "primary", loading = false, full = false, cla
         className,
       )}
     >
-      {loading ? "অপেক্ষা করুন…" : children}
+      {loading ? tr("অপেক্ষা করুন…") : children}
     </button>
   )
 }

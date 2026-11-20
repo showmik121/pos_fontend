@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useEffect, useMemo, useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
@@ -52,48 +53,48 @@ export default function ExpensesPage() {
 
   if (!isOwner) {
     return (
-      <AppShell title="খরচ" backHref="/">
-        <Banner tone="warn">খরচের হিসাব শুধু মালিক দেখতে ও লিখতে পারেন।</Banner>
+      <AppShell title={tr("খরচ")} backHref="/">
+        <Banner tone="warn">{tr("খরচের হিসাব শুধু মালিক দেখতে ও লিখতে পারেন।")}</Banner>
       </AppShell>
     )
   }
 
   return (
-    <AppShell title="খরচ" backHref="/">
+    <AppShell title={tr("খরচ")} backHref="/">
       <div className="flex gap-3">
-        <StatBox label="আজকের খরচ" value={formatTaka(expenseTotal(db, today, today))} />
-        <StatBox label="এই মাসের খরচ" value={formatTaka(expenseTotal(db, from, to))} />
+        <StatBox label={tr("আজকের খরচ")} value={formatTaka(expenseTotal(db, today, today))} />
+        <StatBox label={tr("এই মাসের খরচ")} value={formatTaka(expenseTotal(db, from, to))} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Button variant="secondary" onClick={() => { setError(null); setAdding(true) }}>
-          <Icon name="plus" size={18} /> নতুন ক্যাটেগরি
+          <Icon name="plus" size={18} /> {tr("নতুন ক্যাটেগরি")}
         </Button>
-        <LinkButton href="/expenses/book">খরচের খাতা</LinkButton>
+        <LinkButton href="/expenses/book">{tr("খরচের খাতা")}</LinkButton>
       </div>
 
-      <SearchBox id="cat-search" label="ক্যাটেগরি খুঁজুন" placeholder="ক্যাটেগরি খুঁজুন…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <SearchBox id="cat-search" label={tr("ক্যাটেগরি খুঁজুন")} placeholder={tr("ক্যাটেগরি খুঁজুন…")} value={query} onChange={(e) => setQuery(e.target.value)} />
 
       {categories.length === 0 ? (
-        <Card className="px-4 py-6 text-center text-muted">কোনো ক্যাটেগরি নেই।</Card>
+        <Card className="px-4 py-6 text-center text-muted">{tr("কোনো ক্যাটেগরি নেই।")}</Card>
       ) : (
         <div className="grid grid-cols-3 gap-3">
           {categories.map((c) => (
             <button key={c.id} type="button" onClick={() => setPicked(c.id)} className={cn("card-surface flex min-h-[112px] flex-col items-center justify-center gap-2 rounded-2xl border border-line/80 bg-white px-2 py-3 text-center active:bg-canvas")}>
               <span aria-hidden="true" className="text-[34px] leading-none">{c.icon}</span>
-              <span className="text-[14px] font-medium leading-tight">{c.name}</span>
+              <span className="text-[14px] font-medium leading-tight">{tr(c.name)}</span>
             </button>
           ))}
         </div>
       )}
-      <p className="text-center text-sm text-muted">ক্যাটেগরি চাপলে খরচ লেখার ঘর খুলবে।</p>
+      <p className="text-center text-sm text-muted">{tr("ক্যাটেগরি চাপলে খরচ লেখার ঘর খুলবে।")}</p>
 
       <ExpenseSheet open={picked !== null} onClose={() => setPicked(null)} categoryId={picked ?? ""} />
 
-      <Sheet open={adding} onClose={() => setAdding(false)} label="নতুন ক্যাটেগরি">
-        <h2 className="text-lg font-bold">নতুন ক্যাটেগরি</h2>
-        <Field id="cat-name" label="ক্যাটেগরির নাম" placeholder="যেমন: চা-নাস্তা" maxLength={CATEGORY_NAME_MAX} value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-        <div role="radiogroup" aria-label="ছবি" className="flex flex-wrap gap-2">
+      <Sheet open={adding} onClose={() => setAdding(false)} label={tr("নতুন ক্যাটেগরি")}>
+        <h2 className="text-lg font-bold">{tr("নতুন ক্যাটেগরি")}</h2>
+        <Field id="cat-name" label={tr("ক্যাটেগরির নাম")} placeholder={tr("যেমন: চা-নাস্তা")} maxLength={CATEGORY_NAME_MAX} value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+        <div role="radiogroup" aria-label={tr("ছবি")} className="flex flex-wrap gap-2">
           {CATEGORY_ICONS.map((i) => (
             <button key={i} type="button" role="radio" aria-checked={icon === i} onClick={() => setIcon(i)} className={cn("grid size-12 place-items-center rounded-xl text-2xl", icon === i ? "border-[1.5px] border-brand bg-brand-soft" : "border border-line-strong bg-white")}>
               {i}
@@ -102,19 +103,19 @@ export default function ExpensesPage() {
         </div>
         {error ? <Banner tone="danger">{error}</Banner> : null}
         <Button full onClick={saveCategory} disabled={!name.trim()}>
-          ক্যাটেগরি যোগ করুন
+          {tr("ক্যাটেগরি যোগ করুন")}
         </Button>
         {categories.length > 0 ? (
           <details className="text-sm">
-            <summary className="min-h-11 cursor-pointer py-2.5 text-muted">কোনো ক্যাটেগরি মুছতে চান?</summary>
+            <summary className="min-h-11 cursor-pointer py-2.5 text-muted">{tr("কোনো ক্যাটেগরি মুছতে চান?")}</summary>
             <div className="flex flex-wrap gap-2 pt-1">
               {activeCategories(db).map((c) => (
                 <button key={c.id} type="button" className="min-h-10 rounded-full border border-line-strong bg-white px-3 text-danger" onClick={() => update((d) => removeExpenseCategory(d, c.id))}>
-                  {c.icon} {c.name} মুছুন
+                  {c.icon} {tr(c.name)} {tr("মুছুন")}
                 </button>
               ))}
             </div>
-            <p className="pt-2 text-muted">মুছলেও আগের খরচ খাতায় থাকবে।</p>
+            <p className="pt-2 text-muted">{tr("মুছলেও আগের খরচ খাতায় থাকবে।")}</p>
           </details>
         ) : null}
       </Sheet>

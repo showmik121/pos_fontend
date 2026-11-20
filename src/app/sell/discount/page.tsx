@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import { AppShell, Ready } from "@/components/app-shell"
@@ -38,11 +39,11 @@ function DiscountScreen() {
     for (const { line } of lines) {
       const raw = lineInputs[line.productId] ?? ""
       const v = raw.trim() ? parseTaka(raw) : 0
-      if (v == null) return { ok: false as const, error: "ছাড়ের পরিমাণ সঠিক নয়" }
+      if (v == null) return { ok: false as const, error: tr("ছাড়ের পরিমাণ সঠিক নয়") }
       discounts[line.productId] = v
     }
     const billValue = billInput.trim() ? parseTaka(billInput) : 0
-    if (billValue == null) return { ok: false as const, error: "বিলের ছাড় সঠিক নয়" }
+    if (billValue == null) return { ok: false as const, error: tr("বিলের ছাড় সঠিক নয়") }
     const bill: BillDiscount = { type: kind, value: billValue }
     try {
       const totals = computeCart(
@@ -68,26 +69,26 @@ function DiscountScreen() {
 
   return (
     <AppShell
-      title="ছাড়"
+      title={tr("ছাড়")}
       backHref="/sell"
       footer={
         <div className="space-y-2">
           {preview.ok ? (
             <div className="flex items-center justify-between">
-              <span className="text-muted">ছাড়ের পর মোট</span>
+              <span className="text-muted">{tr("ছাড়ের পর মোট")}</span>
               <span className="text-xl font-bold">{formatTaka(preview.totals.total)}</span>
             </div>
           ) : null}
           <Button full onClick={apply} disabled={!preview.ok}>
-            ছাড় প্রয়োগ করুন
+            {tr("ছাড় প্রয়োগ করুন")}
           </Button>
         </div>
       }
     >
-      {lines.length === 0 ? <Banner tone="warn">বিলে কোনো পণ্য নেই।</Banner> : null}
+      {lines.length === 0 ? <Banner tone="warn">{tr("বিলে কোনো পণ্য নেই।")}</Banner> : null}
       {!preview.ok ? <Banner tone="danger">{preview.error}</Banner> : null}
 
-      <h2 className="text-[15px] font-semibold">পণ্য ধরে ছাড় (মোট টাকা)</h2>
+      <h2 className="text-[15px] font-semibold">{tr("পণ্য ধরে ছাড় (মোট টাকা)")}</h2>
       <RowList>
         {lines.map(({ line, product }) => (
           <div key={product.id} className="flex items-center justify-between gap-3 px-4 py-2">
@@ -95,30 +96,30 @@ function DiscountScreen() {
               <div className="truncate font-medium">{product.name}</div>
               <div className="text-[13px] text-muted">{formatTaka(product.pricePoisha * line.qty)}</div>
             </div>
-            <AmountInput id={`d-${product.id}`} label={`${product.name}-এর ছাড়`} placeholder="০" value={lineInputs[product.id] ?? ""} onChange={(e) => setLineInputs((p) => ({ ...p, [product.id]: e.target.value }))} />
+            <AmountInput id={`d-${product.id}`} label={tf("{p0}-এর ছাড়", { p0: (product.name) })} placeholder={tr("০")} value={lineInputs[product.id] ?? ""} onChange={(e) => setLineInputs((p) => ({ ...p, [product.id]: e.target.value }))} />
           </div>
         ))}
       </RowList>
 
-      <h2 className="text-[15px] font-semibold">পুরো বিলে ছাড়</h2>
+      <h2 className="text-[15px] font-semibold">{tr("পুরো বিলে ছাড়")}</h2>
       <Card className="space-y-3 p-4">
-        <Segmented label="ছাড়ের ধরন" options={KINDS} value={kind} onChange={setKind} />
+        <Segmented label={tr("ছাড়ের ধরন")} options={KINDS} value={kind} onChange={setKind} />
         <div className="flex items-center justify-between gap-3">
-          <span className="font-medium">{kind === "amount" ? "ছাড় (৳)" : "ছাড় (%)"}</span>
-          <AmountInput id="bill-discount" label="বিলের ছাড়" placeholder="০" value={billInput} onChange={(e) => setBillInput(e.target.value)} />
+          <span className="font-medium">{kind === "amount" ? tr("ছাড় (৳)") : tr("ছাড় (%)")}</span>
+          <AmountInput id="bill-discount" label={tr("বিলের ছাড়")} placeholder={tr("০")} value={billInput} onChange={(e) => setBillInput(e.target.value)} />
         </div>
       </Card>
 
       {preview.ok ? (
         <RowList>
-          <KeyValue label="ছাড়ের আগে" value={formatTaka(preview.totals.subtotal)} />
-          <KeyValue label="পণ্যের ছাড়" value={`−${formatTaka(preview.totals.lineDiscount)}`} />
-          <KeyValue label="বিলের ছাড়" value={`−${formatTaka(preview.totals.billDiscount)}`} />
+          <KeyValue label={tr("ছাড়ের আগে")} value={formatTaka(preview.totals.subtotal)} />
+          <KeyValue label={tr("পণ্যের ছাড়")} value={`−${formatTaka(preview.totals.lineDiscount)}`} />
+          <KeyValue label={tr("বিলের ছাড়")} value={`−${formatTaka(preview.totals.billDiscount)}`} />
         </RowList>
       ) : null}
 
       <Button variant="ghost" full onClick={clear}>
-        সব ছাড় সরান
+        {tr("সব ছাড় সরান")}
       </Button>
     </AppShell>
   )

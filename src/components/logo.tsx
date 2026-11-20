@@ -1,3 +1,4 @@
+import { tr } from "@/lib/i18n"
 /** অ্যাপের নাম এক জায়গায়; নাম ঠিক হলে শুধু এটি বদলাবে */
 export const APP_NAME = "Bipone"
 
@@ -12,7 +13,7 @@ export function Logo({ size = 56 }: { size?: number }) {
       />
       <div className="leading-tight">
         <div className="text-xl font-extrabold tracking-tight text-ink">{APP_NAME}</div>
-        <div className="text-xs text-muted">দোকানের বিক্রি · স্টক · বাকি</div>
+        <div className="text-xs text-muted">{tr("দোকানের বিক্রি · স্টক · বাকি")}</div>
       </div>
     </div>
   )

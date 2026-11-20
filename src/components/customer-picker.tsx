@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useMemo, useState } from "react"
 import { useDb } from "./db-provider"
 import { Banner } from "./ui/banner"
@@ -59,40 +60,40 @@ export function CustomerPicker({ open, onClose, onPick }: Props) {
   }
 
   return (
-    <Sheet open={open} onClose={close} label="কাস্টমার বাছুন">
+    <Sheet open={open} onClose={close} label={tr("কাস্টমার বাছুন")}>
       {adding ? (
         <>
-          <h2 className="text-lg font-bold">নতুন কাস্টমার</h2>
-          <Field id="nc-name" label="নাম" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
-          <Field id="nc-phone" label="মোবাইল (ঐচ্ছিক)" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <h2 className="text-lg font-bold">{tr("নতুন কাস্টমার")}</h2>
+          <Field id="nc-name" label={tr("নাম")} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+          <Field id="nc-phone" label={tr("মোবাইল (ঐচ্ছিক)")} inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
           {error ? <Banner tone="danger">{error}</Banner> : null}
           <div className="flex gap-2">
             <Button variant="secondary" className="flex-1" onClick={() => setAdding(false)}>
-              পিছনে
+              {tr("পিছনে")}
             </Button>
             <Button className="flex-1" onClick={save}>
-              যোগ করুন
+              {tr("যোগ করুন")}
             </Button>
           </div>
         </>
       ) : (
         <>
-          <h2 className="text-lg font-bold">কাস্টমার বাছুন</h2>
-          <SearchBox id="cust-search" label="কাস্টমার খুঁজুন" placeholder="নাম বা মোবাইল" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <h2 className="text-lg font-bold">{tr("কাস্টমার বাছুন")}</h2>
+          <SearchBox id="cust-search" label={tr("কাস্টমার খুঁজুন")} placeholder={tr("নাম বা মোবাইল")} value={query} onChange={(e) => setQuery(e.target.value)} />
           <div className="max-h-[40dvh] overflow-y-auto">
             {matches.length === 0 ? (
-              <p className="py-4 text-center text-muted">কাস্টমার পাওয়া যায়নি</p>
+              <p className="py-4 text-center text-muted">{tr("কাস্টমার পাওয়া যায়নি")}</p>
             ) : (
               <RowList>
                 {matches.map((c) => {
                   const bal = customerBalance(db, c.id)
-                  return <Row key={c.id} title={c.name} subtitle={c.phone ? formatPhoneBn(c.phone) : "মোবাইল নেই"} right={bal > 0 ? <span className="text-sm text-warn">বাকি {formatTaka(bal)}</span> : undefined} onClick={() => onPick(c.id)} />
+                  return <Row key={c.id} title={c.name} subtitle={c.phone ? formatPhoneBn(c.phone) : tr("মোবাইল নেই")} right={bal > 0 ? <span className="text-sm text-warn">{tr("বাকি")} {formatTaka(bal)}</span> : undefined} onClick={() => onPick(c.id)} />
                 })}
               </RowList>
             )}
           </div>
           <Button variant="secondary" full onClick={() => setAdding(true)}>
-            + নতুন কাস্টমার
+            {tr("+ নতুন কাস্টমার")}
           </Button>
         </>
       )}

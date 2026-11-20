@@ -1,3 +1,4 @@
+import { tr, tf } from "../i18n"
 import { formatTaka } from "../domain/money"
 import type { Statement } from "../store/statement"
 
@@ -31,16 +32,16 @@ export async function drawStatementPng(opts: { storeName: string; customerName: 
 
   ctx.fillStyle = "#1f2a1f"
   ctx.font = `700 30px ${FONT}`
-  ctx.fillText(opts.storeName || "বাকির খাতা", PAD, 56)
+  ctx.fillText(opts.storeName || tr("বাকির খাতা"), PAD, 56)
   ctx.font = `400 20px ${FONT}`
   ctx.fillStyle = "#6b7280"
-  ctx.fillText(`বাকির খাতা · ${opts.dateText}`, PAD, 88)
+  ctx.fillText(tf("বাকির খাতা · {p0}", { p0: opts.dateText }), PAD, 88)
   ctx.fillStyle = "#1f2a1f"
   ctx.font = `600 26px ${FONT}`
   ctx.fillText(opts.customerName, PAD, 136)
   ctx.font = `400 20px ${FONT}`
   ctx.fillStyle = "#6b7280"
-  ctx.fillText("বর্তমান বাকি", PAD, 170)
+  ctx.fillText(tr("বর্তমান বাকি"), PAD, 170)
   ctx.textAlign = "right"
   ctx.font = `700 30px ${FONT}`
   ctx.fillStyle = balance > 0 ? "#b45309" : "#166534"
@@ -53,7 +54,7 @@ export async function drawStatementPng(opts: { storeName: string; customerName: 
   if (skipped > 0) {
     ctx.fillStyle = "#6b7280"
     ctx.font = `400 18px ${FONT}`
-    ctx.fillText(`আগের ${skipped}টি লেনদেন এখানে নেই`, PAD, y + 20)
+    ctx.fillText(tf("আগের {p0}টি লেনদেন এখানে নেই", { p0: skipped }), PAD, y + 20)
     y += note
   }
   for (const r of rows) {
@@ -73,7 +74,7 @@ export async function drawStatementPng(opts: { storeName: string; customerName: 
     ctx.fillText(r.amountText, W - PAD, y + 28)
     ctx.fillStyle = "#6b7280"
     ctx.font = `400 17px ${FONT}`
-    ctx.fillText(`বাকি ${formatTaka(r.balance)}`, W - PAD, y + 52)
+    ctx.fillText(tf("বাকি {p0}", { p0: formatTaka(r.balance) }), W - PAD, y + 52)
     ctx.textAlign = "left"
     y += ROW_H
   }
@@ -83,7 +84,7 @@ export async function drawStatementPng(opts: { storeName: string; customerName: 
   ctx.stroke()
   ctx.fillStyle = "#6b7280"
   ctx.font = `400 18px ${FONT}`
-  ctx.fillText("ধন্যবাদ!", PAD, y + 44)
+  ctx.fillText(tr("ধন্যবাদ!"), PAD, y + 44)
 
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"))
 }

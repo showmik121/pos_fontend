@@ -1,3 +1,4 @@
+import { tr } from "@/lib/i18n"
 import { cn } from "@/lib/cn"
 
 interface Option<T extends string> {
@@ -20,7 +21,7 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
             onClick={() => onChange(o.value)}
             className={cn("h-11 flex-1 rounded-xl px-1.5 text-[15px]", on ? "border-[1.5px] border-brand bg-brand-soft font-semibold text-brand-dark" : "border border-line-strong bg-white font-medium text-ink")}
           >
-            {o.label}
+            {tr(o.label)}
           </button>
         )
       })}
@@ -42,7 +43,7 @@ export function Chips<T extends string>({ options, value, onChange }: { options:
             onClick={() => onChange(o.value)}
             className={cn("h-11 whitespace-nowrap rounded-full px-3.5 text-sm", on ? "border-[1.5px] border-brand bg-brand-soft font-semibold text-brand-dark" : "border border-line-strong bg-white font-medium text-ink")}
           >
-            {o.label}
+            {tr(o.label)}
           </button>
         )
       })}

@@ -1,3 +1,4 @@
+import { tr, tf } from "../i18n"
 import { daysBetween, localDateIso } from "../domain/dates"
 import { formatTaka } from "../domain/money"
 import { toAsciiDigits } from "../format/bn"
@@ -59,7 +60,7 @@ export function summarizeDues(rows: readonly DueRow[], now: Date): DueSummary {
 /** তাগাদার এসএমএসের লেখা (ভদ্র ভাষায়, দোকানের নামসহ) */
 export function reminderText(opts: { customerName: string; balance: number; storeName: string }): string {
   const shop = opts.storeName.trim()
-  return `আসসালামু আলাইকুম ${opts.customerName}, ${shop ? `${shop}-এ` : "দোকানে"} আপনার ${formatTaka(opts.balance)} বাকি আছে। সুবিধামতো সময়ে পরিশোধ করলে ভালো হয়। ধন্যবাদ।`
+  return tf("আসসালামু আলাইকুম {name}, {shop} আপনার {amount} বাকি আছে। সুবিধামতো সময়ে পরিশোধ করলে ভালো হয়। ধন্যবাদ।", { name: opts.customerName, shop: shop ? tf("{p0}-এ", { p0: shop }) : tr("দোকানে"), amount: formatTaka(opts.balance) })
 }
 
 /** sms: লিংক (Android ও iOS দুটোতেই চলে) */
@@ -99,8 +100,8 @@ export function balanceAfter(ledger: readonly LedgerEntry[], customerId: string,
 
 /** জমার রসিদের লেখা (শেয়ার/কপির জন্য) */
 export function depositReceiptText(opts: { storeName: string; customerName: string; at: string; amount: number; balanceAfter: number }): string {
-  const out = [opts.storeName.trim() || "জমার রসিদ", "টাকা জমার রসিদ", `${opts.customerName} · ${formatDateTimeBn(opts.at)}`, "", `জমা: ${formatTaka(opts.amount)}`]
-  out.push(opts.balanceAfter > 0 ? `এখনো বাকি: ${formatTaka(opts.balanceAfter)}` : "বাকি শোধ হয়েছে", "", "ধন্যবাদ!")
+  const out = [opts.storeName.trim() || tr("জমার রসিদ"), tr("টাকা জমার রসিদ"), `${opts.customerName} · ${formatDateTimeBn(opts.at)}`, "", tf("জমা: {p0}", { p0: formatTaka(opts.amount) })]
+  out.push(opts.balanceAfter > 0 ? tf("এখনো বাকি: {p0}", { p0: formatTaka(opts.balanceAfter) }) : tr("বাকি শোধ হয়েছে"), "", tr("ধন্যবাদ!"))
   return out.join("\n")
 }
 

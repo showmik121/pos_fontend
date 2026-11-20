@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useMemo, useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
@@ -7,7 +8,7 @@ import { ExpenseSheet } from "@/components/expense-sheet"
 import { Banner } from "@/components/ui/banner"
 import { Card, SectionTitle, StatBox } from "@/components/ui/card"
 import { Icon } from "@/components/ui/icons"
-import { addDays, BN_MONTHS, formatDayMonthBn, todayIso } from "@/lib/domain/dates"
+import { addDays, formatDayMonthBn, monthName, todayIso } from "@/lib/domain/dates"
 import { formatTaka } from "@/lib/domain/money"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { useSessionInfo } from "@/lib/hooks/use-session"
@@ -49,42 +50,42 @@ export default function ExpenseBookPage() {
 
   if (!isOwner) {
     return (
-      <AppShell title="খরচের খাতা" backHref="/expenses">
-        <Banner tone="warn">খরচের হিসাব শুধু মালিক দেখতে পারেন।</Banner>
+      <AppShell title={tr("খরচের খাতা")} backHref="/expenses">
+        <Banner tone="warn">{tr("খরচের হিসাব শুধু মালিক দেখতে পারেন।")}</Banner>
       </AppShell>
     )
   }
 
   return (
-    <AppShell title="খরচের খাতা" backHref="/expenses">
+    <AppShell title={tr("খরচের খাতা")} backHref="/expenses">
       <div className="flex items-center justify-between">
-        <button type="button" aria-label="আগের মাস" onClick={() => setAnchor(shiftMonth(anchor, -1))} className="grid size-11 place-items-center rounded-xl border border-line-strong bg-white">
+        <button type="button" aria-label={tr("আগের মাস")} onClick={() => setAnchor(shiftMonth(anchor, -1))} className="grid size-11 place-items-center rounded-xl border border-line-strong bg-white">
           <Icon name="back" />
         </button>
         <div className="text-center font-semibold">
-          {BN_MONTHS[Number(m) - 1]} {toBanglaDigits(y)}
+          {monthName(Number(m))} {toBanglaDigits(y)}
         </div>
-        <button type="button" aria-label="পরের মাস" disabled={isCurrent} onClick={() => setAnchor(shiftMonth(anchor, 1))} className="grid size-11 place-items-center rounded-xl border border-line-strong bg-white disabled:text-muted/50">
+        <button type="button" aria-label={tr("পরের মাস")} disabled={isCurrent} onClick={() => setAnchor(shiftMonth(anchor, 1))} className="grid size-11 place-items-center rounded-xl border border-line-strong bg-white disabled:text-muted/50">
           <Icon name="chevron" />
         </button>
       </div>
 
       <div className="flex gap-3">
-        <StatBox label="মোট খরচ" value={formatTaka(total)} />
-        <StatBox label="নিট লাভ" value={formatTaka(sales.profit - total)} />
+        <StatBox label={tr("মোট খরচ")} value={formatTaka(total)} />
+        <StatBox label={tr("নিট লাভ")} value={formatTaka(sales.profit - total)} />
       </div>
       <p className="text-center text-[13px] text-muted">
-        নিট লাভ = আনুমানিক লাভ {formatTaka(sales.profit)} − খরচ {formatTaka(total)}
+        {tr("নিট লাভ = আনুমানিক লাভ")} {formatTaka(sales.profit)} {tr("− খরচ")} {formatTaka(total)}
       </p>
 
       {totals.length > 0 ? (
         <>
-          <SectionTitle>ক্যাটেগরি অনুযায়ী</SectionTitle>
+          <SectionTitle>{tr("ক্যাটেগরি অনুযায়ী")}</SectionTitle>
           <Card className="divide-y divide-line">
             {totals.map((c) => (
               <div key={c.categoryId} className="flex items-center justify-between px-4 py-2.5">
                 <span className="font-medium">
-                  {c.icon} {c.name}
+                  {c.icon} {tr(c.name)}
                 </span>
                 <span>{formatTaka(c.total)}</span>
               </div>
@@ -93,9 +94,9 @@ export default function ExpenseBookPage() {
         </>
       ) : null}
 
-      <SectionTitle>খরচের তালিকা</SectionTitle>
+      <SectionTitle>{tr("খরচের তালিকা")}</SectionTitle>
       {days.length === 0 ? (
-        <Card className="px-4 py-6 text-center text-muted">এই মাসে কোনো খরচ লেখা নেই।</Card>
+        <Card className="px-4 py-6 text-center text-muted">{tr("এই মাসে কোনো খরচ লেখা নেই।")}</Card>
       ) : (
         days.map((d) => (
           <div key={d.date} className="space-y-1.5">
@@ -110,7 +111,7 @@ export default function ExpenseBookPage() {
                   <button key={x.id} type="button" onClick={() => setEditing(x)} className="flex min-h-[56px] w-full items-center gap-3 px-4 py-1.5 text-left active:bg-canvas">
                     <span aria-hidden="true" className="text-2xl">{c?.icon ?? "🧾"}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium leading-snug">{c?.name ?? "অন্যান্য"}</div>
+                      <div className="font-medium leading-snug">{c ? tr(c.name) : tr("অন্যান্য")}</div>
                       {x.note ? <div className="truncate text-[13px] text-muted">{x.note}</div> : null}
                     </div>
                     <span className="font-semibold">{formatTaka(x.amount)}</span>

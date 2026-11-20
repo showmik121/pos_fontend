@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useState } from "react"
 import { Banner } from "./ui/banner"
 import { Button } from "./ui/button"
@@ -60,16 +61,16 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
     const costPoisha = cost.trim() ? parseTaka(cost) : 0
     const cartonSize = Number(toAsciiDigits(carton))
     const min = Number(toAsciiDigits(minStock))
-    if (pricePoisha == null) return setError("বিক্রয়মূল্য সঠিকভাবে দিন (যেমন ২৪০)")
-    if (costPoisha == null) return setError("ক্রয়মূল্য সঠিক নয়")
-    if (!Number.isInteger(cartonSize) || cartonSize < 1) return setError("কার্টনে পিসের সংখ্যা ১ বা তার বেশি হতে হবে")
-    if (!Number.isInteger(min) || min < 0) return setError("সর্বনিম্ন স্টক সঠিক নয়")
+    if (pricePoisha == null) return setError(tr("বিক্রয়মূল্য সঠিকভাবে দিন (যেমন ২৪০)"))
+    if (costPoisha == null) return setError(tr("ক্রয়মূল্য সঠিক নয়"))
+    if (!Number.isInteger(cartonSize) || cartonSize < 1) return setError(tr("কার্টনে পিসের সংখ্যা ১ বা তার বেশি হতে হবে"))
+    if (!Number.isInteger(min) || min < 0) return setError(tr("সর্বনিম্ন স্টক সঠিক নয়"))
     const qty = stockQty.trim() ? Number(toAsciiDigits(stockQty)) : 0
-    if (withInitialStock && (!Number.isInteger(qty) || qty < 0)) return setError("শুরুর স্টক ০ বা পূর্ণসংখ্যা দিন")
+    if (withInitialStock && (!Number.isInteger(qty) || qty < 0)) return setError(tr("শুরুর স্টক ০ বা পূর্ণসংখ্যা দিন"))
     let expiryDate: string | null = null
     if (withInitialStock && showExpiry && qty > 0 && expiry.trim()) {
       expiryDate = parseMonthYear(expiry)
-      if (!expiryDate) return setError("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)")
+      if (!expiryDate) return setError(tr("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)"))
     }
     try {
       onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate })
@@ -80,41 +81,41 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
 
   return (
     <div className="space-y-4">
-      {open ? <Banner tone="info">বারকোড ছাড়া পণ্য (যেমন খোলা ওষুধ, লুজ আইটেম)। নাম দিয়ে খুঁজে বিক্রি হবে।</Banner> : null}
-      <Field id="p-name" label="পণ্যের নাম" hint="ইংরেজি বা বাংলা — যেভাবে লেখা সহজ, যেমন Pond's Cream" lang="en" autoCapitalize="words" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+      {open ? <Banner tone="info">{tr("বারকোড ছাড়া পণ্য (যেমন খোলা ওষুধ, লুজ আইটেম)। নাম দিয়ে খুঁজে বিক্রি হবে।")}</Banner> : null}
+      <Field id="p-name" label={tr("পণ্যের নাম")} hint={tr("ইংরেজি বা বাংলা — যেভাবে লেখা সহজ, যেমন Pond's Cream")} lang="en" autoCapitalize="words" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
       {!open && !editing ? (
         <Field
           id="p-barcode"
-          label="বারকোড (ঐচ্ছিক)"
+          label={tr("বারকোড (ঐচ্ছিক)")}
           inputMode="numeric"
           value={barcode}
           onChange={(e) => setBarcode(e.target.value)}
           trailing={
-            <button type="button" onClick={() => setScanning(true)} aria-label="বারকোড স্ক্যান করুন" className="grid size-11 place-items-center rounded-lg text-brand active:bg-brand-soft">
+            <button type="button" onClick={() => setScanning(true)} aria-label={tr("বারকোড স্ক্যান করুন")} className="grid size-11 place-items-center rounded-lg text-brand active:bg-brand-soft">
               <Icon name="scan" />
             </button>
           }
         />
       ) : null}
       <div className="space-y-1.5">
-        <span className="block text-sm font-medium">একক</span>
-        <Segmented label="একক" options={UNIT_OPTIONS} value={unit} onChange={setUnit} />
+        <span className="block text-sm font-medium">{tr("একক")}</span>
+        <Segmented label={tr("একক")} options={UNIT_OPTIONS} value={unit} onChange={setUnit} />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field id="p-cost" label="ক্রয়মূল্য (প্রতি পিস)" inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
-        <Field id="p-price" label="বিক্রয়মূল্য (প্রতি পিস)" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <Field id="p-cost" label={tr("ক্রয়মূল্য (প্রতি পিস)")} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
+        <Field id="p-price" label={tr("বিক্রয়মূল্য (প্রতি পিস)")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field id="p-carton" label="১ কার্টনে কত পিস" inputMode="numeric" value={carton} onChange={(e) => setCarton(e.target.value)} />
-        <Field id="p-min" label="সর্বনিম্ন স্টক" inputMode="numeric" value={minStock} onChange={(e) => setMinStock(e.target.value)} />
+        <Field id="p-carton" label={tr("১ কার্টনে কত পিস")} inputMode="numeric" value={carton} onChange={(e) => setCarton(e.target.value)} />
+        <Field id="p-min" label={tr("সর্বনিম্ন স্টক")} inputMode="numeric" value={minStock} onChange={(e) => setMinStock(e.target.value)} />
       </div>
       {withInitialStock ? (
         <div className="space-y-3 rounded-xl border border-line bg-white p-3">
-          <Field id="p-stock" label="শুরুর স্টক (পিস) — এখন যতগুলো আছে" placeholder="০" inputMode="numeric" value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
-          {showExpiry ? <Field id="p-expiry" label="মেয়াদ (ঐচ্ছিক, মাস/বছর)" placeholder="০৬/২০২৭" inputMode="numeric" value={expiry} onChange={(e) => setExpiry(e.target.value)} /> : null}
+          <Field id="p-stock" label={tr("শুরুর স্টক (পিস) — এখন যতগুলো আছে")} placeholder={tr("০")} inputMode="numeric" value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
+          {showExpiry ? <Field id="p-expiry" label={tr("মেয়াদ (ঐচ্ছিক, মাস/বছর)")} placeholder={tr("০৬/২০২৭")} inputMode="numeric" value={expiry} onChange={(e) => setExpiry(e.target.value)} /> : null}
         </div>
       ) : null}
-      <Field id="p-cat" label="ক্যাটেগরি (ঐচ্ছিক)" lang="en" autoCapitalize="words" value={category} onChange={(e) => setCategory(e.target.value)} />
+      <Field id="p-cat" label={tr("ক্যাটেগরি (ঐচ্ছিক)")} lang="en" autoCapitalize="words" value={category} onChange={(e) => setCategory(e.target.value)} />
       {error ? <Banner tone="danger">{error}</Banner> : null}
       <Button full onClick={submit}>
         {submitLabel}

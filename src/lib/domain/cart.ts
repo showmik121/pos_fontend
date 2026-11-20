@@ -1,3 +1,4 @@
+import { tr } from "../i18n"
 import { DomainError, requireNonNegativeInt, requirePositiveInt } from "./errors"
 
 export interface PricedLine {
@@ -26,7 +27,7 @@ export function computeCart(lines: readonly PricedLine[], bill: BillDiscount = N
     requirePositiveInt(l.qty, "পরিমাণ")
     requireNonNegativeInt(l.discount, "ছাড়")
     const gross = l.unitPrice * l.qty
-    if (l.discount > gross) throw new DomainError("discount_too_large", "পণ্যের ছাড় তার দামের চেয়ে বেশি হতে পারে না")
+    if (l.discount > gross) throw new DomainError("discount_too_large", tr("পণ্যের ছাড় তার দামের চেয়ে বেশি হতে পারে না"))
     subtotal += gross
     lineDiscount += l.discount
   }
@@ -37,10 +38,10 @@ export function computeCart(lines: readonly PricedLine[], bill: BillDiscount = N
     billDiscount = requireNonNegativeInt(bill.value, "ছাড়")
   } else {
     requireNonNegativeInt(bill.value, "ছাড়ের শতাংশ")
-    if (bill.value > 10_000) throw new DomainError("invalid_percent", "ছাড় ১০০% এর বেশি হতে পারে না")
+    if (bill.value > 10_000) throw new DomainError("invalid_percent", tr("ছাড় ১০০% এর বেশি হতে পারে না"))
     billDiscount = Math.round((base * bill.value) / 10_000)
   }
-  if (billDiscount > base) throw new DomainError("discount_too_large", "ছাড় বিলের মোটের চেয়ে বেশি হতে পারে না")
+  if (billDiscount > base) throw new DomainError("discount_too_large", tr("ছাড় বিলের মোটের চেয়ে বেশি হতে পারে না"))
   return { subtotal, lineDiscount, billDiscount, total: base - billDiscount }
 }
 
@@ -67,13 +68,13 @@ export function settlePayments(input: {
   requireNonNegativeInt(total, "মোট")
   requireNonNegativeInt(cash, "নগদ")
   requireNonNegativeInt(mobile, "মোবাইল ব্যাংকিং")
-  if (mobile > total) throw new DomainError("overpaid_digital", "মোবাইল ব্যাংকিংয়ের পরিমাণ মোটের বেশি হতে পারে না")
+  if (mobile > total) throw new DomainError("overpaid_digital", tr("মোবাইল ব্যাংকিংয়ের পরিমাণ মোটের বেশি হতে পারে না"))
   const received = cash + mobile
   const change = Math.max(0, received - total)
-  if (change > cash) throw new DomainError("overpaid", "ফেরত দেওয়ার মতো নগদ নেই")
+  if (change > cash) throw new DomainError("overpaid", tr("ফেরত দেওয়ার মতো নগদ নেই"))
   const paid = received - change
   const due = total - paid
-  if (due > 0 && !hasCustomer) throw new DomainError("customer_required", "বাকি রাখতে কাস্টমার বেছে নিন")
+  if (due > 0 && !hasCustomer) throw new DomainError("customer_required", tr("বাকি রাখতে কাস্টমার বেছে নিন"))
   const payments: Payment[] = []
   if (cash > 0) payments.push({ method: "cash", amount: cash })
   if (mobile > 0) payments.push({ method: mobileMethod, amount: mobile })

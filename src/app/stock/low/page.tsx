@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
 import { Card, Pill, Row, RowList } from "@/components/ui/card"
@@ -15,9 +16,9 @@ export default function LowStockPage() {
     .sort((a, b) => a.sellable - b.sellable)
 
   return (
-    <AppShell title="স্টক কম" backHref="/stock">
+    <AppShell title={tr("স্টক কম")} backHref="/stock">
       {rows.length === 0 ? (
-        <Card className="px-4 py-6 text-center text-muted">সব পণ্যের স্টক যথেষ্ট আছে।</Card>
+        <Card className="px-4 py-6 text-center text-muted">{tr("সব পণ্যের স্টক যথেষ্ট আছে।")}</Card>
       ) : (
         <RowList>
           {rows.map(({ p, sellable }) => (
@@ -25,14 +26,14 @@ export default function LowStockPage() {
               key={p.id}
               href={`/stock/in?product=${p.id}`}
               title={p.name}
-              subtitle={`আছে ${formatCount(sellable)} · সর্বনিম্ন ${formatCount(p.minStock)}`}
-              right={<Pill tone={sellable === 0 ? "danger" : "warn"}>{sellable === 0 ? "শেষ" : "কম"}</Pill>}
+              subtitle={tf("আছে {p0} · সর্বনিম্ন {p1}", { p0: (formatCount(sellable)), p1: (formatCount(p.minStock)) })}
+              right={<Pill tone={sellable === 0 ? "danger" : "warn"}>{sellable === 0 ? tr("শেষ") : tr("কম")}</Pill>}
               chevron
             />
           ))}
         </RowList>
       )}
-      <p className="text-center text-sm text-muted">পণ্য চাপলে সরাসরি স্টক যোগের ফর্ম খুলবে।</p>
+      <p className="text-center text-sm text-muted">{tr("পণ্য চাপলে সরাসরি স্টক যোগের ফর্ম খুলবে।")}</p>
     </AppShell>
   )
 }

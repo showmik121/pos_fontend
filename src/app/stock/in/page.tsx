@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { AppShell, Splash } from "@/components/app-shell"
@@ -65,30 +66,30 @@ function StockInForm() {
 
   if (!product) {
     return (
-      <AppShell title="স্টক যোগ" backHref="/stock">
-        <SearchBox id="si-search" label="পণ্য খুঁজুন" placeholder="কোন পণ্যের স্টক যোগ করবেন?" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <AppShell title={tr("স্টক যোগ")} backHref="/stock">
+        <SearchBox id="si-search" label={tr("পণ্য খুঁজুন")} placeholder={tr("কোন পণ্যের স্টক যোগ করবেন?")} value={query} onChange={(e) => setQuery(e.target.value)} />
         <Button variant="secondary" full onClick={() => setScanning(true)}>
-          <Icon name="scan" /> বারকোড স্ক্যান করুন
+          <Icon name="scan" /> {tr("বারকোড স্ক্যান করুন")}
         </Button>
         {scanMiss ? (
           <Banner tone="warn">
             <div className="space-y-2">
-              <div>এই বারকোডে ({scanMiss}) কোনো পণ্য নেই।</div>
+              <div>{tr("এই বারকোডে (")}{scanMiss}{tr(") কোনো পণ্য নেই।")}</div>
               <Button full onClick={() => router.push(newProductFromScanHref(scanMiss))}>
-                <Icon name="plus" /> নতুন পণ্য হিসেবে যোগ করুন
+                <Icon name="plus" /> {tr("নতুন পণ্য হিসেবে যোগ করুন")}
               </Button>
             </div>
           </Banner>
         ) : null}
         <Button variant="secondary" full onClick={() => router.push("/products/new?next=stock")}>
-          <Icon name="plus" /> নতুন পণ্য (তালিকায় নেই)
+          <Icon name="plus" /> {tr("নতুন পণ্য (তালিকায় নেই)")}
         </Button>
         {results.length === 0 ? (
-          <Card className="px-4 py-6 text-center text-muted">পণ্য পাওয়া যায়নি</Card>
+          <Card className="px-4 py-6 text-center text-muted">{tr("পণ্য পাওয়া যায়নি")}</Card>
         ) : (
           <RowList>
             {results.map((p) => (
-              <Row key={p.id} title={p.name} subtitle={`স্টক ${formatCount(totalStock(db, p.id))}`} onClick={() => choose(p.id)} chevron />
+              <Row key={p.id} title={p.name} subtitle={tf("স্টক {p0}", { p0: (formatCount(totalStock(db, p.id))) })} onClick={() => choose(p.id)} chevron />
             ))}
           </RowList>
         )}
@@ -111,14 +112,14 @@ function StockInForm() {
   const submit = () => {
     setError(null)
     const q = Number(toAsciiDigits(qty))
-    if (!Number.isInteger(q) || q < 1) return setError("পরিমাণ ১ বা তার বেশি পূর্ণসংখ্যা দিন")
+    if (!Number.isInteger(q) || q < 1) return setError(tr("পরিমাণ ১ বা তার বেশি পূর্ণসংখ্যা দিন"))
     const costPoisha = cost.trim() ? parseTaka(cost) : 0
     const pricePoisha = price.trim() ? parseTaka(price) : null
-    if (costPoisha == null || (price.trim() && pricePoisha == null)) return setError("টাকার পরিমাণ সঠিক নয়")
+    if (costPoisha == null || (price.trim() && pricePoisha == null)) return setError(tr("টাকার পরিমাণ সঠিক নয়"))
     let expiryDate: string | null = null
     if (expiry.trim()) {
       expiryDate = parseMonthYear(expiry)
-      if (!expiryDate) return setError("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)")
+      if (!expiryDate) return setError(tr("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)"))
     }
     try {
       update((d) => stockIn(d, { productId: product.id, qty: q, unit, batchNo, expiryDate, costPoisha, pricePoisha, requireBatchAndExpiry: isPharmacy }, new Date()))
@@ -130,37 +131,37 @@ function StockInForm() {
 
   const perCarton = product.cartonSize > 1
   return (
-    <AppShell title="স্টক যোগ" backHref="/stock" footer={<Button full onClick={submit}>স্টকে যোগ করুন</Button>}>
+    <AppShell title={tr("স্টক যোগ")} backHref="/stock" footer={<Button full onClick={submit}>{tr("স্টকে যোগ করুন")}</Button>}>
       <Card className="px-4 py-3">
         <div className="font-medium">{product.name}</div>
         <div className="text-[13px] text-muted">
-          এখন স্টক {formatCount(totalStock(db, product.id))} পিস · বিক্রয়মূল্য {formatTaka(product.pricePoisha)}
+          {tr("এখন স্টক")} {formatCount(totalStock(db, product.id))} {tr("পিস · বিক্রয়মূল্য")} {formatTaka(product.pricePoisha)}
         </div>
         <button type="button" onClick={() => setProductId(null)} className="mt-1 min-h-11 text-sm text-brand-dark underline">
-          অন্য পণ্য বাছুন
+          {tr("অন্য পণ্য বাছুন")}
         </button>
       </Card>
 
       {perCarton ? (
         <div className="space-y-1.5">
-          <span className="block text-sm font-medium">কীভাবে গুনছেন</span>
-          <Segmented label="একক" options={UNITS} value={unit} onChange={setUnit} />
+          <span className="block text-sm font-medium">{tr("কীভাবে গুনছেন")}</span>
+          <Segmented label={tr("একক")} options={UNITS} value={unit} onChange={setUnit} />
         </div>
       ) : null}
       <Field
         id="si-qty"
-        label={unit === "carton" ? `কার্টন (১ কার্টন = ${formatCount(product.cartonSize)} পিস)` : "পরিমাণ (পিস)"}
+        label={unit === "carton" ? tf("কার্টন (১ কার্টন = {p0} পিস)", { p0: (formatCount(product.cartonSize)) }) : tr("পরিমাণ (পিস)")}
         inputMode="numeric"
         value={qty}
         onChange={(e) => setQty(e.target.value)}
       />
       <div className="grid grid-cols-2 gap-3">
-        <Field id="si-batch" label={isPharmacy ? "ব্যাচ নম্বর" : "ব্যাচ (ঐচ্ছিক)"} value={batchNo} onChange={(e) => setBatchNo(e.target.value)} />
-        <Field id="si-expiry" label={isPharmacy ? "মেয়াদ (মাস/বছর)" : "মেয়াদ (ঐচ্ছিক)"} placeholder="০৬/২০২৭" inputMode="numeric" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+        <Field id="si-batch" label={isPharmacy ? tr("ব্যাচ নম্বর") : tr("ব্যাচ (ঐচ্ছিক)")} value={batchNo} onChange={(e) => setBatchNo(e.target.value)} />
+        <Field id="si-expiry" label={isPharmacy ? tr("মেয়াদ (মাস/বছর)") : tr("মেয়াদ (ঐচ্ছিক)")} placeholder={tr("০৬/২০২৭")} inputMode="numeric" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field id="si-cost" label={unit === "carton" ? "ক্রয়মূল্য (প্রতি কার্টন)" : "ক্রয়মূল্য (প্রতি পিস)"} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
-        <Field id="si-price" label="বিক্রয়মূল্য (প্রতি পিস)" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <Field id="si-cost" label={unit === "carton" ? tr("ক্রয়মূল্য (প্রতি কার্টন)") : tr("ক্রয়মূল্য (প্রতি পিস)")} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
+        <Field id="si-price" label={tr("বিক্রয়মূল্য (প্রতি পিস)")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
       {error ? <Banner tone="danger">{error}</Banner> : null}
     </AppShell>

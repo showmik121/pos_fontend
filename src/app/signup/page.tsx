@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent, type ReactNode } from "react"
@@ -61,10 +62,10 @@ export default function SignupPage() {
     setError(null)
     const normalized = normalizeBdPhone(phone)
     const next: Errors = {}
-    if (!storeName.trim()) next.storeName = "দোকানের নাম দিন"
-    if (!ownerName.trim()) next.ownerName = "আপনার নাম দিন"
-    if (!normalized) next.phone = "মোবাইল নম্বর সঠিক নয় (যেমন ০১৭১২৩৪৫৬৭৮)"
-    if (password.length < 8) next.password = "পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে"
+    if (!storeName.trim()) next.storeName = tr("দোকানের নাম দিন")
+    if (!ownerName.trim()) next.ownerName = tr("আপনার নাম দিন")
+    if (!normalized) next.phone = tr("মোবাইল নম্বর সঠিক নয় (যেমন ০১৭১২৩৪৫৬৭৮)")
+    if (password.length < 8) next.password = tr("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে")
     setErrors(next)
     if (Object.keys(next).length > 0 || !normalized) return
 
@@ -85,19 +86,19 @@ export default function SignupPage() {
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-gold to-canvas" />
       <div className="relative mx-auto w-full max-w-md flex-1 px-5 pb-6 pt-6">
         <Link href="/login" className="mb-5 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white/70 px-3.5 text-sm font-medium text-ink2 active:bg-white">
-          <span aria-hidden="true">←</span> লগইনে ফিরুন
+          <span aria-hidden="true">←</span> {tr("লগইনে ফিরুন")}
         </Link>
         <Logo size={44} />
-        <h1 className="mt-5 text-[26px] font-extrabold leading-tight tracking-tight text-ink">আপনার দোকান খুলুন</h1>
-        <p className="mt-1 text-[15px] text-ink2">মিনিটখানেকেই তৈরি — নাম, ধরন আর আপনার মোবাইল নম্বর হলেই চলবে।</p>
+        <h1 className="mt-5 text-[26px] font-extrabold leading-tight tracking-tight text-ink">{tr("আপনার দোকান খুলুন")}</h1>
+        <p className="mt-1 text-[15px] text-ink2">{tr("মিনিটখানেকেই তৈরি — নাম, ধরন আর আপনার মোবাইল নম্বর হলেই চলবে।")}</p>
 
         <form onSubmit={onSubmit} noValidate className="card-surface mt-5 space-y-7 rounded-3xl border border-line bg-white p-5">
-          <Step n="১" title="দোকানের তথ্য">
-            <Field id="storeName" label="দোকানের নাম" leading={<StoreIcon />} autoComplete="organization" hint="রসিদে ও অ্যাপে এই নাম দেখাবে" value={storeName} onChange={(e) => setStoreName(e.target.value)} error={errors.storeName} />
+          <Step n={tr("১")} title={tr("দোকানের তথ্য")}>
+            <Field id="storeName" label={tr("দোকানের নাম")} leading={<StoreIcon />} autoComplete="organization" hint={tr("রসিদে ও অ্যাপে এই নাম দেখাবে")} value={storeName} onChange={(e) => setStoreName(e.target.value)} error={errors.storeName} />
 
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">দোকানের ধরন</legend>
-              <div role="radiogroup" aria-label="দোকানের ধরন" className="grid grid-cols-2 gap-3">
+              <legend className="text-sm font-medium">{tr("দোকানের ধরন")}</legend>
+              <div role="radiogroup" aria-label={tr("দোকানের ধরন")} className="grid grid-cols-2 gap-3">
                 {KINDS.map((k) => {
                   const on = storeKind === k.value
                   return (
@@ -106,13 +107,13 @@ export default function SignupPage() {
                       type="button"
                       role="radio"
                       aria-checked={on}
-                      aria-label={k.label}
+                      aria-label={tr(k.label)}
                       onClick={() => setStoreKind(k.value)}
                       className={cn("flex min-h-[132px] flex-col items-start gap-2 rounded-2xl border-[1.5px] p-3.5 text-left transition-colors", on ? "border-brand bg-brand-soft" : "border-line bg-white active:bg-canvas")}
                     >
                       <span className={cn("grid size-11 place-items-center rounded-xl", on ? "bg-brand text-white" : "bg-chip text-brand-dark")}>{k.icon}</span>
-                      <span className="text-[16px] font-bold text-ink">{k.label}</span>
-                      <span className="text-[13px] leading-snug text-muted">{k.hint}</span>
+                      <span className="text-[16px] font-bold text-ink">{tr(k.label)}</span>
+                      <span className="text-[13px] leading-snug text-muted">{tr(k.hint)}</span>
                     </button>
                   )
                 })}
@@ -120,37 +121,37 @@ export default function SignupPage() {
             </fieldset>
           </Step>
 
-          <Step n="২" title="আপনার তথ্য">
-            <Field id="ownerName" label="আপনার নাম" leading={<PersonIcon />} autoComplete="name" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} error={errors.ownerName} />
+          <Step n={tr("২")} title={tr("আপনার তথ্য")}>
+            <Field id="ownerName" label={tr("আপনার নাম")} leading={<PersonIcon />} autoComplete="name" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} error={errors.ownerName} />
             <Field
               id="phone"
-              label="মোবাইল নম্বর"
+              label={tr("মোবাইল নম্বর")}
               leading={<PhoneIcon />}
               type="tel"
               inputMode="tel"
               autoComplete="tel"
-              placeholder="০১৭১২৩৪৫৬৭৮"
-              hint="এটাই আপনার লগইন আইডি"
+              placeholder={tr("০১৭১২৩৪৫৬৭৮")}
+              hint={tr("এটাই আপনার লগইন আইডি")}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               error={errors.phone}
             />
-            <PasswordField id="password" label="পাসওয়ার্ড" leading={<LockIcon />} autoComplete="new-password" hint="কমপক্ষে ৮ অক্ষর" value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} />
+            <PasswordField id="password" label={tr("পাসওয়ার্ড")} leading={<LockIcon />} autoComplete="new-password" hint={tr("কমপক্ষে ৮ অক্ষর")} value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} />
           </Step>
 
           {error ? <Banner tone="danger">{error}</Banner> : null}
           <div className="space-y-2.5">
             <Button type="submit" full loading={busy} className="min-h-14 text-base">
-              দোকান খুলুন
+              {tr("দোকান খুলুন")}
             </Button>
-            <p className="text-center text-[13px] text-muted">সব ঘর পূরণ করা লাগবে। দোকানের নাম পরে সেটিংসে বদলানো যাবে।</p>
+            <p className="text-center text-[13px] text-muted">{tr("সব ঘর পূরণ করা লাগবে। দোকানের নাম পরে সেটিংসে বদলানো যাবে।")}</p>
           </div>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted">
-          আগেই অ্যাকাউন্ট আছে?{" "}
+          {tr("আগেই অ্যাকাউন্ট আছে?")}{" "}
           <Link href="/login" className="font-semibold text-brand">
-            লগইন করুন
+            {tr("লগইন করুন")}
           </Link>
         </p>
       </div>

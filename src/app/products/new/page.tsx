@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { AppShell, Splash } from "@/components/app-shell"
@@ -15,11 +16,11 @@ function NewProduct() {
   const { db, run } = useDb()
   const { isPharmacy } = useSessionInfo()
   return (
-    <AppShell title="নতুন পণ্য" backHref={params.get("next") === "stock" ? "/stock/in" : "/stock"}>
+    <AppShell title={tr("নতুন পণ্য")} backHref={params.get("next") === "stock" ? "/stock/in" : "/stock"}>
       <ProductForm
         initialBarcode={params.get("barcode") ?? ""}
         defaultMinStock={db.settings.defaultMinStock}
-        submitLabel="পণ্য সেভ করুন"
+        submitLabel={tr("পণ্য সেভ করুন")}
         withInitialStock
         showExpiry={isPharmacy}
         onSubmit={(input, stock) => {
