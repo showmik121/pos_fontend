@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useEffect, useState } from "react"
 import { downloadTextFile } from "@/lib/browser/download"
 import { backupFileName, buildBackup } from "@/lib/store/backup"
@@ -39,11 +40,11 @@ export function BackupReminder() {
 
   return (
     <Banner tone="warn">
-      <p className="font-medium">আজকের ব্যাকআপ নেওয়া হয়নি। ফোন হারালে বা মুছে গেলে হিসাব ফেরত পাওয়া যাবে না।</p>
+      <p className="font-medium">{tr("আজকের ব্যাকআপ নেওয়া হয়নি। ফোন হারালে বা মুছে গেলে হিসাব ফেরত পাওয়া যাবে না।")}</p>
       <div className="mt-2 flex gap-2">
-        <Button onClick={backupNow}>এখনই ব্যাকআপ নিন</Button>
+        <Button onClick={backupNow}>{tr("এখনই ব্যাকআপ নিন")}</Button>
         <Button variant="secondary" onClick={later}>
-          পরে
+          {tr("পরে")}
         </Button>
       </div>
     </Banner>

@@ -1,3 +1,4 @@
+import { tr } from "@/lib/i18n"
 import Link from "next/link"
 import { Icon } from "./ui/icons"
 
@@ -22,7 +23,7 @@ export function HomeHeader({ storeName, greeting }: HomeHeaderProps) {
         </div>
         <Link
           href="/settings"
-          aria-label="সেটিংস"
+          aria-label={tr("সেটিংস")}
           className="grid size-11 shrink-0 place-items-center rounded-full bg-white/70 text-ink shadow-sm active:bg-white"
         >
           <Icon name="sliders" size={22} />

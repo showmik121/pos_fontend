@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
 import { AppShell, Splash } from "@/components/app-shell"
@@ -34,8 +35,8 @@ function ProductDetail() {
   const product = id ? findProduct(db, id) : undefined
   if (!product) {
     return (
-      <AppShell title="পণ্য" backHref="/stock">
-        <Banner tone="warn">পণ্যটি পাওয়া যায়নি।</Banner>
+      <AppShell title={tr("পণ্য")} backHref="/stock">
+        <Banner tone="warn">{tr("পণ্যটি পাওয়া যায়নি।")}</Banner>
       </AppShell>
     )
   }
@@ -51,7 +52,7 @@ function ProductDetail() {
     setScanning(false)
     const hit = findByBarcode(db, code)
     if (hit) {
-      setError(hit.product.id === product.id ? "এই বারকোড এই পণ্যেই আগে থেকে আছে।" : `এই বারকোড আগে থেকেই "${hit.product.name}"-এ আছে।`)
+      setError(hit.product.id === product.id ? tr("এই বারকোড এই পণ্যেই আগে থেকে আছে।") : tf("এই বারকোড আগে থেকেই \"{p0}\"-এ আছে।", { p0: (hit.product.name) }))
       return
     }
     setError(null)
@@ -76,37 +77,37 @@ function ProductDetail() {
       backHref="/stock"
       action={
         <LinkButton href={`/products/edit?id=${product.id}`} variant="ghost" className="min-h-10 px-3 text-sm">
-          সম্পাদনা
+          {tr("সম্পাদনা")}
         </LinkButton>
       }
     >
       <Card>
         <div className="divide-y divide-line">
-          <KeyValue label="বিক্রয়মূল্য" value={formatTaka(product.pricePoisha)} />
-          <KeyValue label="ক্রয়মূল্য" value={formatTaka(product.costPoisha)} />
-          <KeyValue label="একক" value={UNIT_LABELS[product.unit]} />
-          {product.category ? <KeyValue label="ক্যাটেগরি" value={product.category} /> : null}
+          <KeyValue label={tr("বিক্রয়মূল্য")} value={formatTaka(product.pricePoisha)} />
+          <KeyValue label={tr("ক্রয়মূল্য")} value={formatTaka(product.costPoisha)} />
+          <KeyValue label={tr("একক")} value={UNIT_LABELS[product.unit]} />
+          {product.category ? <KeyValue label={tr("ক্যাটেগরি")} value={product.category} /> : null}
         </div>
       </Card>
 
       <Card className="space-y-1 px-4 py-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted">বিক্রি করা যাবে</span>
-          {low ? <Pill tone={sellable === 0 ? "danger" : "warn"}>{sellable === 0 ? "স্টক শেষ" : "স্টক কম"}</Pill> : null}
+          <span className="text-sm text-muted">{tr("বিক্রি করা যাবে")}</span>
+          {low ? <Pill tone={sellable === 0 ? "danger" : "warn"}>{sellable === 0 ? tr("স্টক শেষ") : tr("স্টক কম")}</Pill> : null}
         </div>
-        <div className="text-[28px] font-bold leading-tight">{formatCount(sellable)} পিস</div>
+        <div className="text-[28px] font-bold leading-tight">{formatCount(sellable)} {tr("পিস")}</div>
         <div className="text-sm text-muted">
-          মোট {formatCount(total)} পিস{split ? ` (${formatCount(split.cartons)} কার্টন ${formatCount(split.pieces)} পিস)` : ""} · সর্বনিম্ন {formatCount(product.minStock)}
+          {tr("মোট")} {formatCount(total)} {tr("পিস")}{split ? tf(" ({p0} কার্টন {p1} পিস)", { p0: (formatCount(split.cartons)), p1: (formatCount(split.pieces)) }) : ""} {tr("· সর্বনিম্ন")} {formatCount(product.minStock)}
         </div>
       </Card>
 
       <LinkButton href={`/stock/in?product=${product.id}`} full>
-        <Icon name="plus" /> স্টক যোগ করুন
+        <Icon name="plus" /> {tr("স্টক যোগ করুন")}
       </LinkButton>
 
-      <SectionTitle>ব্যাচ</SectionTitle>
+      <SectionTitle>{tr("ব্যাচ")}</SectionTitle>
       {batches.length === 0 ? (
-        <Card className="px-4 py-5 text-center text-muted">কোনো ব্যাচে স্টক নেই।</Card>
+        <Card className="px-4 py-5 text-center text-muted">{tr("কোনো ব্যাচে স্টক নেই।")}</Card>
       ) : (
         <RowList>
           {batches.map((b) => {
@@ -115,15 +116,15 @@ function ProductDetail() {
             return (
               <Row
                 key={b.id}
-                title={b.batchNo ? `ব্যাচ ${b.batchNo}` : "ব্যাচ নম্বর নেই"}
-                subtitle={`${formatCount(b.qtyRemaining)} পিস · ${b.expiryDate ? formatDateBn(b.expiryDate) : "মেয়াদ নেই"}`}
+                title={b.batchNo ? tf("ব্যাচ {p0}", { p0: (b.batchNo) }) : tr("ব্যাচ নম্বর নেই")}
+                subtitle={tf("{p0} পিস · {p1}", { p0: (formatCount(b.qtyRemaining)), p1: (b.expiryDate ? formatDateBn(b.expiryDate) : tr("মেয়াদ নেই")) })}
                 right={
                   cls === "expired" ? (
-                    <Pill tone="danger">মেয়াদোত্তীর্ণ</Pill>
+                    <Pill tone="danger">{tr("মেয়াদোত্তীর্ণ")}</Pill>
                   ) : b.id === firstSellableId ? (
-                    <Pill tone="brand">আগে বিক্রি হবে</Pill>
+                    <Pill tone="brand">{tr("আগে বিক্রি হবে")}</Pill>
                   ) : days != null && days <= 30 ? (
-                    <Pill tone="warn">{toBanglaDigits(days)} দিন</Pill>
+                    <Pill tone="warn">{toBanglaDigits(days)} {tr("দিন")}</Pill>
                   ) : undefined
                 }
               />
@@ -132,38 +133,38 @@ function ProductDetail() {
         </RowList>
       )}
 
-      <SectionTitle>বারকোড</SectionTitle>
+      <SectionTitle>{tr("বারকোড")}</SectionTitle>
       {product.barcodes.length === 0 ? (
-        <Card className="px-4 py-4 text-center text-muted">{product.open ? "এটি খোলা পণ্য — বারকোড ছাড়াই বিক্রি হয়।" : "কোনো বারকোড নেই।"}</Card>
+        <Card className="px-4 py-4 text-center text-muted">{product.open ? tr("এটি খোলা পণ্য — বারকোড ছাড়াই বিক্রি হয়।") : tr("কোনো বারকোড নেই।")}</Card>
       ) : (
         <RowList>
           {product.barcodes.map((b) => (
-            <Row key={b.code} title={toBanglaDigits(b.code)} subtitle={b.packSize === 1 ? "১ পিস" : `কার্টন · ${formatCount(b.packSize)} পিস`} />
+            <Row key={b.code} title={toBanglaDigits(b.code)} subtitle={b.packSize === 1 ? tr("১ পিস") : tf("কার্টন · {p0} পিস", { p0: (formatCount(b.packSize)) })} />
           ))}
         </RowList>
       )}
       {error ? <Banner tone="warn">{error}</Banner> : null}
       <Button variant="secondary" full onClick={() => setScanning(true)}>
-        <Icon name="barcode" /> বারকোড যোগ করুন
+        <Icon name="barcode" /> {tr("বারকোড যোগ করুন")}
       </Button>
 
-      <Scanner open={scanning} onClose={() => setScanning(false)} onCode={onScanned} title="নতুন বারকোড স্ক্যান" />
+      <Scanner open={scanning} onClose={() => setScanning(false)} onCode={onScanned} title={tr("নতুন বারকোড স্ক্যান")} />
 
-      <Sheet open={pending != null} onClose={() => setPending(null)} label="বারকোডের ধরন">
-        <h2 className="text-lg font-bold">এই বারকোড কিসের?</h2>
+      <Sheet open={pending != null} onClose={() => setPending(null)} label={tr("বারকোডের ধরন")}>
+        <h2 className="text-lg font-bold">{tr("এই বারকোড কিসের?")}</h2>
         <p className="text-muted">{pending ? toBanglaDigits(pending) : ""}</p>
         <Segmented
-          label="বারকোডের ধরন"
+          label={tr("বারকোডের ধরন")}
           value={pack}
           onChange={setPack}
           options={[
-            { value: "piece" as const, label: "১ পিস" },
-            ...(product.cartonSize > 1 ? [{ value: "carton" as const, label: `কার্টন (${formatCount(product.cartonSize)} পিস)` }] : []),
+            { value: "piece" as const, label: tr("১ পিস") },
+            ...(product.cartonSize > 1 ? [{ value: "carton" as const, label: tf("কার্টন ({p0} পিস)", { p0: (formatCount(product.cartonSize)) }) }] : []),
           ]}
         />
-        <p className="text-sm text-muted">কার্টনের বারকোড স্ক্যান করলে বিলে একবারে এতগুলো পিস যোগ হবে।</p>
+        <p className="text-sm text-muted">{tr("কার্টনের বারকোড স্ক্যান করলে বিলে একবারে এতগুলো পিস যোগ হবে।")}</p>
         <Button full onClick={saveBarcode}>
-          বারকোড সেভ করুন
+          {tr("বারকোড সেভ করুন")}
         </Button>
       </Sheet>
     </AppShell>

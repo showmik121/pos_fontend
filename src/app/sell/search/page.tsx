@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import { AppShell } from "@/components/app-shell"
@@ -21,15 +22,15 @@ export default function SellSearchPage() {
   const results = useMemo(() => searchProducts(db, query), [db, query])
 
   return (
-    <AppShell title="পণ্য খুঁজুন" backHref="/sell">
-      <SearchBox id="sell-search" label="পণ্য খুঁজুন" placeholder="নাম বা বারকোড লিখুন" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus />
+    <AppShell title={tr("পণ্য খুঁজুন")} backHref="/sell">
+      <SearchBox id="sell-search" label={tr("পণ্য খুঁজুন")} placeholder={tr("নাম বা বারকোড লিখুন")} value={query} onChange={(e) => setQuery(e.target.value)} autoFocus />
       {db.products.length === 0 ? (
         <Card className="space-y-3 px-4 py-6 text-center">
-          <p className="font-medium">এখনো কোনো পণ্য নেই</p>
-          <LinkButton href="/products/new">নতুন পণ্য যোগ করুন</LinkButton>
+          <p className="font-medium">{tr("এখনো কোনো পণ্য নেই")}</p>
+          <LinkButton href="/products/new">{tr("নতুন পণ্য যোগ করুন")}</LinkButton>
         </Card>
       ) : results.length === 0 ? (
-        <Card className="px-4 py-6 text-center text-muted">কিছু পাওয়া যায়নি</Card>
+        <Card className="px-4 py-6 text-center text-muted">{tr("কিছু পাওয়া যায়নি")}</Card>
       ) : (
         <RowList>
           {results.map((p) => {
@@ -38,8 +39,8 @@ export default function SellSearchPage() {
               <Row
                 key={p.id}
                 title={p.name}
-                subtitle={`${formatTaka(p.pricePoisha)} · স্টক ${formatCount(sellable)}`}
-                right={sellable <= 0 ? <Pill tone="danger">স্টক নেই</Pill> : undefined}
+                subtitle={tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: (formatCount(sellable)) })}
+                right={sellable <= 0 ? <Pill tone="danger">{tr("স্টক নেই")}</Pill> : undefined}
                 onClick={
                   sellable <= 0
                     ? undefined

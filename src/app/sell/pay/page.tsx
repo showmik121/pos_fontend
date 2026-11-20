@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { AppShell, Ready } from "@/components/app-shell"
@@ -64,7 +65,7 @@ function PayScreen() {
   const cash = cashInput === null ? Math.max(0, total - (mobile ?? 0)) : cashInput.trim() ? parseTaka(cashInput) : 0
 
   const settled = useMemo(() => {
-    if (mobile == null || cash == null) return { error: "টাকার পরিমাণ সঠিক নয়" }
+    if (mobile == null || cash == null) return { error: tr("টাকার পরিমাণ সঠিক নয়") }
     try {
       return { ...settlePayments({ total, cash, mobile, mobileMethod: method, hasCustomer: customer != null }), error: null as string | null }
     } catch (err) {
@@ -94,70 +95,70 @@ function PayScreen() {
 
   return (
     <AppShell
-      title="পেমেন্ট"
+      title={tr("পেমেন্ট")}
       backHref="/sell"
       footer={
         <Button full onClick={confirm} disabled={Boolean(settled.error) || lines.length === 0}>
-          বিল সম্পন্ন করুন
+          {tr("বিল সম্পন্ন করুন")}
         </Button>
       }
     >
       <Card className="px-4 py-4 text-center">
-        <div className="text-sm text-muted">মোট প্রাপ্য</div>
+        <div className="text-sm text-muted">{tr("মোট প্রাপ্য")}</div>
         <div className="text-[32px] font-bold leading-tight">{formatTaka(total)}</div>
       </Card>
 
-      <h2 className="text-[15px] font-semibold">কত পেলেন</h2>
+      <h2 className="text-[15px] font-semibold">{tr("কত পেলেন")}</h2>
       <Card className="space-y-3 p-4">
         <div className="flex items-center justify-between gap-3">
-          <span className="font-medium">ক্যাশ</span>
-          <AmountInput id="pay-cash" label="ক্যাশ টাকা" value={cashInput ?? takaInputValue(cash ?? 0)} onChange={(e) => setCashInput(e.target.value)} />
+          <span className="font-medium">{tr("ক্যাশ")}</span>
+          <AmountInput id="pay-cash" label={tr("ক্যাশ টাকা")} value={cashInput ?? takaInputValue(cash ?? 0)} onChange={(e) => setCashInput(e.target.value)} />
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
-            <span className="font-medium">মোবাইল ব্যাংকিং</span>
-            <AmountInput id="pay-mobile" label="মোবাইল ব্যাংকিংয়ে পাওয়া" placeholder="০" value={mobileInput} onChange={(e) => setMobileInput(e.target.value)} />
+            <span className="font-medium">{tr("মোবাইল ব্যাংকিং")}</span>
+            <AmountInput id="pay-mobile" label={tr("মোবাইল ব্যাংকিংয়ে পাওয়া")} placeholder={tr("০")} value={mobileInput} onChange={(e) => setMobileInput(e.target.value)} />
           </div>
-          <Segmented label="মোবাইল ব্যাংকিংয়ের মাধ্যম" options={METHODS} value={method} onChange={setMethod} />
+          <Segmented label={tr("মোবাইল ব্যাংকিংয়ের মাধ্যম")} options={METHODS} value={method} onChange={setMethod} />
         </div>
       </Card>
 
       {settled.error ? (
         <Banner tone="danger">{settled.error}</Banner>
       ) : due > 0 ? (
-        <Banner tone="warn">বাকি থাকছে {formatTaka(due)} — কাস্টমারের খাতায় উঠবে</Banner>
+        <Banner tone="warn">{tr("বাকি থাকছে")} {formatTaka(due)} {tr("— কাস্টমারের খাতায় উঠবে")}</Banner>
       ) : change > 0 ? (
-        <Banner tone="info">ফেরত দিন {formatTaka(change)}</Banner>
+        <Banner tone="info">{tr("ফেরত দিন")} {formatTaka(change)}</Banner>
       ) : (
-        <Banner tone="info">হিসাব মিলেছে</Banner>
+        <Banner tone="info">{tr("হিসাব মিলেছে")}</Banner>
       )}
 
       {limit?.over ? (
-        <Banner tone="danger">বাকির সীমা {formatTaka(limit.limit)}। এই বিলের পর {customer?.name}-এর বাকি হবে {formatTaka(limit.after)}। চাইলে তবুও বিল করতে পারেন।</Banner>
+        <Banner tone="danger">{tr("বাকির সীমা")} {formatTaka(limit.limit)}{tr("। এই বিলের পর")} {customer?.name}{tr("-এর বাকি হবে")} {formatTaka(limit.after)}{tr("। চাইলে তবুও বিল করতে পারেন।")}</Banner>
       ) : null}
 
-      <h2 className="text-[15px] font-semibold">কাস্টমার {due > 0 ? "(বাকির জন্য দরকার)" : "(ঐচ্ছিক)"}</h2>
+      <h2 className="text-[15px] font-semibold">{tr("কাস্টমার")} {due > 0 ? tr("(বাকির জন্য দরকার)") : tr("(ঐচ্ছিক)")}</h2>
       <RowList>
         {customer ? (
           <>
-            <Row title={customer.name} subtitle="এই বিলের কাস্টমার" onClick={() => setPicking(true)} chevron />
+            <Row title={customer.name} subtitle={tr("এই বিলের কাস্টমার")} onClick={() => setPicking(true)} chevron />
             <div className="px-4 py-1">
               <Button variant="ghost" onClick={() => update((d) => ({ ...d, draft: setCartCustomer(d.draft, null) }))}>
-                কাস্টমার সরান
+                {tr("কাস্টমার সরান")}
               </Button>
             </div>
           </>
         ) : (
-          <Row title="কাস্টমার বাছুন" subtitle="বাকি রাখতে বা হিসাবের জন্য" onClick={() => setPicking(true)} chevron />
+          <Row title={tr("কাস্টমার বাছুন")} subtitle={tr("বাকি রাখতে বা হিসাবের জন্য")} onClick={() => setPicking(true)} chevron />
         )}
       </RowList>
 
       {error ? <Banner tone="danger">{error}</Banner> : null}
       <RowList>
-        <KeyValue label="পণ্যের সংখ্যা" value={`${lines.length}টি`} />
+        <KeyValue label={tr("পণ্যের সংখ্যা")} value={tf("{p0}টি", { p0: (lines.length) })} />
       </RowList>
       <LinkButton href="/sell" variant="ghost" full>
-        বিলে ফিরে যান
+        {tr("বিলে ফিরে যান")}
       </LinkButton>
 
       <CustomerPicker

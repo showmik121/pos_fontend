@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { AuthShell } from "@/components/auth-shell"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -31,12 +32,12 @@ export default function LoginPage() {
     setError(null)
     const normalized = normalizeBdPhone(phone)
     if (!normalized) {
-      setPhoneError("মোবাইল নম্বর সঠিক নয় (যেমন ০১৭১২৩৪৫৬৭৮)")
+      setPhoneError(tr("মোবাইল নম্বর সঠিক নয় (যেমন ০১৭১২৩৪৫৬৭৮)"))
       return
     }
     setPhoneError(null)
     if (!password) {
-      setError("পাসওয়ার্ড দিন")
+      setError(tr("পাসওয়ার্ড দিন"))
       return
     }
     setBusy(true)
@@ -53,13 +54,13 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title="লগইন"
-      subtitle="আপনার মোবাইল নম্বর ও পাসওয়ার্ড দিন।"
+      title={tr("লগইন")}
+      subtitle={tr("আপনার মোবাইল নম্বর ও পাসওয়ার্ড দিন।")}
       footer={
         <>
-          নতুন দোকান?{" "}
+          {tr("নতুন দোকান?")}{" "}
           <Link href="/signup" className="font-semibold text-brand">
-            দোকান খুলুন
+            {tr("দোকান খুলুন")}
           </Link>
         </>
       }
@@ -67,19 +68,19 @@ export default function LoginPage() {
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         <Field
           id="phone"
-          label="মোবাইল নম্বর"
+          label={tr("মোবাইল নম্বর")}
           type="tel"
           inputMode="tel"
           autoComplete="tel"
-          placeholder="০১৭১২৩৪৫৬৭৮"
+          placeholder={tr("০১৭১২৩৪৫৬৭৮")}
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           error={phoneError}
         />
-        <PasswordField id="password" label="পাসওয়ার্ড" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <PasswordField id="password" label={tr("পাসওয়ার্ড")} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
         {error ? <Banner tone="danger">{error}</Banner> : null}
         <Button type="submit" full loading={busy}>
-          লগইন করুন
+          {tr("লগইন করুন")}
         </Button>
       </form>
     </AuthShell>

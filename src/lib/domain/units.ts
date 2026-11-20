@@ -1,3 +1,4 @@
+import { tr } from "../i18n"
 import { DomainError, requirePositiveInt } from "./errors"
 
 export type StockUnit = "piece" | "carton"
@@ -8,7 +9,7 @@ export function toBaseUnits(input: { qty: number; unit: StockUnit; packSize: num
   requirePositiveInt(qty, "পরিমাণ")
   if (unit === "piece") return qty
   requirePositiveInt(packSize, "কার্টনে পিসের সংখ্যা")
-  if (packSize === 1) throw new DomainError("no_carton", "এই পণ্যের কার্টন সাইজ ঠিক করা নেই")
+  if (packSize === 1) throw new DomainError("no_carton", tr("এই পণ্যের কার্টন সাইজ ঠিক করা নেই"))
   return qty * packSize
 }
 

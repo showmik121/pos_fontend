@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useEffect, useRef, useState } from "react"
 import { downloadBackup } from "@/lib/browser/backup-download"
 import { requestPersistentStorage } from "@/lib/browser/persist"
@@ -27,7 +28,7 @@ export function BackupSection({ storeId }: { storeId: string }) {
 
   const download = () => {
     downloadBackup(db, storeId)
-    setMessage({ tone: "info", text: "ব্যাকআপ ফাইল নামানো হয়েছে। ফাইলটি নিরাপদ জায়গায় (গুগল ড্রাইভ বা অন্য ফোনে) রাখুন।" })
+    setMessage({ tone: "info", text: tr("ব্যাকআপ ফাইল নামানো হয়েছে। ফাইলটি নিরাপদ জায়গায় (গুগল ড্রাইভ বা অন্য ফোনে) রাখুন।") })
   }
 
   const onFile = async (file: File) => {
@@ -46,27 +47,27 @@ export function BackupSection({ storeId }: { storeId: string }) {
     if (!pending) return
     update(() => pending.db)
     setPending(null)
-    setMessage({ tone: "info", text: "ব্যাকআপ থেকে তথ্য ফেরানো হয়েছে।" })
+    setMessage({ tone: "info", text: tr("ব্যাকআপ থেকে তথ্য ফেরানো হয়েছে।") })
   }
 
   return (
     <div className="space-y-3">
       {usage.level !== "ok" ? (
         <Banner tone={usage.level === "danger" ? "danger" : "warn"}>
-          ফোনের সেভ-জায়গা {toBanglaDigits(usage.percent)}% ভরেছে। এখনই ব্যাকআপ নিন; জায়গা শেষ হলে নতুন বিল সেভ নাও হতে পারে।
+          {tr("ফোনের সেভ-জায়গা")} {toBanglaDigits(usage.percent)}{tr("% ভরেছে। এখনই ব্যাকআপ নিন; জায়গা শেষ হলে নতুন বিল সেভ নাও হতে পারে।")}
         </Banner>
       ) : (
-        <p className="text-sm text-muted">ফোনের সেভ-জায়গা ব্যবহার: {toBanglaDigits(usage.percent)}%</p>
+        <p className="text-sm text-muted">{tr("ফোনের সেভ-জায়গা ব্যবহার:")} {toBanglaDigits(usage.percent)}%</p>
       )}
 
       {persistent !== true ? (
         <Banner tone="warn">
-          ব্রাউজার এই ডেটা স্থায়ী রাখার নিশ্চয়তা দেয়নি; ফোনের জায়গা কমলে বা অনেক দিন না খুললে মুছে যেতে পারে। অ্যাপটি হোম স্ক্রিনে যোগ করুন আর নিয়মিত ব্যাকআপ নিন।
+          {tr("ব্রাউজার এই ডেটা স্থায়ী রাখার নিশ্চয়তা দেয়নি; ফোনের জায়গা কমলে বা অনেক দিন না খুললে মুছে যেতে পারে। অ্যাপটি হোম স্ক্রিনে যোগ করুন আর নিয়মিত ব্যাকআপ নিন।")}
         </Banner>
       ) : null}
 
       <Button variant="secondary" full onClick={download}>
-        ব্যাকআপ ফাইল নামান
+        {tr("ব্যাকআপ ফাইল নামান")}
       </Button>
 
       <input
@@ -74,28 +75,28 @@ export function BackupSection({ storeId }: { storeId: string }) {
         type="file"
         accept=".json,application/json"
         className="hidden"
-        aria-label="ব্যাকআপ ফাইল বাছুন"
+        aria-label={tr("ব্যাকআপ ফাইল বাছুন")}
         onChange={(e) => {
           const f = e.target.files?.[0]
           if (f) void onFile(f)
         }}
       />
       <Button variant="secondary" full onClick={() => fileRef.current?.click()}>
-        ব্যাকআপ থেকে ফেরান
+        {tr("ব্যাকআপ থেকে ফেরান")}
       </Button>
 
       {pending ? (
         <div className="space-y-2 rounded-xl border border-line bg-white p-3 text-sm">
           <p>
-            ব্যাকআপে আছে: পণ্য {toBanglaDigits(pending.db.products.length)}টি, বিল {toBanglaDigits(pending.db.sales.length)}টি, কাস্টমার {toBanglaDigits(pending.db.customers.length)}জন।
+            {tr("ব্যাকআপে আছে: পণ্য")} {toBanglaDigits(pending.db.products.length)}{tr("টি, বিল")} {toBanglaDigits(pending.db.sales.length)}{tr("টি, কাস্টমার")} {toBanglaDigits(pending.db.customers.length)}{tr("জন।")}
           </p>
-          <p className="text-danger">ফেরালে এই ফোনের এখনকার সব পণ্য, বিল ও বাকির তথ্য এটি দিয়ে বদলে যাবে।</p>
+          <p className="text-danger">{tr("ফেরালে এই ফোনের এখনকার সব পণ্য, বিল ও বাকির তথ্য এটি দিয়ে বদলে যাবে।")}</p>
           <div className="flex gap-2">
             <Button variant="danger" className="flex-1" onClick={restore}>
-              হ্যাঁ, ফেরান
+              {tr("হ্যাঁ, ফেরান")}
             </Button>
             <Button variant="secondary" className="flex-1" onClick={() => setPending(null)}>
-              বাতিল
+              {tr("বাতিল")}
             </Button>
           </div>
         </div>

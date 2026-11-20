@@ -1,3 +1,4 @@
+import { tr, tf } from "../i18n"
 import { formatBillNo } from "../domain/bill"
 import { formatTaka } from "../domain/money"
 import { formatDateTimeBn } from "../format/datetime"
@@ -6,9 +7,9 @@ import type { LedgerEntry } from "./types"
 /** খাতার এক সারির নাম (পর্দা ও ছবি দুই জায়গায় একই) */
 export function ledgerTitle(e: LedgerEntry): string {
   const bill = e.saleNo != null ? formatBillNo({ no: e.saleNo, prefix: e.salePrefix }) : ""
-  if (e.kind === "payment") return "জমা"
-  if (e.kind === "opening") return "আগের বাকি"
-  return e.kind === "void" ? `বিল #${bill} বাতিল` : `বিল #${bill}`
+  if (e.kind === "payment") return tr("জমা")
+  if (e.kind === "opening") return tr("আগের বাকি")
+  return e.kind === "void" ? tf("বিল #{p0} বাতিল", { p0: bill }) : tf("বিল #{p0}", { p0: bill })
 }
 
 export interface StatementRow {

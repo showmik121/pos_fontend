@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
@@ -22,26 +23,26 @@ export default function TopProductsPage() {
   const rows = topProducts(db, rangeStart(today, Number(range)), today, 10)
 
   return (
-    <AppShell title="সেরা বিক্রি" backHref="/reports">
+    <AppShell title={tr("সেরা বিক্রি")} backHref="/reports">
       {!isOwner ? (
-        <Banner tone="warn">রিপোর্ট শুধু মালিক দেখতে পারেন।</Banner>
+        <Banner tone="warn">{tr("রিপোর্ট শুধু মালিক দেখতে পারেন।")}</Banner>
       ) : (
         <>
           <Chips
             value={range}
             onChange={setRange}
             options={[
-              { value: "1", label: "আজ" },
-              { value: "7", label: "৭ দিন" },
-              { value: "30", label: "৩০ দিন" },
+              { value: "1", label: tr("আজ") },
+              { value: "7", label: tr("৭ দিন") },
+              { value: "30", label: tr("৩০ দিন") },
             ]}
           />
           {rows.length === 0 ? (
-            <Card className="px-4 py-6 text-center text-muted">এই সময়ে কোনো বিক্রি নেই।</Card>
+            <Card className="px-4 py-6 text-center text-muted">{tr("এই সময়ে কোনো বিক্রি নেই।")}</Card>
           ) : (
             <RowList>
               {rows.map((r, i) => (
-                <Row key={r.productId} title={`${toBanglaDigits(i + 1)}. ${r.name}`} subtitle={`${formatCount(r.qty)} পিস বিক্রি`} right={<span className="font-semibold">{formatTaka(r.revenue)}</span>} />
+                <Row key={r.productId} title={`${toBanglaDigits(i + 1)}. ${r.name}`} subtitle={tf("{p0} পিস বিক্রি", { p0: (formatCount(r.qty)) })} right={<span className="font-semibold">{formatTaka(r.revenue)}</span>} />
               ))}
             </RowList>
           )}

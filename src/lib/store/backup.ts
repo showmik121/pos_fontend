@@ -1,3 +1,4 @@
+import { tr } from "../i18n"
 import { DomainError } from "../domain/errors"
 import { localDateIso } from "../domain/dates"
 import { isDb } from "./db"
@@ -29,20 +30,20 @@ export interface ParsedBackup {
 
 /** ব্যাকআপ ফাইল যাচাই করে Db ফেরত দেয়; ভুল হলে বাংলা বার্তাসহ DomainError */
 export function parseBackup(text: string, storeId: string): ParsedBackup {
-  if (text.length > BACKUP_MAX_BYTES) throw new DomainError("backup_too_large", "ফাইলটি অনেক বড়; এটি ব্যাকআপ ফাইল নয় মনে হচ্ছে")
+  if (text.length > BACKUP_MAX_BYTES) throw new DomainError("backup_too_large", tr("ফাইলটি অনেক বড়; এটি ব্যাকআপ ফাইল নয় মনে হচ্ছে"))
   let data: unknown
   try {
     data = JSON.parse(text)
   } catch {
-    throw new DomainError("backup_invalid", "ফাইলটি পড়া যায়নি; অ্যাপ থেকে নামানো ব্যাকআপ ফাইল দিন")
+    throw new DomainError("backup_invalid", tr("ফাইলটি পড়া যায়নি; অ্যাপ থেকে নামানো ব্যাকআপ ফাইল দিন"))
   }
-  if (typeof data !== "object" || data === null) throw new DomainError("backup_invalid", "এটি এই অ্যাপের ব্যাকআপ ফাইল নয়")
+  if (typeof data !== "object" || data === null) throw new DomainError("backup_invalid", tr("এটি এই অ্যাপের ব্যাকআপ ফাইল নয়"))
   const b = data as Record<string, unknown>
   if (b.app !== APP || b.version !== VERSION || typeof b.exportedAt !== "string" || typeof b.storeId !== "string") {
-    throw new DomainError("backup_invalid", "এটি এই অ্যাপের ব্যাকআপ ফাইল নয়")
+    throw new DomainError("backup_invalid", tr("এটি এই অ্যাপের ব্যাকআপ ফাইল নয়"))
   }
-  if (b.storeId !== storeId) throw new DomainError("backup_other_store", "এই ব্যাকআপ অন্য দোকানের; এখানে ফেরানো যাবে না")
-  if (!isDb(b.db)) throw new DomainError("backup_invalid", "ব্যাকআপের ভেতরের তথ্য নষ্ট বা অচেনা")
+  if (b.storeId !== storeId) throw new DomainError("backup_other_store", tr("এই ব্যাকআপ অন্য দোকানের; এখানে ফেরানো যাবে না"))
+  if (!isDb(b.db)) throw new DomainError("backup_invalid", tr("ব্যাকআপের ভেতরের তথ্য নষ্ট বা অচেনা"))
   return { db: b.db, exportedAt: b.exportedAt }
 }
 

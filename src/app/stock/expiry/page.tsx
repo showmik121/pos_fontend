@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/components/auth-provider"
@@ -23,8 +24,8 @@ const REMOVE_REASONS = ["মেয়াদ শেষ", "নষ্ট বা ভ
 const LOG_SHOWN = 10
 
 function describe(row: ExpiryRow): string {
-  const batch = row.batch.batchNo ? `ব্যাচ ${row.batch.batchNo} · ` : ""
-  return `${batch}${formatCount(row.batch.qtyRemaining)} পিস · ${row.batch.expiryDate ? formatDateBn(row.batch.expiryDate) : ""}`
+  const batch = row.batch.batchNo ? tf("ব্যাচ {p0} · ", { p0: (row.batch.batchNo) }) : ""
+  return tf("{p0}{p1} পিস · {p2}", { p0: (batch), p1: (formatCount(row.batch.qtyRemaining)), p2: (row.batch.expiryDate ? formatDateBn(row.batch.expiryDate) : "") })
 }
 
 export default function ExpiryPage() {
@@ -43,20 +44,20 @@ export default function ExpiryPage() {
   const upcoming = [...buckets.within30, ...(range !== "30" ? buckets.within60 : []), ...(range === "90" ? buckets.within90 : [])]
 
   return (
-    <AppShell title="মেয়াদ" backHref="/stock">
+    <AppShell title={tr("মেয়াদ")} backHref="/stock">
       <Chips
         value={range}
         onChange={setRange}
         options={[
-          { value: "30", label: `৩০ দিনের মধ্যে · ${toBanglaDigits(buckets.within30.length)}` },
-          { value: "60", label: `৬০ দিন · ${toBanglaDigits(buckets.within30.length + buckets.within60.length)}` },
-          { value: "90", label: `৯০ দিন · ${toBanglaDigits(buckets.within30.length + buckets.within60.length + buckets.within90.length)}` },
+          { value: "30", label: tf("৩০ দিনের মধ্যে · {p0}", { p0: (toBanglaDigits(buckets.within30.length)) }) },
+          { value: "60", label: tf("৬০ দিন · {p0}", { p0: (toBanglaDigits(buckets.within30.length + buckets.within60.length)) }) },
+          { value: "90", label: tf("৯০ দিন · {p0}", { p0: (toBanglaDigits(buckets.within30.length + buckets.within60.length + buckets.within90.length)) }) },
         ]}
       />
 
       {buckets.expired.length > 0 ? (
         <>
-          <SectionTitle>মেয়াদোত্তীর্ণ — বিক্রি বন্ধ</SectionTitle>
+          <SectionTitle>{tr("মেয়াদোত্তীর্ণ — বিক্রি বন্ধ")}</SectionTitle>
           <RowList>
             {buckets.expired.map((r) => (
               <Row
@@ -67,7 +68,7 @@ export default function ExpiryPage() {
                 right={
                   isOwner ? (
                     <Button variant="danger" className="min-h-11 px-3 text-sm" onClick={() => (setReason(REMOVE_REASONS[0]), setRemoving(r))}>
-                      সরান
+                      {tr("সরান")}
                     </Button>
                   ) : undefined
                 }
@@ -77,9 +78,9 @@ export default function ExpiryPage() {
         </>
       ) : null}
 
-      <SectionTitle>মেয়াদ শেষ হবে</SectionTitle>
+      <SectionTitle>{tr("মেয়াদ শেষ হবে")}</SectionTitle>
       {upcoming.length === 0 ? (
-        <Card className="px-4 py-6 text-center text-muted">এই সময়ে কোনো ব্যাচের মেয়াদ শেষ হচ্ছে না।</Card>
+        <Card className="px-4 py-6 text-center text-muted">{tr("এই সময়ে কোনো ব্যাচের মেয়াদ শেষ হচ্ছে না।")}</Card>
       ) : (
         <RowList>
           {upcoming.map((r) => (
@@ -89,7 +90,7 @@ export default function ExpiryPage() {
               dot={r.days <= 30 ? "amber" : "muted"}
               title={r.product.name}
               subtitle={describe(r)}
-              right={<Pill tone={r.days <= 30 ? "warn" : "neutral"}>{toBanglaDigits(r.days)} দিন</Pill>}
+              right={<Pill tone={r.days <= 30 ? "warn" : "neutral"}>{toBanglaDigits(r.days)} {tr("দিন")}</Pill>}
               chevron
             />
           ))}
@@ -98,16 +99,16 @@ export default function ExpiryPage() {
 
       {log.length > 0 ? (
         <>
-          <SectionTitle>সরানো ব্যাচের খাতা</SectionTitle>
+          <SectionTitle>{tr("সরানো ব্যাচের খাতা")}</SectionTitle>
           <Card className="px-4 py-3 text-sm text-muted">
-            মোট {toBanglaDigits(log.length)}টি ব্যাচ সরানো হয়েছে; কেনা দামে ক্ষতি {formatTaka(removedBatchLoss(db))}।
+            {tr("মোট")} {toBanglaDigits(log.length)}{tr("টি ব্যাচ সরানো হয়েছে; কেনা দামে ক্ষতি")} {formatTaka(removedBatchLoss(db))}।
           </Card>
           <RowList>
             {log.slice(0, LOG_SHOWN).map((r) => (
               <Row
                 key={r.id}
                 title={r.productName}
-                subtitle={`${r.batchNo ? `ব্যাচ ${r.batchNo} · ` : ""}${formatCount(r.qty)} পিস · ${r.reason} · ${r.by} · ${formatDateBn(localDateIso(new Date(r.at)))}`}
+                subtitle={tf("{p0}{p1} পিস · {p2} · {p3} · {p4}", { p0: (r.batchNo ? tf("ব্যাচ {p0} · ", { p0: (r.batchNo) }) : ""), p1: (formatCount(r.qty)), p2: (r.reason), p3: (r.by), p4: (formatDateBn(localDateIso(new Date(r.at)))) })}
                 right={<span className="font-medium">{formatTaka(r.qty * r.costPoisha)}</span>}
               />
             ))}
@@ -121,11 +122,11 @@ export default function ExpiryPage() {
           setRemoving(null)
           setRemoveError(null)
         }}
-        label="ব্যাচ সরানোর নিশ্চিতকরণ"
+        label={tr("ব্যাচ সরানোর নিশ্চিতকরণ")}
       >
-        <h2 className="text-lg font-bold">ব্যাচটি সরাবেন?</h2>
+        <h2 className="text-lg font-bold">{tr("ব্যাচটি সরাবেন?")}</h2>
         <p className="text-muted">
-          {removing?.product.name} — {removing ? describe(removing) : ""}। এই ব্যাচের {removing ? formatCount(removing.batch.qtyRemaining) : ""} পিস স্টক থেকে মুছে যাবে। সরানো ব্যাচ ফেরানো যায় না, তবে খাতায় লেখা থাকে।
+          {removing?.product.name} — {removing ? describe(removing) : ""}{tr("। এই ব্যাচের")} {removing ? formatCount(removing.batch.qtyRemaining) : ""} {tr("পিস স্টক থেকে মুছে যাবে। সরানো ব্যাচ ফেরানো যায় না, তবে খাতায় লেখা থাকে।")}
         </p>
         <Chips value={reason} onChange={setReason} options={REMOVE_REASONS.map((r) => ({ value: r, label: r }))} />
         {removeError ? <Banner tone="danger">{removeError}</Banner> : null}
@@ -143,7 +144,7 @@ export default function ExpiryPage() {
             }
           }}
         >
-          হ্যাঁ, সরান
+          {tr("হ্যাঁ, সরান")}
         </Button>
         <Button
           variant="secondary"
@@ -153,7 +154,7 @@ export default function ExpiryPage() {
             setRemoveError(null)
           }}
         >
-          না, রেখে দিন
+          {tr("না, রেখে দিন")}
         </Button>
       </Sheet>
     </AppShell>

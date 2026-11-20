@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useRouter } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
@@ -10,11 +11,11 @@ export default function OpenProductPage() {
   const router = useRouter()
   const { db, run } = useDb()
   return (
-    <AppShell title="খোলা পণ্য" backHref="/stock">
+    <AppShell title={tr("খোলা পণ্য")} backHref="/stock">
       <ProductForm
         open
         defaultMinStock={db.settings.defaultMinStock}
-        submitLabel="পণ্য সেভ করুন"
+        submitLabel={tr("পণ্য সেভ করুন")}
         onSubmit={(input) => {
           const product = run((d) => {
             const out = createProduct(d, input, new Date())

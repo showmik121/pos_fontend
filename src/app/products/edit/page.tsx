@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { AppShell, Splash } from "@/components/app-shell"
@@ -15,20 +16,20 @@ function EditProduct() {
   const { db, update } = useDb()
   const product = id ? findProduct(db, id) : undefined
   return (
-    <AppShell title="পণ্য সম্পাদনা" backHref={id ? `/products/detail?id=${id}` : "/stock"}>
+    <AppShell title={tr("পণ্য সম্পাদনা")} backHref={id ? `/products/detail?id=${id}` : "/stock"}>
       {product ? (
         <ProductForm
           key={product.id}
           initial={product}
           defaultMinStock={db.settings.defaultMinStock}
-          submitLabel="পরিবর্তন সেভ করুন"
+          submitLabel={tr("পরিবর্তন সেভ করুন")}
           onSubmit={(input) => {
             update((d) => updateProduct(d, product.id, input))
             router.replace(`/products/detail?id=${product.id}`)
           }}
         />
       ) : (
-        <Banner tone="warn">পণ্যটি পাওয়া যায়নি।</Banner>
+        <Banner tone="warn">{tr("পণ্যটি পাওয়া যায়নি।")}</Banner>
       )}
     </AppShell>
   )

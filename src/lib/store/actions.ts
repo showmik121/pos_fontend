@@ -1,3 +1,4 @@
+import { tr } from "../i18n"
 import { computeCart, settlePayments, type BillDiscount, type MobileMethod } from "../domain/cart"
 import { localDateIso } from "../domain/dates"
 import { DomainError, requireNonNegativeInt, requirePositiveInt } from "../domain/errors"
@@ -24,8 +25,8 @@ export interface ProductInput {
 }
 
 function validateProductFields(input: ProductInput): void {
-  if (!input.name.trim()) throw new DomainError("name_required", "পণ্যের নাম দিন")
-  if (!(input.pricePoisha > 0)) throw new DomainError("price_required", "বিক্রয়মূল্য দিন")
+  if (!input.name.trim()) throw new DomainError("name_required", tr("পণ্যের নাম দিন"))
+  if (!(input.pricePoisha > 0)) throw new DomainError("price_required", tr("বিক্রয়মূল্য দিন"))
   requireNonNegativeInt(input.costPoisha, "ক্রয়মূল্য")
   requirePositiveInt(input.cartonSize, "কার্টনে পিসের সংখ্যা")
   requireNonNegativeInt(input.minStock, "সর্বনিম্ন স্টক")
@@ -34,7 +35,7 @@ function validateProductFields(input: ProductInput): void {
 export function createProduct(db: Db, input: ProductInput, now: Date): { db: Db; product: Product } {
   validateProductFields(input)
   const code = input.barcode?.trim() || null
-  if (code && findByBarcode(db, code)) throw new DomainError("duplicate_barcode", "এই বারকোড আগে থেকেই আছে")
+  if (code && findByBarcode(db, code)) throw new DomainError("duplicate_barcode", tr("এই বারকোড আগে থেকেই আছে"))
   const product: Product = {
     id: newId(),
     name: input.name.trim(),
@@ -53,7 +54,7 @@ export function createProduct(db: Db, input: ProductInput, now: Date): { db: Db;
 
 export function updateProduct(db: Db, id: string, input: Omit<ProductInput, "barcode" | "open">): Db {
   validateProductFields({ ...input, barcode: null, open: false })
-  if (!findProduct(db, id)) throw new DomainError("not_found", "পণ্যটি পাওয়া যায়নি")
+  if (!findProduct(db, id)) throw new DomainError("not_found", tr("পণ্যটি পাওয়া যায়নি"))
   return {
     ...db,
     products: db.products.map((p) =>
@@ -64,10 +65,10 @@ export function updateProduct(db: Db, id: string, input: Omit<ProductInput, "bar
 
 export function addBarcode(db: Db, productId: string, code: string, packSize: number): Db {
   const c = code.trim()
-  if (!c) throw new DomainError("barcode_required", "বারকোড ফাঁকা")
+  if (!c) throw new DomainError("barcode_required", tr("বারকোড ফাঁকা"))
   requirePositiveInt(packSize, "কার্টনে পিসের সংখ্যা")
-  if (!findProduct(db, productId)) throw new DomainError("not_found", "পণ্যটি পাওয়া যায়নি")
-  if (findByBarcode(db, c)) throw new DomainError("duplicate_barcode", "এই বারকোড আগে থেকেই আছে")
+  if (!findProduct(db, productId)) throw new DomainError("not_found", tr("পণ্যটি পাওয়া যায়নি"))
+  if (findByBarcode(db, c)) throw new DomainError("duplicate_barcode", tr("এই বারকোড আগে থেকেই আছে"))
   return {
     ...db,
     products: db.products.map((p) => (p.id === productId ? { ...p, open: false, barcodes: [...p.barcodes, { code: c, packSize }] } : p)),
@@ -92,13 +93,13 @@ export interface StockInInput {
 
 export function stockIn(db: Db, input: StockInInput, now: Date): Db {
   const product = findProduct(db, input.productId)
-  if (!product) throw new DomainError("not_found", "পণ্যটি পাওয়া যায়নি")
+  if (!product) throw new DomainError("not_found", tr("পণ্যটি পাওয়া যায়নি"))
   const pieces = toBaseUnits({ qty: input.qty, unit: input.unit, packSize: product.cartonSize })
   requireNonNegativeInt(input.costPoisha, "ক্রয়মূল্য")
   const batchNo = input.batchNo.trim()
   if (input.requireBatchAndExpiry) {
-    if (!batchNo) throw new DomainError("batch_required", "ব্যাচ নম্বর দিন")
-    if (!input.expiryDate) throw new DomainError("expiry_required", "মেয়াদ দিন (মাস/বছর)")
+    if (!batchNo) throw new DomainError("batch_required", tr("ব্যাচ নম্বর দিন"))
+    if (!input.expiryDate) throw new DomainError("expiry_required", tr("মেয়াদ দিন (মাস/বছর)"))
   }
   const costPerPiece = input.unit === "carton" ? Math.round(input.costPoisha / product.cartonSize) : input.costPoisha
   const nowIso = now.toISOString()
@@ -119,7 +120,7 @@ export function removeBatch(db: Db, batchId: string, input: { by: string; reason
   const batch = db.batches.find((b) => b.id === batchId)
   if (!batch) return db
   const reason = input.reason.trim()
-  if (!reason) throw new DomainError("reason_required", "সরানোর কারণ বাছুন")
+  if (!reason) throw new DomainError("reason_required", tr("সরানোর কারণ বাছুন"))
   const entry: RemovedBatch = {
     id: newId(),
     at: now.toISOString(),
@@ -179,12 +180,12 @@ export interface CompleteSaleInput {
 
 export function completeSale(db: Db, input: CompleteSaleInput, now: Date): { db: Db; sale: Sale } {
   const draft = db.draft
-  if (draft.lines.length === 0) throw new DomainError("empty_cart", "বিলে কমপক্ষে একটি পণ্য লাগবে")
+  if (draft.lines.length === 0) throw new DomainError("empty_cart", tr("বিলে কমপক্ষে একটি পণ্য লাগবে"))
   const today = localDateIso(now)
 
   const priced = draft.lines.map((l) => {
     const product = findProduct(db, l.productId)
-    if (!product) throw new DomainError("not_found", "কার্টের একটি পণ্য আর পাওয়া যাচ্ছে না")
+    if (!product) throw new DomainError("not_found", tr("কার্টের একটি পণ্য আর পাওয়া যাচ্ছে না"))
     return { line: l, product }
   })
   const totals = computeCart(
@@ -257,10 +258,10 @@ export interface VoidResult {
 
 export function voidSale(db: Db, saleId: string, input: { by: string; reason: string }, now: Date): VoidResult {
   const sale = db.sales.find((s) => s.id === saleId)
-  if (!sale) throw new DomainError("not_found", "বিলটি পাওয়া যায়নি")
-  if (sale.voided) throw new DomainError("already_voided", "এই বিল আগেই বাতিল করা হয়েছে")
+  if (!sale) throw new DomainError("not_found", tr("বিলটি পাওয়া যায়নি"))
+  if (sale.voided) throw new DomainError("already_voided", tr("এই বিল আগেই বাতিল করা হয়েছে"))
   const reason = input.reason.trim()
-  if (!reason) throw new DomainError("reason_required", "বাতিলের কারণ লিখুন")
+  if (!reason) throw new DomainError("reason_required", tr("বাতিলের কারণ লিখুন"))
 
   let restoredQty = 0
   let lostQty = 0
@@ -293,12 +294,12 @@ export function voidSale(db: Db, saleId: string, input: { by: string; reason: st
 
 export function addCustomer(db: Db, input: { name: string; phone: string }, now: Date): { db: Db; customer: Customer } {
   const name = input.name.trim()
-  if (!name) throw new DomainError("name_required", "কাস্টমারের নাম দিন")
+  if (!name) throw new DomainError("name_required", tr("কাস্টমারের নাম দিন"))
   let phone = ""
   if (input.phone.trim()) {
     const normalized = normalizeBdPhone(input.phone)
-    if (!normalized) throw new DomainError("invalid_phone", "মোবাইল নম্বর সঠিক নয় (যেমন ০১৭১২৩৪৫৬৭৮)")
-    if (db.customers.some((c) => c.phone === normalized)) throw new DomainError("duplicate_phone", "এই নম্বরে কাস্টমার আগে থেকেই আছে")
+    if (!normalized) throw new DomainError("invalid_phone", tr("মোবাইল নম্বর সঠিক নয় (যেমন ০১৭১২৩৪৫৬৭৮)"))
+    if (db.customers.some((c) => c.phone === normalized)) throw new DomainError("duplicate_phone", tr("এই নম্বরে কাস্টমার আগে থেকেই আছে"))
     phone = normalized
   }
   const customer: Customer = { id: newId(), name, phone, createdAt: now.toISOString() }
@@ -307,7 +308,7 @@ export function addCustomer(db: Db, input: { name: string; phone: string }, now:
 
 /** কাস্টমারের বাকির সীমা বসায় (পয়সায়, > ০); null হলে সীমা তুলে দেয় */
 export function setCreditLimit(db: Db, customerId: string, limit: number | null): Db {
-  if (!db.customers.some((c) => c.id === customerId)) throw new DomainError("customer_not_found", "কাস্টমার পাওয়া যায়নি")
+  if (!db.customers.some((c) => c.id === customerId)) throw new DomainError("customer_not_found", tr("কাস্টমার পাওয়া যায়নি"))
   if (limit !== null) requirePositiveInt(limit, "বাকির সীমা")
   return { ...db, customers: db.customers.map((c) => (c.id === customerId ? { ...c, creditLimit: limit } : c)) }
 }
@@ -315,11 +316,11 @@ export function setCreditLimit(db: Db, customerId: string, limit: number | null)
 /** আদায়ের প্রতিশ্রুতির তারিখ বসায় (আজ বা পরে); date = null হলে মুছে দেয় */
 export function setPromise(db: Db, customerId: string, date: string | null, note: string, now: Date): Db {
   const customer = db.customers.find((c) => c.id === customerId)
-  if (!customer) throw new DomainError("customer_not_found", "কাস্টমার পাওয়া যায়নি")
+  if (!customer) throw new DomainError("customer_not_found", tr("কাস্টমার পাওয়া যায়নি"))
   let promise: Customer["promise"] = null
   if (date !== null) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) throw new DomainError("invalid_date", "তারিখ সঠিক নয়")
-    if (date < localDateIso(now)) throw new DomainError("past_date", "আজ বা পরের তারিখ দিন")
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) throw new DomainError("invalid_date", tr("তারিখ সঠিক নয়"))
+    if (date < localDateIso(now)) throw new DomainError("past_date", tr("আজ বা পরের তারিখ দিন"))
     promise = { date, note: note.trim().slice(0, 120) }
   }
   return { ...db, customers: db.customers.map((c) => (c.id === customerId ? { ...c, promise } : c)) }
@@ -327,8 +328,8 @@ export function setPromise(db: Db, customerId: string, date: string | null, note
 
 export function receiveDue(db: Db, customerId: string, amount: number, by: string, now: Date): Db {
   requirePositiveInt(amount, "জমার পরিমাণ")
-  if (!db.customers.some((c) => c.id === customerId)) throw new DomainError("not_found", "কাস্টমার পাওয়া যায়নি")
-  if (amount > customerBalance(db, customerId)) throw new DomainError("overpay", "বাকির চেয়ে বেশি জমা নেওয়া যায় না")
+  if (!db.customers.some((c) => c.id === customerId)) throw new DomainError("not_found", tr("কাস্টমার পাওয়া যায়নি"))
+  if (amount > customerBalance(db, customerId)) throw new DomainError("overpay", tr("বাকির চেয়ে বেশি জমা নেওয়া যায় না"))
   const entry: LedgerEntry = { id: newId(), customerId, at: now.toISOString(), kind: "payment", amount, saleNo: null, by }
   return { ...db, ledger: [...db.ledger, entry] }
 }

@@ -1,3 +1,4 @@
+import { tr } from "../i18n"
 import { ErrorEnvelopeSchema } from "./schemas"
 
 export const DEFAULT_API_URL = "https://gaxzkbcomeexlnzquvzf.supabase.co/functions/v1/api"
@@ -46,7 +47,7 @@ export async function apiRequest<T>(path: string, parse: (data: unknown) => T, o
       signal: controller.signal,
     })
   } catch {
-    throw new ApiError(0, "network", "ইন্টারনেট সংযোগ নেই বা সার্ভারে পৌঁছানো যাচ্ছে না। একটু পরে আবার চেষ্টা করুন")
+    throw new ApiError(0, "network", tr("ইন্টারনেট সংযোগ নেই বা সার্ভারে পৌঁছানো যাচ্ছে না। একটু পরে আবার চেষ্টা করুন"))
   } finally {
     clearTimeout(timer)
   }
@@ -61,16 +62,16 @@ export async function apiRequest<T>(path: string, parse: (data: unknown) => T, o
   if (!res.ok) {
     const env = ErrorEnvelopeSchema.safeParse(data)
     if (env.success) throw new ApiError(res.status, env.data.error.code, env.data.error.message, env.data.error.details)
-    throw new ApiError(res.status, "http_error", "সার্ভারে সমস্যা হয়েছে, একটু পরে আবার চেষ্টা করুন")
+    throw new ApiError(res.status, "http_error", tr("সার্ভারে সমস্যা হয়েছে, একটু পরে আবার চেষ্টা করুন"))
   }
 
   try {
     return parse(data)
   } catch {
-    throw new ApiError(res.status, "bad_response", "সার্ভারের উত্তর বোঝা যায়নি, অ্যাপ হালনাগাদ করে দেখুন")
+    throw new ApiError(res.status, "bad_response", tr("সার্ভারের উত্তর বোঝা যায়নি, অ্যাপ হালনাগাদ করে দেখুন"))
   }
 }
 
 export function errorMessage(err: unknown): string {
-  return err instanceof ApiError ? err.message : "কিছু একটা ভুল হয়েছে, আবার চেষ্টা করুন"
+  return err instanceof ApiError ? err.message : tr("কিছু একটা ভুল হয়েছে, আবার চেষ্টা করুন")
 }

@@ -1,18 +1,19 @@
+import { tr, tf } from "../i18n"
 import { formatDateBn, localDateIso } from "../domain/dates"
 import { toBanglaDigits } from "./bn"
 
 function dayPart(hour: number): string {
-  if (hour >= 4 && hour < 12) return "সকাল"
-  if (hour >= 12 && hour < 16) return "দুপুর"
-  if (hour >= 16 && hour < 18) return "বিকাল"
-  if (hour >= 18 && hour < 20) return "সন্ধ্যা"
-  return "রাত"
+  if (hour >= 4 && hour < 12) return tr("সকাল")
+  if (hour >= 12 && hour < 16) return tr("দুপুর")
+  if (hour >= 16 && hour < 18) return tr("বিকাল")
+  if (hour >= 18 && hour < 20) return tr("সন্ধ্যা")
+  return tr("রাত")
 }
 
 /** "শুভ সকাল" … "শুভ রাত্রি" (ঘণ্টা ০–২৩) */
 export function greetingBn(hour: number): string {
   const part = dayPart(hour)
-  return part === "রাত" ? "শুভ রাত্রি" : `শুভ ${part}`
+  return part === tr("রাত") ? tr("শুভ রাত্রি") : tf("শুভ {p0}", { p0: part })
 }
 
 /** "দুপুর ২:৩০" */

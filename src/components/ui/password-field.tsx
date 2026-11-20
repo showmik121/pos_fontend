@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useState, type InputHTMLAttributes, type ReactNode } from "react"
 import { Field } from "./field"
 
@@ -24,7 +25,7 @@ export function PasswordField(props: Props) {
           aria-pressed={visible}
           className="min-h-11 rounded-lg px-3 text-sm font-medium text-brand active:bg-brand-soft"
         >
-          {visible ? "লুকান" : "দেখান"}
+          {visible ? tr("লুকান") : tr("দেখান")}
         </button>
       }
     />

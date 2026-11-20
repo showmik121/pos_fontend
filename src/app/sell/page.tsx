@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import { AppShell } from "@/components/app-shell"
@@ -56,11 +57,11 @@ export default function SellPage() {
     const hit = findByBarcode(db, code)
     if (!hit) {
       setNotFound(code)
-      return `এই বারকোডের পণ্য নেই (${code})`
+      return tf("এই বারকোডের পণ্য নেই ({p0})", { p0: (code) })
     }
     setNotFound(null)
     addProduct(hit.product, hit.packSize)
-    return `✓ ${hit.product.name} যোগ হলো`
+    return tf("✓ {p0} যোগ হলো", { p0: (hit.product.name) })
   }
 
   const hasDiscount = totals != null && totals.lineDiscount + totals.billDiscount > 0
@@ -69,31 +70,31 @@ export default function SellPage() {
 
   return (
     <AppShell
-      title="নতুন বিল"
+      title={tr("নতুন বিল")}
       backHref="/"
       art={lines.length === 0}
       footer={
         lines.length > 0 && totals ? (
           <div className="space-y-3">
             <Link href="/sell/discount" className="flex min-h-11 items-center justify-between text-[15px]">
-              <span className="font-medium">ছাড়</span>
+              <span className="font-medium">{tr("ছাড়")}</span>
               <span className="flex items-center gap-1 text-brand-dark">
-                {hasDiscount ? `−${formatTaka(totals.lineDiscount + totals.billDiscount)}` : "যোগ করুন"}
+                {hasDiscount ? `−${formatTaka(totals.lineDiscount + totals.billDiscount)}` : tr("যোগ করুন")}
                 <Icon name="chevron" size={18} />
               </span>
             </Link>
             <div className="flex items-center justify-between">
-              <span className="text-muted">{toBanglaDigits(itemCount)}টি পণ্য · মোট</span>
+              <span className="text-muted">{toBanglaDigits(itemCount)}{tr("টি পণ্য · মোট")}</span>
               <span className="text-2xl font-bold">{formatTaka(totals.total)}</span>
             </div>
-            {overStock ? <Banner tone="warn">কিছু পণ্যের পরিমাণ স্টকের চেয়ে বেশি — কমিয়ে নিন।</Banner> : null}
+            {overStock ? <Banner tone="warn">{tr("কিছু পণ্যের পরিমাণ স্টকের চেয়ে বেশি — কমিয়ে নিন।")}</Banner> : null}
             {overStock ? (
               <Button full disabled>
-                পেমেন্ট নিন
+                {tr("পেমেন্ট নিন")}
               </Button>
             ) : (
               <LinkButton href="/sell/pay" full>
-                পেমেন্ট নিন
+                {tr("পেমেন্ট নিন")}
               </LinkButton>
             )}
           </div>
@@ -102,26 +103,26 @@ export default function SellPage() {
     >
       <div className="grid grid-cols-2 gap-3">
         <Button onClick={() => setScanning(true)}>
-          <Icon name="scan" /> স্ক্যান করুন
+          <Icon name="scan" /> {tr("স্ক্যান করুন")}
         </Button>
         <LinkButton href="/sell/search" variant="secondary">
-          <Icon name="search" /> নাম দিয়ে খুঁজুন
+          <Icon name="search" /> {tr("নাম দিয়ে খুঁজুন")}
         </LinkButton>
       </div>
 
       {notFound ? (
         <Banner tone="warn">
-          এই বারকোডে কোনো পণ্য নেই।{" "}
+          {tr("এই বারকোডে কোনো পণ্য নেই।")}{" "}
           <Link href={`/products/new?barcode=${encodeURIComponent(notFound)}`} className="font-semibold underline">
-            নতুন পণ্য হিসেবে যোগ করুন
+            {tr("নতুন পণ্য হিসেবে যোগ করুন")}
           </Link>
         </Banner>
       ) : null}
 
       {lines.length === 0 ? (
         <Card className="px-4 py-8 text-center">
-          <p className="font-medium">বিলে কোনো পণ্য নেই</p>
-          <p className="mt-1 text-sm text-muted">পণ্যের বারকোড স্ক্যান করুন বা নাম দিয়ে খুঁজে যোগ করুন।</p>
+          <p className="font-medium">{tr("বিলে কোনো পণ্য নেই")}</p>
+          <p className="mt-1 text-sm text-muted">{tr("পণ্যের বারকোড স্ক্যান করুন বা নাম দিয়ে খুঁজে যোগ করুন।")}</p>
         </Card>
       ) : (
         <RowList>
@@ -132,16 +133,16 @@ export default function SellPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-medium leading-snug">{product.name}</div>
-                    <div className="text-[13px] text-muted">প্রতি পিস {formatTaka(product.pricePoisha)}</div>
+                    <div className="text-[13px] text-muted">{tr("প্রতি পিস")} {formatTaka(product.pricePoisha)}</div>
                   </div>
                   <div className="text-right">
                     <div className="font-semibold">{formatTaka(gross - line.discount)}</div>
-                    {line.discount > 0 ? <div className="text-[13px] text-muted">ছাড় −{formatTaka(line.discount)}</div> : null}
+                    {line.discount > 0 ? <div className="text-[13px] text-muted">{tr("ছাড় −")}{formatTaka(line.discount)}</div> : null}
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <Stepper value={line.qty} onChange={(q) => update((d) => ({ ...d, draft: setCartQty(d.draft, product.id, q) }))} />
-                  {line.qty > sellable ? <Pill tone="warn">স্টকে আছে {formatCount(sellable)}</Pill> : null}
+                  {line.qty > sellable ? <Pill tone="warn">{tr("স্টকে আছে")} {formatCount(sellable)}</Pill> : null}
                 </div>
               </div>
             )
@@ -151,22 +152,22 @@ export default function SellPage() {
 
       {lines.length > 0 ? (
         <Button variant="ghost" full onClick={() => update((d) => ({ ...d, draft: { ...d.draft, lines: [], bill: { type: "amount", value: 0 }, customerId: null } }))}>
-          বিল খালি করুন
+          {tr("বিল খালি করুন")}
         </Button>
       ) : null}
 
-      <Scanner open={scanning} onClose={() => setScanning(false)} onCode={onScanned} continuous title="বিলে স্ক্যান করুন" />
+      <Scanner open={scanning} onClose={() => setScanning(false)} onCode={onScanned} continuous title={tr("বিলে স্ক্যান করুন")} />
 
-      <Sheet open={expiredFor != null} onClose={() => setExpiredFor(null)} label="মেয়াদোত্তীর্ণ ব্যাচ">
-        <h2 className="text-lg font-bold">মেয়াদোত্তীর্ণ ব্যাচ আছে</h2>
+      <Sheet open={expiredFor != null} onClose={() => setExpiredFor(null)} label={tr("মেয়াদোত্তীর্ণ ব্যাচ")}>
+        <h2 className="text-lg font-bold">{tr("মেয়াদোত্তীর্ণ ব্যাচ আছে")}</h2>
         <p className="text-muted">
-          {expiredFor?.name}-এর কিছু ব্যাচের মেয়াদ শেষ। সেগুলো বিক্রি হবে না — শুধু মেয়াদ থাকা ব্যাচ থেকে (যেটার মেয়াদ আগে শেষ হবে সেটা আগে) বিক্রি হবে।
+          {expiredFor?.name}{tr("-এর কিছু ব্যাচের মেয়াদ শেষ। সেগুলো বিক্রি হবে না — শুধু মেয়াদ থাকা ব্যাচ থেকে (যেটার মেয়াদ আগে শেষ হবে সেটা আগে) বিক্রি হবে।")}
         </p>
         <Button full onClick={() => setExpiredFor(null)}>
-          ঠিক আছে, বিক্রি চালু রাখুন
+          {tr("ঠিক আছে, বিক্রি চালু রাখুন")}
         </Button>
         <LinkButton href="/stock/expiry" variant="secondary" full>
-          মেয়াদোত্তীর্ণ স্টক দেখুন ও সরান
+          {tr("মেয়াদোত্তীর্ণ স্টক দেখুন ও সরান")}
         </LinkButton>
         <Button
           variant="ghost"
@@ -176,7 +177,7 @@ export default function SellPage() {
             setExpiredFor(null)
           }}
         >
-          এই পণ্য বিল থেকে বাদ দিন
+          {tr("এই পণ্য বিল থেকে বাদ দিন")}
         </Button>
       </Sheet>
     </AppShell>

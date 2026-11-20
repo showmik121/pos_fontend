@@ -6,6 +6,7 @@ import { AuthProvider } from "./auth-provider"
 import { CrashReporter } from "./crash-reporter"
 import { DbProvider } from "./db-provider"
 import { DeviceRegistrar } from "./device-registrar"
+import { LangProvider } from "./lang-provider"
 import { StorageGuard } from "./storage-guard"
 import { SyncRunner } from "./sync-runner"
 
@@ -25,7 +26,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <DeviceRegistrar />
         <StorageGuard />
         <SyncRunner />
-        {children}
+        <LangProvider>{children}</LangProvider>
       </DbProvider>
     </AuthProvider>
   )

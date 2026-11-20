@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useMemo, useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
@@ -40,20 +41,20 @@ export default function NotesPage() {
   }
 
   return (
-    <AppShell title="আনতে হবে" backHref="/">
+    <AppShell title={tr("আনতে হবে")} backHref="/">
       <Card className="space-y-3 p-4">
         <Chips value={kind} onChange={setKind} options={KINDS} />
-        <Field id="note-text" label="কী আনতে হবে" placeholder={kind === "request" ? "যেমন: পন্ডস ক্রিম ২টা" : "পণ্যের নাম ও কত"} maxLength={NOTE_TEXT_MAX} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
-        {kind === "request" ? <Field id="note-customer" label="কে চেয়েছে (ইচ্ছা হলে)" placeholder="কাস্টমারের নাম" maxLength={60} value={customerName} onChange={(e) => setCustomerName(e.target.value)} /> : null}
+        <Field id="note-text" label={tr("কী আনতে হবে")} placeholder={kind === "request" ? tr("যেমন: পন্ডস ক্রিম ২টা") : tr("পণ্যের নাম ও কত")} maxLength={NOTE_TEXT_MAX} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+        {kind === "request" ? <Field id="note-customer" label={tr("কে চেয়েছে (ইচ্ছা হলে)")} placeholder={tr("কাস্টমারের নাম")} maxLength={60} value={customerName} onChange={(e) => setCustomerName(e.target.value)} /> : null}
         {error ? <Banner tone="danger">{error}</Banner> : null}
         <Button full onClick={add} disabled={!text.trim()}>
-          নোটে রাখুন
+          {tr("নোটে রাখুন")}
         </Button>
       </Card>
 
       {suggestions.length > 0 ? (
         <>
-          <SectionTitle>স্টক শেষ — এক ট্যাপে নোটে তুলুন</SectionTitle>
+          <SectionTitle>{tr("স্টক শেষ — এক ট্যাপে নোটে তুলুন")}</SectionTitle>
           <div className="flex flex-wrap gap-2">
             {suggestions.slice(0, 12).map((p) => (
               <button
@@ -69,16 +70,16 @@ export default function NotesPage() {
         </>
       ) : null}
 
-      <SectionTitle>নোট ({toBanglaDigits(pendingNoteCount(db))}টি বাকি)</SectionTitle>
+      <SectionTitle>{tr("নোট (")}{toBanglaDigits(pendingNoteCount(db))}{tr("টি বাকি)")}</SectionTitle>
       {notes.length === 0 ? (
-        <Card className="px-4 py-6 text-center text-muted">এখনো কোনো নোট নেই।</Card>
+        <Card className="px-4 py-6 text-center text-muted">{tr("এখনো কোনো নোট নেই।")}</Card>
       ) : (
         <Card className="divide-y divide-line">
           {notes.map((n) => (
             <div key={n.id} className="flex items-center gap-3 px-4 py-2">
               <input
                 type="checkbox"
-                aria-label={`${n.text} — আনা হয়েছে`}
+                aria-label={tf("{p0} — আনা হয়েছে", { p0: (n.text) })}
                 className="size-6 flex-none accent-brand"
                 checked={n.done}
                 onChange={(e) => update((d) => setNoteDone(d, n.id, e.target.checked))}
@@ -86,18 +87,18 @@ export default function NotesPage() {
               <div className={`min-w-0 flex-1 ${n.done ? "text-muted line-through" : ""}`}>
                 <div className="font-medium leading-snug">{n.text}</div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[13px] text-muted">
-                  <Pill tone={KIND_TONE[n.kind]}>{NOTE_KIND_LABEL[n.kind]}</Pill>
+                  <Pill tone={KIND_TONE[n.kind]}>{tr(NOTE_KIND_LABEL[n.kind])}</Pill>
                   {n.customerName ? <span>{n.customerName}</span> : null}
                 </div>
               </div>
-              <button type="button" aria-label={`${n.text} মুছুন`} className="min-h-10 flex-none px-2 text-sm text-danger" onClick={() => update((d) => removeNote(d, n.id))}>
-                মুছুন
+              <button type="button" aria-label={tf("{p0} মুছুন", { p0: (n.text) })} className="min-h-10 flex-none px-2 text-sm text-danger" onClick={() => update((d) => removeNote(d, n.id))}>
+                {tr("মুছুন")}
               </button>
             </div>
           ))}
         </Card>
       )}
-      <p className="text-center text-sm text-muted">টিক দিলে আনা হয়েছে ধরা হয়, তালিকার নিচে চলে যায়।</p>
+      <p className="text-center text-sm text-muted">{tr("টিক দিলে আনা হয়েছে ধরা হয়, তালিকার নিচে চলে যায়।")}</p>
     </AppShell>
   )
 }

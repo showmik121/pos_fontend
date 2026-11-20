@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { Button } from "./ui/button"
 import { useInstall } from "./use-install"
 
@@ -14,21 +15,21 @@ export function InstallBanner() {
   }
 
   return (
-    <section aria-label="অ্যাপ ইনস্টল" className="no-print space-y-2 rounded-xl bg-brand-soft p-3 text-sm text-brand-dark">
-      <p className="font-medium">ফোনের হোম স্ক্রিনে অ্যাপ হিসেবে রাখুন</p>
+    <section aria-label={tr("অ্যাপ ইনস্টল")} className="no-print space-y-2 rounded-xl bg-brand-soft p-3 text-sm text-brand-dark">
+      <p className="font-medium">{tr("ফোনের হোম স্ক্রিনে অ্যাপ হিসেবে রাখুন")}</p>
       {mode === "ios" ? (
-        <p>Safari-র নিচে শেয়ার (⬆) বোতাম চেপে &quot;Add to Home Screen&quot; বেছে নিন।</p>
+        <p>{tr("Safari-র নিচে শেয়ার (⬆) বোতাম চেপে &quot;Add to Home Screen&quot; বেছে নিন।")}</p>
       ) : (
-        <p>ইনস্টল করলে অ্যাপের মতো সরাসরি খুলবে, ইন্টারনেট ছাড়াও চলবে।</p>
+        <p>{tr("ইনস্টল করলে অ্যাপের মতো সরাসরি খুলবে, ইন্টারনেট ছাড়াও চলবে।")}</p>
       )}
       <div className="flex gap-2">
         {mode === "prompt" ? (
           <Button onClick={onInstall} className="min-h-11 flex-1">
-            ইনস্টল করুন
+            {tr("ইনস্টল করুন")}
           </Button>
         ) : null}
         <Button variant="secondary" onClick={dismiss} className="min-h-11 flex-1">
-          পরে
+          {tr("পরে")}
         </Button>
       </div>
     </section>

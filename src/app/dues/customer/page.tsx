@@ -1,5 +1,6 @@
 "use client"
 
+import { tr, tf } from "@/lib/i18n"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
 import { AppShell, Splash } from "@/components/app-shell"
@@ -43,8 +44,8 @@ function CustomerDues() {
   const customer = id ? db.customers.find((c) => c.id === id) : undefined
   if (!customer) {
     return (
-      <AppShell title="কাস্টমার" backHref="/dues">
-        <Banner tone="warn">কাস্টমার পাওয়া যায়নি।</Banner>
+      <AppShell title={tr("কাস্টমার")} backHref="/dues">
+        <Banner tone="warn">{tr("কাস্টমার পাওয়া যায়নি।")}</Banner>
       </AppShell>
     )
   }
@@ -55,7 +56,7 @@ function CustomerDues() {
   const deposit = () => {
     setError(null)
     const poisha = parseTaka(amount)
-    if (poisha == null || poisha <= 0) return setError("জমার পরিমাণ সঠিকভাবে দিন")
+    if (poisha == null || poisha <= 0) return setError(tr("জমার পরিমাণ সঠিকভাবে দিন"))
     try {
       const entryId = run((d) => {
         const next = receiveDue(d, customer.id, poisha, actor, new Date())
@@ -81,7 +82,7 @@ function CustomerDues() {
     let value: number | null = null
     if (!clear) {
       const poisha = parseTaka(limitInput)
-      if (poisha == null || poisha <= 0) return setLimitError("সীমার পরিমাণ সঠিকভাবে দিন")
+      if (poisha == null || poisha <= 0) return setLimitError(tr("সীমার পরিমাণ সঠিকভাবে দিন"))
       value = poisha
     }
     try {
@@ -101,7 +102,7 @@ function CustomerDues() {
 
   const savePromise = (date: string | null) => {
     setPromiseError(null)
-    if (date !== null && !date) return setPromiseError("তারিখ বাছুন")
+    if (date !== null && !date) return setPromiseError(tr("তারিখ বাছুন"))
     try {
       update((d) => setPromise(d, customer.id, date, promiseNote, new Date()))
       setPromiseOpen(false)
@@ -122,7 +123,7 @@ function CustomerDues() {
         return
       }
       await navigator.clipboard.writeText(receiptText)
-      setShareNote("রসিদের লেখা কপি হয়েছে — মেসেজে পেস্ট করে পাঠান।")
+      setShareNote(tr("রসিদের লেখা কপি হয়েছে — মেসেজে পেস্ট করে পাঠান।"))
     } catch {
       // শেয়ার বাতিল করলে কিছু করার নেই
     }
@@ -131,11 +132,11 @@ function CustomerDues() {
   const shareStatement = async () => {
     setStatementNote(null)
     const blob = await drawStatementPng({ storeName, customerName: customer.name, statement: buildStatement(db.ledger, customer.id), dateText: formatDayMonthBn(todayIso()) })
-    if (!blob) return setStatementNote("ছবি বানানো গেল না — আবার চেষ্টা করুন।")
+    if (!blob) return setStatementNote(tr("ছবি বানানো গেল না — আবার চেষ্টা করুন।"))
     const file = new File([blob], `khata-${customer.name}.png`, { type: "image/png" })
     try {
       if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: `${customer.name}-এর খাতা` })
+        await navigator.share({ files: [file], title: tf("{p0}-এর খাতা", { p0: (customer.name) }) })
         return
       }
     } catch {
@@ -147,7 +148,7 @@ function CustomerDues() {
     a.download = file.name
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 10_000)
-    setStatementNote("খাতার ছবি নামানো হয়েছে — গ্যালারি থেকে পাঠান।")
+    setStatementNote(tr("খাতার ছবি নামানো হয়েছে — গ্যালারি থেকে পাঠান।"))
   }
 
   const sellOnCredit = () => {
@@ -158,61 +159,61 @@ function CustomerDues() {
   return (
     <AppShell title={customer.name} backHref="/dues">
       <Card className="px-4 py-4 text-center">
-        <div className="text-sm text-muted">{customer.phone ? formatPhoneBn(customer.phone) : "মোবাইল নেই"}</div>
-        <div className="mt-1 text-sm text-muted">বর্তমান বাকি</div>
+        <div className="text-sm text-muted">{customer.phone ? formatPhoneBn(customer.phone) : tr("মোবাইল নেই")}</div>
+        <div className="mt-1 text-sm text-muted">{tr("বর্তমান বাকি")}</div>
         <div className={`text-[32px] font-bold leading-tight ${balance > 0 ? "text-warn" : ""}`}>{formatTaka(balance)}</div>
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
         <Button onClick={() => setOpen(true)} disabled={balance <= 0}>
-          টাকা জমা নিন
+          {tr("টাকা জমা নিন")}
         </Button>
         <Button variant="secondary" onClick={sellOnCredit}>
-          বাকিতে বিক্রি
+          {tr("বাকিতে বিক্রি")}
         </Button>
       </div>
 
       <Card className="flex items-center justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
-          <div className="text-sm text-muted">বাকির সীমা</div>
+          <div className="text-sm text-muted">{tr("বাকির সীমা")}</div>
           {customer.creditLimit ? (
             <div className={`font-semibold ${balance > customer.creditLimit ? "text-danger" : ""}`}>
               {formatTaka(customer.creditLimit)}
-              {balance > customer.creditLimit ? <span className="font-normal"> · সীমা ছাড়িয়েছে</span> : null}
+              {balance > customer.creditLimit ? <span className="font-normal"> {tr("· সীমা ছাড়িয়েছে")}</span> : null}
             </div>
           ) : (
-            <div className="text-muted">সীমা নেই</div>
+            <div className="text-muted">{tr("সীমা নেই")}</div>
           )}
         </div>
         <Button variant="secondary" className="min-h-10 px-3 text-sm" onClick={openLimit}>
-          {customer.creditLimit ? "বদলান" : "সীমা দিন"}
+          {customer.creditLimit ? tr("বদলান") : tr("সীমা দিন")}
         </Button>
       </Card>
 
       {balance > 0 ? (
         <Card className="flex items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
-            <div className="text-sm text-muted">কবে দেবে</div>
+            <div className="text-sm text-muted">{tr("কবে দেবে")}</div>
             {customer.promise ? (
               <div className={`font-semibold ${customer.promise.date < todayIso() ? "text-warn" : ""}`}>
                 {formatDayMonthBn(customer.promise.date)}
                 {customer.promise.note ? <span className="font-normal text-muted"> · {customer.promise.note}</span> : null}
               </div>
             ) : (
-              <div className="text-muted">তারিখ লেখা নেই</div>
+              <div className="text-muted">{tr("তারিখ লেখা নেই")}</div>
             )}
           </div>
           <Button variant="secondary" className="min-h-10 px-3 text-sm" onClick={openPromise}>
-            {customer.promise ? "বদলান" : "তারিখ দিন"}
+            {customer.promise ? tr("বদলান") : tr("তারিখ দিন")}
           </Button>
         </Card>
       ) : null}
 
       {customer.phone ? (
         <div className="grid grid-cols-2 gap-3">
-          <a href={`tel:${customer.phone}`} className="flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-white font-medium active:bg-canvas">কল করুন</a>
+          <a href={`tel:${customer.phone}`} className="flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-white font-medium active:bg-canvas">{tr("কল করুন")}</a>
           {balance > 0 ? (
-            <a href={smsHref(customer.phone, reminderText({ customerName: customer.name, balance, storeName }))} className="flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-white font-medium active:bg-canvas">এসএমএসে তাগাদা</a>
+            <a href={smsHref(customer.phone, reminderText({ customerName: customer.name, balance, storeName }))} className="flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-white font-medium active:bg-canvas">{tr("এসএমএসে তাগাদা")}</a>
           ) : null}
         </div>
       ) : null}
@@ -221,16 +222,16 @@ function CustomerDues() {
         right={
           entries.length > 0 ? (
             <Button variant="ghost" className="min-h-9 px-2 text-sm" onClick={shareStatement}>
-              ছবি করে পাঠান
+              {tr("ছবি করে পাঠান")}
             </Button>
           ) : undefined
         }
       >
-        খাতা
+        {tr("খাতা")}
       </SectionTitle>
       {statementNote ? <Banner tone="info">{statementNote}</Banner> : null}
       {entries.length === 0 ? (
-        <Card className="px-4 py-5 text-center text-muted">কোনো লেনদেন নেই।</Card>
+        <Card className="px-4 py-5 text-center text-muted">{tr("কোনো লেনদেন নেই।")}</Card>
       ) : (
         <RowList>
           {entries.map((e) => (
@@ -245,71 +246,71 @@ function CustomerDues() {
         </RowList>
       )}
 
-      <Sheet open={limitOpen} onClose={() => setLimitOpen(false)} label="বাকির সীমা">
-        <h2 className="text-lg font-bold">বাকির সীমা</h2>
-        <p className="text-muted">এর বেশি বাকি হতে চাইলে বিলের সময় সতর্ক করব। আপনি চাইলে তবুও বিল করতে পারবেন।</p>
-        <Field id="limit-amount" label="সর্বোচ্চ কত টাকা বাকি" inputMode="decimal" value={limitInput} onChange={(e) => setLimitInput(e.target.value)} autoFocus />
+      <Sheet open={limitOpen} onClose={() => setLimitOpen(false)} label={tr("বাকির সীমা")}>
+        <h2 className="text-lg font-bold">{tr("বাকির সীমা")}</h2>
+        <p className="text-muted">{tr("এর বেশি বাকি হতে চাইলে বিলের সময় সতর্ক করব। আপনি চাইলে তবুও বিল করতে পারবেন।")}</p>
+        <Field id="limit-amount" label={tr("সর্বোচ্চ কত টাকা বাকি")} inputMode="decimal" value={limitInput} onChange={(e) => setLimitInput(e.target.value)} autoFocus />
         {limitError ? <Banner tone="danger">{limitError}</Banner> : null}
         <Button full onClick={() => saveLimit(false)}>
-          সংরক্ষণ
+          {tr("সংরক্ষণ")}
         </Button>
         {customer.creditLimit ? (
           <Button full variant="secondary" onClick={() => saveLimit(true)}>
-            সীমা তুলে দিন
+            {tr("সীমা তুলে দিন")}
           </Button>
         ) : null}
       </Sheet>
 
-      <Sheet open={receiptEntry !== undefined} onClose={() => setReceiptId(null)} label="জমার রসিদ">
-        <h2 className="text-lg font-bold">জমা নেওয়া হয়েছে</h2>
+      <Sheet open={receiptEntry !== undefined} onClose={() => setReceiptId(null)} label={tr("জমার রসিদ")}>
+        <h2 className="text-lg font-bold">{tr("জমা নেওয়া হয়েছে")}</h2>
         <pre className="whitespace-pre-wrap rounded-xl bg-canvas px-3 py-3 font-[inherit] text-[15px] leading-relaxed">{receiptText}</pre>
         {shareNote ? <Banner tone="info">{shareNote}</Banner> : null}
         <Button full onClick={shareReceipt}>
-          রসিদ পাঠান
+          {tr("রসিদ পাঠান")}
         </Button>
         <Button full variant="secondary" onClick={() => setReceiptId(null)}>
-          বন্ধ করুন
+          {tr("বন্ধ করুন")}
         </Button>
       </Sheet>
 
-      <Sheet open={promiseOpen} onClose={() => setPromiseOpen(false)} label="আদায়ের তারিখ">
-        <h2 className="text-lg font-bold">কবে দেবে?</h2>
-        <p className="text-muted">সেদিন হোম পেজে মনে করিয়ে দেব।</p>
+      <Sheet open={promiseOpen} onClose={() => setPromiseOpen(false)} label={tr("আদায়ের তারিখ")}>
+        <h2 className="text-lg font-bold">{tr("কবে দেবে?")}</h2>
+        <p className="text-muted">{tr("সেদিন হোম পেজে মনে করিয়ে দেব।")}</p>
         <div className="flex flex-wrap gap-2">
           {[
-            ["আজ", 0],
-            ["কাল", 1],
-            ["৩ দিন পর", 3],
-            ["৭ দিন পর", 7],
+            [tr("আজ"), 0],
+            [tr("কাল"), 1],
+            [tr("৩ দিন পর"), 3],
+            [tr("৭ দিন পর"), 7],
           ].map(([label, n]) => (
             <Button key={label} variant="secondary" className="min-h-10 px-3 text-sm" onClick={() => setPromiseDate(addDays(todayIso(), n as number))}>
               {label}
             </Button>
           ))}
         </div>
-        <Field id="promise-date" label="তারিখ" type="date" min={todayIso()} value={promiseDate} onChange={(e) => setPromiseDate(e.target.value)} hint={promiseDate ? formatDayMonthBn(promiseDate) : undefined} />
-        <Field id="promise-note" label="নোট (ইচ্ছা হলে)" placeholder="যেমন: বেতন পেয়ে দেবে" maxLength={120} value={promiseNote} onChange={(e) => setPromiseNote(e.target.value)} />
+        <Field id="promise-date" label={tr("তারিখ")} type="date" min={todayIso()} value={promiseDate} onChange={(e) => setPromiseDate(e.target.value)} hint={promiseDate ? formatDayMonthBn(promiseDate) : undefined} />
+        <Field id="promise-note" label={tr("নোট (ইচ্ছা হলে)")} placeholder={tr("যেমন: বেতন পেয়ে দেবে")} maxLength={120} value={promiseNote} onChange={(e) => setPromiseNote(e.target.value)} />
         {promiseError ? <Banner tone="danger">{promiseError}</Banner> : null}
         <Button full onClick={() => savePromise(promiseDate)}>
-          সংরক্ষণ
+          {tr("সংরক্ষণ")}
         </Button>
         {customer.promise ? (
           <Button full variant="secondary" onClick={() => savePromise(null)}>
-            তারিখ মুছুন
+            {tr("তারিখ মুছুন")}
           </Button>
         ) : null}
       </Sheet>
 
-      <Sheet open={open} onClose={() => setOpen(false)} label="টাকা জমা">
-        <h2 className="text-lg font-bold">টাকা জমা নিন</h2>
-        <p className="text-muted">বাকি আছে {formatTaka(balance)}</p>
-        <Field id="due-amount" label="কত টাকা পেলেন" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
+      <Sheet open={open} onClose={() => setOpen(false)} label={tr("টাকা জমা")}>
+        <h2 className="text-lg font-bold">{tr("টাকা জমা নিন")}</h2>
+        <p className="text-muted">{tr("বাকি আছে")} {formatTaka(balance)}</p>
+        <Field id="due-amount" label={tr("কত টাকা পেলেন")} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
         <Button variant="secondary" onClick={() => setAmount(String(balance / 100))}>
-          পুরো বাকি
+          {tr("পুরো বাকি")}
         </Button>
         {error ? <Banner tone="danger">{error}</Banner> : null}
         <Button full onClick={deposit}>
-          জমা নিন
+          {tr("জমা নিন")}
         </Button>
       </Sheet>
     </AppShell>

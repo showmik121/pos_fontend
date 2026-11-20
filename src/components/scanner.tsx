@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "./ui/button"
 import { Sheet } from "./ui/sheet"
@@ -35,7 +36,7 @@ interface ScannerProps {
 const SAME_CODE_PAUSE_MS = 1500
 
 /** ক্যামেরায় বারকোড স্ক্যান (ব্রাউজার সাপোর্ট করলে); না করলে বা ক্যামেরা না দিলে হাতে লিখে দেওয়া যায়। */
-export function Scanner({ open, onClose, onCode, title = "বারকোড স্ক্যান", continuous = false }: ScannerProps) {
+export function Scanner({ open, onClose, onCode, title = tr("বারকোড স্ক্যান"), continuous = false }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [manual, setManual] = useState("")
   const [note, setNote] = useState<string | null>(null)
@@ -52,7 +53,7 @@ export function Scanner({ open, onClose, onCode, title = "বারকোড স
     setCount(0)
     const Ctor = detectorCtor()
     if (!Ctor || !navigator.mediaDevices?.getUserMedia) {
-      setNote("এই ফোনের ব্রাউজারে ক্যামেরা স্ক্যান চলে না — নম্বর হাতে লিখুন।")
+      setNote(tr("এই ফোনের ব্রাউজারে ক্যামেরা স্ক্যান চলে না — নম্বর হাতে লিখুন।"))
       return
     }
     let stopped = false
@@ -98,7 +99,7 @@ export function Scanner({ open, onClose, onCode, title = "বারকোড স
         }
         void tick()
       } catch {
-        setNote("ক্যামেরা চালু করা যায়নি — অনুমতি দিন, অথবা নম্বর হাতে লিখুন।")
+        setNote(tr("ক্যামেরা চালু করা যায়নি — অনুমতি দিন, অথবা নম্বর হাতে লিখুন।"))
       }
     }
     void start()
@@ -130,14 +131,14 @@ export function Scanner({ open, onClose, onCode, title = "বারকোড স
           {feedback}
         </p>
       ) : null}
-      {note ? <p className="text-sm text-muted">{note}</p> : <p className="text-sm text-muted">{continuous ? "একটার পর একটা বারকোড ধরুন — বিলে যোগ হতে থাকবে" : "বারকোডটি ফ্রেমের মাঝে ধরুন"}</p>}
-      <Field id="scan-manual" label="অথবা বারকোড নম্বর লিখুন" inputMode="numeric" value={manual} onChange={(e) => setManual(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} />
+      {note ? <p className="text-sm text-muted">{note}</p> : <p className="text-sm text-muted">{continuous ? tr("একটার পর একটা বারকোড ধরুন — বিলে যোগ হতে থাকবে") : tr("বারকোডটি ফ্রেমের মাঝে ধরুন")}</p>}
+      <Field id="scan-manual" label={tr("অথবা বারকোড নম্বর লিখুন")} inputMode="numeric" value={manual} onChange={(e) => setManual(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} />
       <div className="flex gap-2">
         <Button variant="secondary" className="flex-1" onClick={onClose}>
-          {continuous ? (count > 0 ? "শেষ করুন" : "বন্ধ") : "বাতিল"}
+          {continuous ? (count > 0 ? tr("শেষ করুন") : tr("বন্ধ")) : tr("বাতিল")}
         </Button>
         <Button className="flex-1" onClick={submit} disabled={!manual.trim()}>
-          {continuous ? "যোগ করুন" : "খুঁজুন"}
+          {continuous ? tr("যোগ করুন") : tr("খুঁজুন")}
         </Button>
       </div>
     </Sheet>

@@ -1,3 +1,4 @@
+import { tr } from "../i18n"
 import { DomainError } from "../domain/errors"
 import { newId } from "./db"
 import { sellableStock } from "./selectors"
@@ -9,7 +10,7 @@ export const NOTE_KIND_LABEL: Record<Note["kind"], string> = { out: "স্ট�
 /** নতুন নোট; লেখা ফাঁকা হলে ত্রুটি */
 export function addNote(db: Db, input: { text: string; kind: Note["kind"]; customerName?: string; productId?: string }, now: Date): Db {
   const text = input.text.trim().slice(0, NOTE_TEXT_MAX)
-  if (!text) throw new DomainError("note_required", "কী আনতে হবে লিখুন")
+  if (!text) throw new DomainError("note_required", tr("কী আনতে হবে লিখুন"))
   const note: Note = {
     id: newId(),
     text,
@@ -24,7 +25,7 @@ export function addNote(db: Db, input: { text: string; kind: Note["kind"]; custo
 
 function patchNote(db: Db, id: string, patch: Partial<Note>): Db {
   const notes = db.notes ?? []
-  if (!notes.some((n) => n.id === id)) throw new DomainError("note_not_found", "নোট পাওয়া যায়নি")
+  if (!notes.some((n) => n.id === id)) throw new DomainError("note_not_found", tr("নোট পাওয়া যায়নি"))
   return { ...db, notes: notes.map((n) => (n.id === id ? { ...n, ...patch } : n)) }
 }
 

@@ -1,5 +1,6 @@
 "use client"
 
+import { tr } from "@/lib/i18n"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, type ReactNode } from "react"
@@ -30,7 +31,7 @@ interface AppShellProps {
 export function Splash() {
   return (
     <div className="grid min-h-dvh place-items-center text-muted" role="status">
-      লোড হচ্ছে…
+      {tr("লোড হচ্ছে…")}
     </div>
   )
 }
@@ -64,7 +65,7 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
       {hero ?? (
         <header className="no-print sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-line bg-white px-4">
           {backHref ? (
-            <Link href={backHref} aria-label="পিছনে যান" className="-ml-2 grid size-11 place-items-center rounded-lg text-ink active:bg-canvas">
+            <Link href={backHref} aria-label={tr("পিছনে যান")} className="-ml-2 grid size-11 place-items-center rounded-lg text-ink active:bg-canvas">
               <Icon name="back" size={22} />
             </Link>
           ) : null}
@@ -74,7 +75,7 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
       )}
       {saveFailed ? (
         <div role="alert" className="bg-danger-bg px-4 py-2 text-sm text-danger">
-          ফোনের জায়গা ভরা বা সেভ বন্ধ — নতুন তথ্য সেভ হচ্ছে না। জায়গা খালি করুন।
+          {tr("ফোনের জায়গা ভরা বা সেভ বন্ধ — নতুন তথ্য সেভ হচ্ছে না। জায়গা খালি করুন।")}
         </div>
       ) : null}
       <main className="flex-1 space-y-4 p-4">
