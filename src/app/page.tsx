@@ -97,9 +97,16 @@ function Dashboard() {
         </>
       ) : null}
 
-      <LinkButton href="/notes" variant="secondary" full>
-        আনতে হবে — নোট
-      </LinkButton>
+      <div className={state.status === "authed" && state.user.role === "owner" ? "grid grid-cols-2 gap-3" : ""}>
+        <LinkButton href="/notes" variant="secondary" full>
+          আনতে হবে — নোট
+        </LinkButton>
+        {state.status === "authed" && state.user.role === "owner" ? (
+          <LinkButton href="/expenses" variant="secondary" full>
+            দোকানের খরচ
+          </LinkButton>
+        ) : null}
+      </div>
 
       <SectionTitle>নজর দিন</SectionTitle>
       {alerts ? (

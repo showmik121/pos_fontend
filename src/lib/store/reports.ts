@@ -71,8 +71,18 @@ export function duesReportCsv(db: Db): string {
   return toCsv(["তারিখ", "কাস্টমার", "ধরন", "বিল নম্বর", "বাকি বাড়ল/কমল (টাকা)", "এখন মোট বাকি (টাকা)"], rows)
 }
 
-export function reportFileName(kind: "stock" | "sales" | "dues", now: Date): string {
+/** খরচের খাতা: প্রতিটি খরচ, তারিখ ও ক্যাটেগরি সহ (মোছা খরচ বাদ) */
+export function expensesReportCsv(db: Db): string {
+  const cats = new Map((db.expenseCategories ?? []).map((c) => [c.id, c.name]))
+  const rows = (db.expenses ?? [])
+    .filter((x) => !x.deleted)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at))
+    .map((x) => [x.date, cats.get(x.categoryId) ?? "অন্যান্য", takaCell(x.amount), x.note, x.by])
+  return toCsv(["তারিখ", "ক্যাটেগরি", "খরচ (টাকা)", "নোট", "লিখেছেন"], rows)
+}
+
+export function reportFileName(kind: "stock" | "sales" | "dues" | "expenses", now: Date): string {
   const p = (n: number) => String(n).padStart(2, "0")
   const day = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`
-  return { stock: `stock-hisab-${day}.csv`, sales: `bikri-hisab-${day}.csv`, dues: `baki-khata-${day}.csv` }[kind]
+  return { stock: `stock-hisab-${day}.csv`, sales: `bikri-hisab-${day}.csv`, dues: `baki-khata-${day}.csv`, expenses: `khoroch-${day}.csv` }[kind]
 }

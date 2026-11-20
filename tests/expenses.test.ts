@@ -61,3 +61,19 @@ describe("খরচ", () => {
     expect(expenseTotal(applyEvents(other, del.events).db, "2026-11-01", "2026-11-30")).toBe(0)
   })
 })
+
+import { expensesReportCsv } from "../src/lib/store/reports"
+import { periodSummary } from "../src/lib/store/selectors"
+
+describe("খরচের রিপোর্ট", () => {
+  it("CSV-তে মোছা খরচ বাদ, টাকা সংখ্যা হিসেবে; মাসের বিক্রি ফাঁকা হলে ০", () => {
+    const { db, rent } = setup()
+    let d = addExpense(db, { categoryId: rent, amount: 150050, note: "ভাড়া, নভেম্বর", date: "2026-11-05" }, "মালিক", NOW)
+    d = addExpense(d, { categoryId: rent, amount: 100, note: "", date: "2026-11-06" }, "মালিক", NOW)
+    d = removeExpense(d, d.expenses![1]!.id)
+    const csv = expensesReportCsv(d)
+    expect(csv).toContain("2026-11-05,দোকান ভাড়া,1500.5,\"ভাড়া, নভেম্বর\",মালিক")
+    expect(csv).not.toContain("2026-11-06")
+    expect(periodSummary(d, "2026-11-01", "2026-11-30")).toEqual({ bills: 0, total: 0, profit: 0 })
+  })
+})
