@@ -76,6 +76,7 @@ export default function DuesPage() {
                 <div className="min-w-0">
                   <div className="truncate font-medium">{r.customer.name}</div>
                   {r.customer.phone ? <div className="truncate text-[13px] text-muted">{toBanglaDigits(r.customer.phone)}</div> : null}
+                  {r.customer.promise ? <div className="truncate text-[13px] text-brand-dark">দেবে {formatDayMonthBn(r.customer.promise.date)}</div> : null}
                 </div>
                 <div className="w-20 text-[13px] leading-snug text-muted">
                   {formatDayMonthBn(localDateIso(new Date(r.lastAt)))}

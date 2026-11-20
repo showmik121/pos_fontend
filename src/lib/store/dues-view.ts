@@ -64,3 +64,22 @@ export function reminderText(opts: { customerName: string; balance: number; stor
 export function smsHref(phone: string, body: string): string {
   return `sms:${phone}?&body=${encodeURIComponent(body)}`
 }
+
+export interface PromiseRow {
+  row: DueRow
+  date: string
+  note: string
+  /** ঋণাত্মক নয়: প্রতিশ্রুতির তারিখ পেরিয়ে কত দিন (আজ = ০) */
+  lateDays: number
+}
+
+/** যাদের বাকি আছে ও প্রতিশ্রুতির তারিখ আজ বা পেরিয়ে গেছে (বেশি দেরি আগে) */
+export function duePromises(rows: readonly DueRow[], today: string): PromiseRow[] {
+  const out: PromiseRow[] = []
+  for (const row of rows) {
+    const p = row.customer.promise
+    if (!p || p.date > today) continue
+    out.push({ row, date: p.date, note: p.note, lateDays: daysBetween(p.date, today) })
+  }
+  return out.sort((a, b) => b.lateDays - a.lateDays)
+}

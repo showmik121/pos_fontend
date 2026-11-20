@@ -13,6 +13,7 @@ import { formatTaka } from "@/lib/domain/money"
 import { formatTimeBn, greetingBn } from "@/lib/format/datetime"
 import { formatBillNo } from "@/lib/domain/bill"
 import { toBanglaDigits } from "@/lib/format/bn"
+import { duePromises } from "@/lib/store/dues-view"
 import { daySummary, dueRows, expiringSoonCount, lowStockProducts, totalDue } from "@/lib/store/selectors"
 
 /** লগইন না থাকলে ল্যান্ডিং, থাকলে হোম */
@@ -34,6 +35,7 @@ function Dashboard() {
   const soon = expiringSoonCount(db, today)
   const dueCount = dueRows(db).length
   const recent = [...db.sales].reverse().slice(0, 5)
+  const promises = duePromises(dueRows(db), today)
   const alerts = low > 0 || soon > 0 || dueCount > 0
 
   return (
@@ -57,6 +59,25 @@ function Dashboard() {
           <p className="text-sm text-muted">বিল করার আগে পণ্য যোগ করুন — একটি একটি করে, অথবা CSV ফাইল থেকে একসাথে।</p>
           <LinkButton href="/products/new">প্রথম পণ্য যোগ করুন</LinkButton>
         </Card>
+      ) : null}
+
+      {promises.length > 0 ? (
+        <>
+          <SectionTitle>আজ আদায়ের কথা</SectionTitle>
+          <RowList>
+            {promises.map((p) => (
+              <Row
+                key={p.row.customer.id}
+                href={`/dues/customer?id=${p.row.customer.id}`}
+                dot={p.lateDays > 0 ? "danger" : "amber"}
+                title={p.row.customer.name}
+                subtitle={`${p.lateDays > 0 ? `${toBanglaDigits(p.lateDays)} দিন পেরিয়েছে` : "আজ দেওয়ার কথা"}${p.note ? ` · ${p.note}` : ""}`}
+                right={<span className="font-semibold text-warn">{formatTaka(p.row.balance)}</span>}
+                chevron
+              />
+            ))}
+          </RowList>
+        </>
       ) : null}
 
       <SectionTitle>নজর দিন</SectionTitle>

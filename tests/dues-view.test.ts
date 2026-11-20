@@ -30,3 +30,25 @@ describe("বাকির তালিকা", () => {
     expect(smsHref("01711111111", t).startsWith("sms:01711111111?&body=")).toBe(true)
   })
 })
+
+import { addCustomer, setPromise } from "../src/lib/store/actions"
+import { emptyDb } from "../src/lib/store/db"
+import { duePromises } from "../src/lib/store/dues-view"
+
+describe("আদায়ের প্রতিশ্রুতি", () => {
+  const made = addCustomer(emptyDb(), { name: "রহিম", phone: "" }, NOW)
+  const id = made.customer.id
+  it("তারিখ বসে, মোছা যায়, পুরনো তারিখ ও ভুল তারিখ আটকায়", () => {
+    const d = setPromise(made.db, id, "2026-11-25", "  বেতন পেয়ে  ", NOW)
+    expect(d.customers[0]?.promise).toEqual({ date: "2026-11-25", note: "বেতন পেয়ে" })
+    expect(setPromise(d, id, null, "", NOW).customers[0]?.promise).toBeNull()
+    expect(() => setPromise(made.db, id, "2026-11-19", "", NOW)).toThrow()
+    expect(() => setPromise(made.db, id, "abc", "", NOW)).toThrow()
+    expect(made.db.customers[0]?.promise).toBeUndefined()
+  })
+  it("আজ বা পেরোনো প্রতিশ্রুতি দেরি-অনুযায়ী সাজানো, ভবিষ্যৎগুলো বাদ", () => {
+    const mk = (i: string, date: string | null): DueRow => ({ ...row(i, i, "", 100, "2026-11-01T10:00:00+06:00"), customer: { id: i, name: i, phone: "", createdAt: "x", promise: date ? { date, note: "" } : null } })
+    const out = duePromises([mk("a", "2026-11-20"), mk("b", "2026-11-17"), mk("c", "2026-11-22"), mk("d", null)], "2026-11-20")
+    expect(out.map((p) => [p.row.customer.id, p.lateDays])).toEqual([["b", 3], ["a", 0]])
+  })
+})
