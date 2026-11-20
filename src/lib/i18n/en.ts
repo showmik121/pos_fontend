@@ -727,6 +727,6 @@ export const EN: Record<string, string> = {
   "ক্রয়মূল্য (ঐচ্ছিক)": "Cost price (optional)",
   "দাম প্রতি পিসের হিসাবে লিখুন। ক্রয়মূল্য দিলে লাভের হিসাব মেলে।": "Enter prices per piece. Adding the cost price gives you profit reports.",
   "এখন কতগুলো আছে (পিস)": "How many you have now (pcs)",
-  "আরও তথ্য (বারকোড, একক, ক্যাটেগরি)": "More details (barcode, unit, category)",
+  "আরও তথ্য (একক, কার্টন, ক্যাটেগরি)": "More details (unit, carton, category)",
   "কম দেখান": "Show less",
 }
