@@ -7,7 +7,7 @@ interface HomeHeaderProps {
   greeting: string
 }
 
-/** হোমের ছবিওয়ালা হেডার: শুভেচ্ছা, দোকানের নাম, প্রোফাইল বোতাম (সেটিংসে যায়); নিচে বাংলার বাজারের দৃশ্য */
+/** হোমের ছবিওয়ালা হেডার: শুভেচ্ছা, দোকানের নাম, প্রোফাইল বোতাম (সেটিংসে যায়); নিচে জলরঙের শহুরে দৃশ্য */
 export function HomeHeader({ storeName, greeting }: HomeHeaderProps) {
   return (
     <header className="home-hero no-print">
