@@ -1,3 +1,4 @@
+import type { StoreKind } from "@/lib/api/schemas"
 import { tr } from "@/lib/i18n"
 import Link from "next/link"
 import { Icon } from "./ui/icons"
@@ -5,12 +6,14 @@ import { Icon } from "./ui/icons"
 interface HomeHeaderProps {
   storeName: string
   greeting: string
+  /** দোকানের ধরন অনুযায়ী ছবি: ফার্মেসি, কসমেটিক্স, বাকিরা (জেনারেল স্টোর) */
+  kind: StoreKind | undefined
 }
 
-/** হোমের ছবিওয়ালা হেডার: শুভেচ্ছা, দোকানের নাম, প্রোফাইল বোতাম (সেটিংসে যায়); নিচে জলরঙের শহুরে দৃশ্য */
-export function HomeHeader({ storeName, greeting }: HomeHeaderProps) {
+/** হোমের ছবিওয়ালা হেডার: শুভেচ্ছা, দোকানের নাম, প্রোফাইল বোতাম (সেটিংসে যায়); নিচে জলরঙের শহুরে দৃশ্য (ফার্মেসি, কসমেটিক্স ও জেনারেল স্টোরের ছবি আলাদা) */
+export function HomeHeader({ storeName, greeting, kind }: HomeHeaderProps) {
   return (
-    <header className="home-hero no-print">
+    <header className="home-hero no-print" data-kind={kind === "pharmacy" || kind === "cosmetics" ? kind : "retail"}>
       <div className="relative z-10 flex items-center gap-3 px-4 pb-2 pt-5">
         <span
           aria-hidden="true"

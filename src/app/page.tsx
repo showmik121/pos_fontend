@@ -42,11 +42,12 @@ function Dashboard() {
   const shopName = state.status === "authed" ? (state.store?.name ?? "") : ""
   const noteCount = pendingNoteCount(db)
   const isOwner = state.status === "authed" && state.user.role === "owner"
+  const storeKind = state.status === "authed" ? state.store?.kind : undefined
   const payable = isOwner ? payableSummary(dealerRows(db, today)) : null
   const alerts = low > 0 || soon > 0 || dueCount > 0 || noteCount > 0 || (payable?.count ?? 0) > 0
 
   return (
-    <AppShell title={storeName} nav hero={<HomeHeader storeName={storeName} greeting={greetingBn(new Date().getHours())} />}>
+    <AppShell title={storeName} nav hero={<HomeHeader storeName={storeName} greeting={greetingBn(new Date().getHours())} kind={storeKind} />}>
       <LinkButton href="/sell" full className="min-h-14 text-base">
         <Icon name="plus" /> {tr("নতুন বিল")}
       </LinkButton>
