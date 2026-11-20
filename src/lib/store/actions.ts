@@ -305,6 +305,19 @@ export function addCustomer(db: Db, input: { name: string; phone: string }, now:
   return { db: { ...db, customers: [...db.customers, customer] }, customer }
 }
 
+/** আদায়ের প্রতিশ্রুতির তারিখ বসায় (আজ বা পরে); date = null হলে মুছে দেয় */
+export function setPromise(db: Db, customerId: string, date: string | null, note: string, now: Date): Db {
+  const customer = db.customers.find((c) => c.id === customerId)
+  if (!customer) throw new DomainError("customer_not_found", "কাস্টমার পাওয়া যায়নি")
+  let promise: Customer["promise"] = null
+  if (date !== null) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) throw new DomainError("invalid_date", "তারিখ সঠিক নয়")
+    if (date < localDateIso(now)) throw new DomainError("past_date", "আজ বা পরের তারিখ দিন")
+    promise = { date, note: note.trim().slice(0, 120) }
+  }
+  return { ...db, customers: db.customers.map((c) => (c.id === customerId ? { ...c, promise } : c)) }
+}
+
 export function receiveDue(db: Db, customerId: string, amount: number, by: string, now: Date): Db {
   requirePositiveInt(amount, "জমার পরিমাণ")
   if (!db.customers.some((c) => c.id === customerId)) throw new DomainError("not_found", "কাস্টমার পাওয়া যায়নি")

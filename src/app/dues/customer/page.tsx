@@ -15,7 +15,8 @@ import { formatTaka, parseTaka } from "@/lib/domain/money"
 import { formatDateTimeBn } from "@/lib/format/datetime"
 import { formatPhoneBn } from "@/lib/format/phone"
 import { formatBillNo } from "@/lib/domain/bill"
-import { receiveDue, setCartCustomer } from "@/lib/store/actions"
+import { receiveDue, setCartCustomer, setPromise } from "@/lib/store/actions"
+import { addDays, formatDayMonthBn, todayIso } from "@/lib/domain/dates"
 import { customerBalance } from "@/lib/store/selectors"
 import { reminderText, smsHref } from "@/lib/store/dues-view"
 
@@ -27,6 +28,10 @@ function CustomerDues() {
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [promiseOpen, setPromiseOpen] = useState(false)
+  const [promiseDate, setPromiseDate] = useState("")
+  const [promiseNote, setPromiseNote] = useState("")
+  const [promiseError, setPromiseError] = useState<string | null>(null)
 
   const customer = id ? db.customers.find((c) => c.id === id) : undefined
   if (!customer) {
@@ -53,6 +58,24 @@ function CustomerDues() {
     }
   }
 
+  const openPromise = () => {
+    setPromiseDate(customer.promise?.date ?? "")
+    setPromiseNote(customer.promise?.note ?? "")
+    setPromiseError(null)
+    setPromiseOpen(true)
+  }
+
+  const savePromise = (date: string | null) => {
+    setPromiseError(null)
+    if (date !== null && !date) return setPromiseError("তারিখ বাছুন")
+    try {
+      update((d) => setPromise(d, customer.id, date, promiseNote, new Date()))
+      setPromiseOpen(false)
+    } catch (err) {
+      setPromiseError(domainMessage(err))
+    }
+  }
+
   const sellOnCredit = () => {
     update((d) => ({ ...d, draft: setCartCustomer(d.draft, customer.id) }))
     router.push("/sell")
@@ -74,6 +97,25 @@ function CustomerDues() {
           বাকিতে বিক্রি
         </Button>
       </div>
+
+      {balance > 0 ? (
+        <Card className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <div className="text-sm text-muted">কবে দেবে</div>
+            {customer.promise ? (
+              <div className={`font-semibold ${customer.promise.date < todayIso() ? "text-warn" : ""}`}>
+                {formatDayMonthBn(customer.promise.date)}
+                {customer.promise.note ? <span className="font-normal text-muted"> · {customer.promise.note}</span> : null}
+              </div>
+            ) : (
+              <div className="text-muted">তারিখ লেখা নেই</div>
+            )}
+          </div>
+          <Button variant="secondary" className="min-h-10 px-3 text-sm" onClick={openPromise}>
+            {customer.promise ? "বদলান" : "তারিখ দিন"}
+          </Button>
+        </Card>
+      ) : null}
 
       {customer.phone ? (
         <div className="grid grid-cols-2 gap-3">
@@ -99,6 +141,34 @@ function CustomerDues() {
           ))}
         </RowList>
       )}
+
+      <Sheet open={promiseOpen} onClose={() => setPromiseOpen(false)} label="আদায়ের তারিখ">
+        <h2 className="text-lg font-bold">কবে দেবে?</h2>
+        <p className="text-muted">সেদিন হোম পেজে মনে করিয়ে দেব।</p>
+        <div className="flex flex-wrap gap-2">
+          {[
+            ["আজ", 0],
+            ["কাল", 1],
+            ["৩ দিন পর", 3],
+            ["৭ দিন পর", 7],
+          ].map(([label, n]) => (
+            <Button key={label} variant="secondary" className="min-h-10 px-3 text-sm" onClick={() => setPromiseDate(addDays(todayIso(), n as number))}>
+              {label}
+            </Button>
+          ))}
+        </div>
+        <Field id="promise-date" label="তারিখ" type="date" min={todayIso()} value={promiseDate} onChange={(e) => setPromiseDate(e.target.value)} hint={promiseDate ? formatDayMonthBn(promiseDate) : undefined} />
+        <Field id="promise-note" label="নোট (ইচ্ছা হলে)" placeholder="যেমন: বেতন পেয়ে দেবে" maxLength={120} value={promiseNote} onChange={(e) => setPromiseNote(e.target.value)} />
+        {promiseError ? <Banner tone="danger">{promiseError}</Banner> : null}
+        <Button full onClick={() => savePromise(promiseDate)}>
+          সংরক্ষণ
+        </Button>
+        {customer.promise ? (
+          <Button full variant="secondary" onClick={() => savePromise(null)}>
+            তারিখ মুছুন
+          </Button>
+        ) : null}
+      </Sheet>
 
       <Sheet open={open} onClose={() => setOpen(false)} label="টাকা জমা">
         <h2 className="text-lg font-bold">টাকা জমা নিন</h2>

@@ -43,6 +43,8 @@ export interface Customer {
   name: string
   phone: string
   createdAt: string
+  /** আদায়ের প্রতিশ্রুতি: কাস্টমার কবে বাকি দেবে (তারিখ YYYY-MM-DD); পুরনো ডেটায় নেই */
+  promise?: { date: string; note: string } | null
 }
 
 export interface SaleAllocation {
