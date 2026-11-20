@@ -210,6 +210,37 @@ describe("দুই ফোন সিংক", () => {
     expect(a.p.sync.dropped).toBe(0)
   })
 
+  // Admin panel (docs/ADMIN_PANEL_PRD.md §17.4): the server answers 403 tenant_suspended / tenant_read_only. They MUST be 403
+  // (400/413 would make the engine drop events). The offline queue must survive for as long as the shop is restricted and
+  // be delivered in full once the operator reactivates it: a late payment must lose no sale.
+  it.each(["tenant_suspended", "tenant_read_only"])("সার্ভার %s (403) দিলে কিউ অক্ষত থাকে, কিছু বাদ/অগ্রাহ্য হয় না, পুনরায় চালু হলে সব যায়", async (code) => {
+    const s = server()
+    const a = phone()
+    a.act((db) => createProduct(db, prod, T(0)).db, 0)
+    a.act((db) => addCustomer(db, { name: "করিম", phone: "" }, T(1)).db, 1)
+    const queued = a.p.sync.outbox.map((e) => e.id)
+    expect(queued).toHaveLength(2)
+
+    const restricted: Transport = {
+      push: async () => { throw Object.assign(new Error(code), { status: 403, code, details: { status: code === "tenant_suspended" ? "suspended" : "read_only" } }) },
+      pull: s.t.pull,
+    }
+    expect(await sync(a, restricted)).toBe("auth")
+    expect(a.p.sync.outbox.map((e) => e.id)).toEqual(queued) // nothing removed
+    expect(a.p.sync.dropped).toBe(0)
+    expect(a.p.sync.rejected).toHaveLength(0) // and not parked as "rejected" either
+    expect(s.log).toHaveLength(0)
+
+    // still restricted on later attempts: same outcome, still nothing lost
+    expect(await sync(a, restricted)).toBe("auth")
+    expect(a.p.sync.outbox.map((e) => e.id)).toEqual(queued)
+
+    // reactivated: the whole queue arrives
+    expect(await sync(a, s.t)).toBe("ok")
+    expect(a.p.sync.outbox).toHaveLength(0)
+    expect(s.log.map((e) => e.id).sort()).toEqual([...queued].sort())
+  })
+
   it("ডিভাইস নিবন্ধিত না থাকলে ইভেন্ট বাদ যায় না", async () => {
     const a = phone()
     a.act((db) => createProduct(db, prod, T(0)).db, 0)
