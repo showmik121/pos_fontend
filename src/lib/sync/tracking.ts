@@ -1,6 +1,6 @@
 import type { SyncEvent } from "./events"
 import { isKnownKind } from "./replay"
-import { MAX_KEPT_EVENTS, capKept, type SkippedEvent, type SyncState } from "./state"
+import { capKeptBytes, type SkippedEvent, type SyncState } from "./state"
 
 /** এর বেশি সময় অপেক্ষায় থাকা ইভেন্ট "আটকে গেছে" ধরা হয় (অন্য ফোনের তথ্য আসেনি, বা চিরকাল আসবে না) */
 export const STUCK_DEFERRED_MS = 24 * 3_600_000
@@ -21,13 +21,17 @@ export function stuckDeferred(state: Pick<SyncState, "deferred" | "deferredSince
 }
 
 /**
- * এই দফায় বসাতে না পারা ইভেন্টগুলো `skipped` তালিকা বানায়। আগে থেকে থাকলে `since` বদলায় না, একই id দুবার থাকে না;
- * কারণ: ধরনটাই অচেনা (অ্যাপ পুরনো) নাকি ধরন চেনা কিন্তু পেলোড নষ্ট।
+ * এই দফায় বসাতে না পারা ইভেন্টগুলো `skipped` তালিকা বানায়। একই id দুবার থাকে না (Map দিয়ে), আগে থেকে থাকলে `since` বদলায় না;
+ * কারণ: ধরনটাই অচেনা (অ্যাপ পুরনো) নাকি ধরন চেনা কিন্তু পেলোড নষ্ট। সংখ্যা ও বাইট দুই সীমাই মানে।
  */
 export function mergeSkipped(prev: readonly SkippedEvent[], ignored: readonly SyncEvent[], now: Date): { list: SkippedEvent[]; evicted: number } {
   const before = new Map(prev.map((s) => [s.event.id, s]))
-  const next = ignored.map((event): SkippedEvent => before.get(event.id) ?? { event, reason: isKnownKind(event.kind) ? "bad_payload" : "unknown_kind", since: now.toISOString() })
-  return capKept(next, MAX_KEPT_EVENTS)
+  const next = new Map<string, SkippedEvent>()
+  for (const event of ignored) {
+    if (next.has(event.id)) continue
+    next.set(event.id, before.get(event.id) ?? { event, reason: isKnownKind(event.kind) ? "bad_payload" : "unknown_kind", since: now.toISOString() })
+  }
+  return capKeptBytes([...next.values()])
 }
 
 /** সার্ভার যে ইভেন্ট নেয়নি সেগুলো আবার কিউয়ে তোলে (আগের কিউয়ের পরে; একই id দুবার নয়) */

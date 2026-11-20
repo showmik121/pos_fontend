@@ -1,7 +1,7 @@
 import type { Db } from "../store/types"
 import type { SyncEvent } from "./events"
 import { applyEvents, validateEvent } from "./replay"
-import { MAX_KEPT_EVENTS, capKept, type SyncState } from "./state"
+import { MAX_KEPT_BYTES, MAX_KEPT_EVENTS, type SyncState } from "./state"
 import { mergeSkipped, trackDeferred } from "./tracking"
 
 export interface PulledPage {
@@ -82,7 +82,8 @@ const isForbidden = (err: unknown) => statusOf(err) === 403 && codeOf(err) === "
  */
 export interface SyncIo {
   db(): Db
-  setDb(db: Db): void
+  /** `false` মানে ফোনে সেভ হয়নি; তখন সিংক কার্সর এগোয় না (নইলে টানা ইভেন্ট রিলোডে চিরতরে হারাত) */
+  setDb(db: Db): unknown
   state(): SyncState
   setState(state: SyncState): void
 }
@@ -93,13 +94,20 @@ async function pushAll(io: SyncIo, transport: Transport, now: Date): Promise<Syn
     const ids = new Set(events.map((e) => e.id))
     patch((s) => ({ ...s, outbox: s.outbox.filter((e) => !ids.has(e.id)) }))
   }
-  // সার্ভার নেয়নি: কিউ থেকে সরিয়ে `rejected`-এ রাখি (মুছি না), যাতে সারি আটকে না থাকে অথচ মালিক দেখতে ও আবার পাঠাতে পারেন
-  const reject = (event: SyncEvent, err: unknown) =>
-    patch((s) => {
-      const code = codeOf(err)
-      const kept = capKept([...s.rejected, { event, status: statusOf(err), code: typeof code === "string" ? code : "", message: messageOf(err), rejectedAt: now.toISOString() }], MAX_KEPT_EVENTS)
-      return { ...s, outbox: s.outbox.filter((e) => e.id !== event.id), rejected: kept.list, evicted: s.evicted + kept.evicted }
-    })
+  // সার্ভার নেয়নি: কিউ থেকে সরিয়ে `rejected`-এ রাখি (মুছি না), যাতে সারি আটকে না থাকে অথচ মালিক দেখতে ও আবার পাঠাতে পারেন।
+  // জায়গা (সংখ্যা বা বাইট) না থাকলে ইভেন্ট কিউতেই থাকে: ফোনের কাছে এটিই একমাত্র কপি হতে পারে, তাই কখনো মুছে ফেলি না।
+  let blocked = false
+  const reject = (event: SyncEvent, err: unknown) => {
+    const s = io.state()
+    const code = codeOf(err)
+    const entry = { event, status: statusOf(err), code: typeof code === "string" ? code : "", message: messageOf(err), rejectedAt: now.toISOString() }
+    const bytes = new TextEncoder().encode(JSON.stringify([...s.rejected, entry])).length
+    if (s.rejected.length >= MAX_KEPT_EVENTS || bytes > MAX_KEPT_BYTES) {
+      blocked = true
+      return
+    }
+    io.setState({ ...s, outbox: s.outbox.filter((e) => e.id !== event.id), rejected: [...s.rejected, entry] })
+  }
   for (const part of chunk(io.state().outbox)) {
     try {
       await transport.push(part)
@@ -119,7 +127,8 @@ async function pushAll(io: SyncIo, transport: Transport, now: Date): Promise<Syn
       }
     }
   }
-  return "ok"
+  // জায়গা না থাকায় কিছু অগ্রাহ্য ইভেন্ট কিউতে রয়ে গেছে: সার্ভারের সাথে ব্যবস্থায় গোলমাল; জানাই, মুছি না
+  return blocked ? "server" : "ok"
 }
 
 /** একবার সিংক: আগে কিউ পাঠায়, তারপর সার্ভারের নতুন ইভেন্ট টেনে Db-তে বসায়। ব্যর্থ হলে যতটা হয়েছে ততটা রেখে থামে। */
@@ -144,10 +153,14 @@ export async function runSync(input: { io: SyncIo; transport: Transport; now: Da
     }
     // পড়া ও লেখার মাঝে await নেই, তাই এর মধ্যে স্থানীয় বদল হারায় না
     const st = io.state()
-    // আগে বসাতে না পারা (skipped) ইভেন্টও প্রতিবার আবার চেষ্টা হয়: অ্যাপ হালনাগাদের পর নিজে ঠিক হয়ে যায়
-    const applied = applyEvents(io.db(), [...st.deferred, ...st.skipped.map((s) => s.event), ...valid])
-    const skipped = mergeSkipped(st.skipped, applied.ignored, now)
-    io.setDb(applied.db)
+    // আগে বসাতে না পারা (skipped) ইভেন্টও আবার চেষ্টা হয় (প্রতি সিংকের প্রথম পাতায়): অ্যাপ হালনাগাদের পর নিজে ঠিক হয়ে যায়
+    const retry = page === 0 ? st.skipped.map((s) => s.event) : []
+    const applied = applyEvents(io.db(), [...st.deferred, ...retry, ...valid])
+    // প্রথম পাতার পর আগের skipped আবার চালানো হয় না, কিন্তু তালিকায় থাকে: নতুন ignored-এর সাথে মিলিয়ে রাখি
+    const stillSkipped = page === 0 ? applied.ignored : [...st.skipped.map((s) => s.event), ...applied.ignored]
+    const skipped = mergeSkipped(st.skipped, stillSkipped, now)
+    // ডেটা ফোনে সেভ না হলে কার্সর এগোয় না: নইলে এই ইভেন্টগুলো রিলোডে চিরতরে হারাত (আবার টানলে নিরাপদ, কারণ বসানো idempotent)
+    if (io.setDb(applied.db) === false) return "error"
     io.setState({
       ...io.state(),
       cursor: Math.max(io.state().cursor, got.lastSeq),

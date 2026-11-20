@@ -23,12 +23,21 @@ export interface CycleDeps {
 export async function runSyncCycle(d: CycleDeps): Promise<SyncStatus | "busy"> {
   const device = d.device()
   if (!device.code) {
+    let code: string
     try {
-      d.saveDeviceCode(await d.registerDevice(device.id))
+      code = await d.registerDevice(device.id)
     } catch (err) {
       const status = classifyError(err)
       d.note(status)
       return status
+    }
+    try {
+      d.saveDeviceCode(code)
+    } catch (err) {
+      // সেভ ব্যর্থ: এটি নেটওয়ার্ক সমস্যা নয়, তাই "অফলাইন" বলা ভুল হতো
+      d.report(err)
+      d.note("error")
+      return "error"
     }
   }
   const transport: Transport = {

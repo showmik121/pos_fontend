@@ -17,8 +17,9 @@ export interface SkippedEvent {
   since: string
 }
 
-/** রাখা ইভেন্টের তালিকার সীমা (স্থানীয় সেভ-জায়গা সীমিত); পেরোলে পুরনোটা যায় এবং `evicted`-এ গোনা হয় */
+/** রাখা ইভেন্টের তালিকার সীমা: সংখ্যায় ও বাইটে (স্থানীয় সেভ-জায়গা ~৫ MB, ব্যবসার ডেটার সাথে ভাগ করা); পেরোলে `skipped` থেকে পুরনোটা যায় এবং `evicted`-এ গোনা হয় */
 export const MAX_KEPT_EVENTS = 500
+export const MAX_KEPT_BYTES = 256 * 1024
 
 /** ফোনে রাখা সিংক অবস্থা (Db-র বাইরে, ব্যাকআপে যায় না): কার্সর, না-পাঠানো কিউ, অপেক্ষমাণ ইভেন্ট */
 export interface SyncState {
@@ -30,7 +31,7 @@ export interface SyncState {
   deferred: SyncEvent[]
   /** আগের সংস্করণে সার্ভার-অগ্রাহ্য বলে বাদ দেওয়া ইভেন্টের সংখ্যা (এখন বাদ না দিয়ে `rejected`-এ রাখা হয়) */
   dropped: number
-  /** সার্ভার নেয়নি, তাই রাখা আছে */
+  /** সার্ভার নেয়নি, তাই রাখা আছে (এখান থেকে কখনো মুছে ফেলা হয় না; জায়গা না থাকলে কিউতেই থাকে) */
   rejected: RejectedEvent[]
   /** পেয়েছি কিন্তু বসাতে পারিনি */
   skipped: SkippedEvent[]
@@ -38,9 +39,9 @@ export interface SyncState {
   malformed: number
   /** অপেক্ষমাণ ইভেন্ট প্রথম কখন অপেক্ষায় গেছে (id -> ISO); আটকে থাকা ধরতে */
   deferredSince: Record<string, string>
-  /** সীমার কারণে তালিকা থেকে বাদ পড়া ইভেন্টের সংখ্যা */
+  /** সীমার কারণে `skipped` তালিকা থেকে বাদ পড়া ইভেন্টের সংখ্যা */
   evicted: number
-  /** সংরক্ষিত অবস্থা পড়া যায়নি/নষ্ট ছিল; কাঁচা কপি `.corrupt` কী-তে */
+  /** সংরক্ষিত অবস্থা পড়া যায়নি/নষ্ট ছিল; কাঁচা কপি (পারলে) `.corrupt` কী-তে */
   damaged: boolean
   /** পুরনো ডেটা ইভেন্ট করে কিউতে তোলা হয়েছে কি না */
   seeded: boolean
@@ -64,6 +65,12 @@ export const emptySyncState = (): SyncState => ({
 
 export const syncStorageKey = (storeId: string) => `pos.sync.v1.${storeId}`
 
+/** নষ্ট অবস্থার কাঁচা কপির কী-গুলো (সর্বোচ্চ ৩টি; আগেরটি ঘষা হয় না, নতুনটি পরের জায়গায় যায়) */
+export const syncCorruptKeys = (storeId: string): string[] => {
+  const k = `${syncStorageKey(storeId)}.corrupt`
+  return [k, `${k}.2`, `${k}.3`]
+}
+
 type Store = Pick<Storage, "getItem" | "setItem">
 
 function defaultStorage(): Store | null {
@@ -76,11 +83,25 @@ function defaultStorage(): Store | null {
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null && !Array.isArray(x)
 const isNum = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x)
+const byteLen = (x: unknown): number => new TextEncoder().encode(JSON.stringify(x)).length
+const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"])
 
 /** তালিকা থেকে সীমার বেশি অংশ (পুরনোগুলো, অর্থাৎ শুরুর দিক) বাদ দেয় ও কত গেল জানায় */
 export function capKept<T>(list: readonly T[], max: number = MAX_KEPT_EVENTS): { list: T[]; evicted: number } {
   const evicted = Math.max(0, list.length - max)
   return { list: evicted > 0 ? list.slice(evicted) : [...list], evicted }
+}
+
+/** সংখ্যা ও মোট বাইট দুই সীমাই মানে: পুরনো (শুরুর) গুলো আগে বাদ। সবচেয়ে নতুনটি সব সময় থাকে। */
+export function capKeptBytes<T>(list: readonly T[], max: number = MAX_KEPT_EVENTS, maxBytes: number = MAX_KEPT_BYTES): { list: T[]; evicted: number } {
+  let start = Math.max(0, list.length - max)
+  const sizes = list.map(byteLen)
+  let total = sizes.slice(start).reduce((a, b) => a + b, 0)
+  while (total > maxBytes && start < list.length - 1) {
+    total -= sizes[start] ?? 0
+    start++
+  }
+  return { list: list.slice(start), evicted: start }
 }
 
 /** তালিকার বৈধ উপাদান রাখে; কয়টি বাদ গেল জানায় */
@@ -127,7 +148,11 @@ function parseDetailed(raw: string): Parsed | null {
   const deferred = keepValid(d.deferred, validateEvent)
   const rejected = keepValid(Array.isArray(d.rejected) ? d.rejected : [], asRejected)
   const skipped = keepValid(Array.isArray(d.skipped) ? d.skipped : [], asSkipped)
-  const since = isObj(d.deferredSince) ? Object.fromEntries(Object.entries(d.deferredSince).filter((kv): kv is [string, string] => typeof kv[1] === "string")) : {}
+  // সীমা লোডের সময়ও: আগের (সীমাহীন) সংস্করণের ভরা অবস্থা ঠিক হয়। `rejected` এখানে ছাঁটা হয় না (মুছে ফেলা চলবে না)।
+  const skippedCapped = capKeptBytes(skipped.kept)
+  const since = isObj(d.deferredSince)
+    ? Object.fromEntries(Object.entries(d.deferredSince).filter((kv): kv is [string, string] => typeof kv[1] === "string" && !UNSAFE_KEYS.has(kv[0])))
+    : {}
   const droppedNow = outbox.bad + deferred.bad + rejected.bad + skipped.bad
   return {
     droppedNow,
@@ -137,10 +162,10 @@ function parseDetailed(raw: string): Parsed | null {
       deferred: deferred.kept,
       dropped: isNum(d.dropped) ? d.dropped : 0,
       rejected: rejected.kept,
-      skipped: skipped.kept,
+      skipped: skippedCapped.list,
       malformed: (isNum(d.malformed) ? d.malformed : 0) + droppedNow,
       deferredSince: since,
-      evicted: isNum(d.evicted) ? d.evicted : 0,
+      evicted: (isNum(d.evicted) ? d.evicted : 0) + skippedCapped.evicted,
       damaged: d.damaged === true,
       seeded: d.seeded === true,
       lastSyncAt: typeof d.lastSyncAt === "string" ? d.lastSyncAt : null,
@@ -152,19 +177,43 @@ export function parseSyncState(raw: string): SyncState | null {
   return parseDetailed(raw)?.state ?? null
 }
 
-/** নষ্ট বা অচেনা কাঁচা লেখা আলাদা কপিতে রাখে। আগের কপি ঘষে না: সেটিই সবচেয়ে পুরনো, অর্থাৎ আসলের কাছাকাছি। */
-function keepCorruptCopy(storage: Store, storeId: string, raw: string): void {
-  const k = `${syncStorageKey(storeId)}.corrupt`
+/** নষ্ট বা অচেনা কাঁচা লেখা আলাদা কপিতে রাখে; আগের কপি ঘষে না (পরের খালি জায়গায় যায়)। রাখতে পারলে true। */
+function keepCorruptCopy(storage: Store, storeId: string, raw: string): boolean {
   try {
-    if (storage.getItem(k) === null) storage.setItem(k, raw)
+    for (const k of syncCorruptKeys(storeId)) {
+      if (storage.getItem(k) === null) {
+        storage.setItem(k, raw)
+        return true
+      }
+    }
   } catch {
     // জায়গা নেই: কিছু করার নেই; মূল কী ঘষা না হওয়া পর্যন্ত কাঁচা লেখা সেখানেই থাকে
+  }
+  return false
+}
+
+/** নষ্ট অবস্থার কাঁচা কপিগুলো মোছে (মালিক "বুঝেছি" চাপলে বা ডেটা মোছার সময়); নইলে এগুলো কোটা খায় ও ব্যবসার তথ্য ধরে রাখে */
+export function clearSyncCorruptCopy(storeId: string, storage: Pick<Storage, "removeItem"> | null = defaultRemover()): void {
+  for (const k of syncCorruptKeys(storeId)) {
+    try {
+      storage?.removeItem(k)
+    } catch {
+      // মোছা গেল না: পরের বার
+    }
+  }
+}
+
+function defaultRemover(): Pick<Storage, "removeItem"> | null {
+  try {
+    return typeof window === "undefined" ? null : window.localStorage
+  } catch {
+    return null
   }
 }
 
 /**
  * সংরক্ষিত অবস্থা পড়ে। নষ্ট হলে ফাঁকা অবস্থা দেয় ঠিকই, কিন্তু চুপচাপ নয়:
- * কাঁচা লেখা `.corrupt` কপিতে রাখে, `damaged: true` বসায়, আর `seeded: false` রাখে
+ * কাঁচা লেখা `.corrupt` কপিতে রাখে (পারলে), `damaged: true` বসায়, আর `seeded: false` রাখে
  * যাতে পরের লোডে ফোনের ডেটা স্থির-id ইভেন্টে আবার কিউতে ওঠে (সার্ভারে দ্বিগুণ হয় না)।
  */
 export function loadSyncState(storeId: string, storage: Store | null = defaultStorage()): SyncState {

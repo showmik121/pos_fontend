@@ -80,7 +80,7 @@ describe("সার্ভার যে ইভেন্ট নেয়নি ত
     expect(h.state.rejected).toEqual([])
   })
 
-  it(`rejected তালিকা ${MAX_KEPT_EVENTS} ছাড়ালে পুরনোগুলো যায় এবং evicted-এ গোনা হয়`, async () => {
+  it(`rejected তালিকা ${MAX_KEPT_EVENTS} ছাড়ালে বাকিগুলো কিউতে থাকে, কিছু মুছে যায় না`, async () => {
     const events = Array.from({ length: MAX_KEPT_EVENTS + 2 }, () => mk("product_upserted"))
     const { h, io } = harness({ outbox: events })
     const transport: Transport = {
@@ -90,9 +90,10 @@ describe("সার্ভার যে ইভেন্ট নেয়নি ত
       pull: noPull,
     }
     await runSync({ io, transport, now: NOW })
+    // সীমা পূর্ণ হলে বাকিগুলো মুছে যায় না: কিউতেই থাকে (এটিই তাদের একমাত্র কপি হতে পারে)
     expect(h.state.rejected).toHaveLength(MAX_KEPT_EVENTS)
-    expect(h.state.evicted).toBe(2)
-    expect(h.state.rejected.at(-1)?.event.id).toBe(events.at(-1)?.id)
+    expect(h.state.outbox).toHaveLength(2)
+    expect(h.state.evicted).toBe(0)
   })
 
   it("ভাগ করার মাপ বাইট দিয়ে (বাংলা ৩ বাইট), তাই কোনো অনুরোধ সার্ভারের সীমা ছাড়ায় না", async () => {
