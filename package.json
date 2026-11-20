@@ -5,6 +5,8 @@
   "description": "ফার্মেসি ও কসমেটিক্স দোকানের মোবাইল-প্রথম POS (PWA)",
   "scripts": {
     "dev": "next dev",
+    "dev:proxy": "node scripts/dev-proxy.mjs",
+    "dev:local": "node scripts/dev-proxy.mjs --next",
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
