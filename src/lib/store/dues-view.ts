@@ -103,3 +103,16 @@ export function depositReceiptText(opts: { storeName: string; customerName: stri
   out.push(opts.balanceAfter > 0 ? `এখনো বাকি: ${formatTaka(opts.balanceAfter)}` : "বাকি শোধ হয়েছে", "", "ধন্যবাদ!")
   return out.join("\n")
 }
+
+export interface LimitStatus {
+  limit: number
+  after: number
+  over: boolean
+}
+
+/** এই বিলের বাকি যোগ করলে কাস্টমার সীমা ছাড়াবে কি না; সীমা না থাকলে null */
+export function limitStatus(limit: number | null | undefined, balance: number, newDue: number): LimitStatus | null {
+  if (limit == null) return null
+  const after = balance + newDue
+  return { limit, after, over: after > limit }
+}

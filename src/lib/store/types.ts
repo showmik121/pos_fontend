@@ -45,6 +45,8 @@ export interface Customer {
   createdAt: string
   /** আদায়ের প্রতিশ্রুতি: কাস্টমার কবে বাকি দেবে (তারিখ YYYY-MM-DD); পুরনো ডেটায় নেই */
   promise?: { date: string; note: string } | null
+  /** বাকির সীমা (পয়সায়); null বা নেই = সীমা নেই */
+  creditLimit?: number | null
 }
 
 export interface SaleAllocation {

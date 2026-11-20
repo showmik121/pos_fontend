@@ -15,7 +15,7 @@ import { formatTaka, parseTaka } from "@/lib/domain/money"
 import { formatDateTimeBn } from "@/lib/format/datetime"
 import { formatPhoneBn } from "@/lib/format/phone"
 import { formatBillNo } from "@/lib/domain/bill"
-import { receiveDue, setCartCustomer, setPromise } from "@/lib/store/actions"
+import { receiveDue, setCartCustomer, setCreditLimit, setPromise } from "@/lib/store/actions"
 import { addDays, formatDayMonthBn, todayIso } from "@/lib/domain/dates"
 import { customerBalance } from "@/lib/store/selectors"
 import { balanceAfter, depositReceiptText, reminderText, smsHref } from "@/lib/store/dues-view"
@@ -28,6 +28,9 @@ function CustomerDues() {
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [limitOpen, setLimitOpen] = useState(false)
+  const [limitInput, setLimitInput] = useState("")
+  const [limitError, setLimitError] = useState<string | null>(null)
   const [receiptId, setReceiptId] = useState<string | null>(null)
   const [shareNote, setShareNote] = useState<string | null>(null)
   const [promiseOpen, setPromiseOpen] = useState(false)
@@ -62,6 +65,28 @@ function CustomerDues() {
       setReceiptId(entryId)
     } catch (err) {
       setError(domainMessage(err))
+    }
+  }
+
+  const openLimit = () => {
+    setLimitInput(customer.creditLimit ? String(customer.creditLimit / 100) : "")
+    setLimitError(null)
+    setLimitOpen(true)
+  }
+
+  const saveLimit = (clear: boolean) => {
+    setLimitError(null)
+    let value: number | null = null
+    if (!clear) {
+      const poisha = parseTaka(limitInput)
+      if (poisha == null || poisha <= 0) return setLimitError("সীমার পরিমাণ সঠিকভাবে দিন")
+      value = poisha
+    }
+    try {
+      update((d) => setCreditLimit(d, customer.id, value))
+      setLimitOpen(false)
+    } catch (err) {
+      setLimitError(domainMessage(err))
     }
   }
 
@@ -123,6 +148,23 @@ function CustomerDues() {
         </Button>
       </div>
 
+      <Card className="flex items-center justify-between gap-3 px-4 py-3">
+        <div className="min-w-0">
+          <div className="text-sm text-muted">বাকির সীমা</div>
+          {customer.creditLimit ? (
+            <div className={`font-semibold ${balance > customer.creditLimit ? "text-danger" : ""}`}>
+              {formatTaka(customer.creditLimit)}
+              {balance > customer.creditLimit ? <span className="font-normal"> · সীমা ছাড়িয়েছে</span> : null}
+            </div>
+          ) : (
+            <div className="text-muted">সীমা নেই</div>
+          )}
+        </div>
+        <Button variant="secondary" className="min-h-10 px-3 text-sm" onClick={openLimit}>
+          {customer.creditLimit ? "বদলান" : "সীমা দিন"}
+        </Button>
+      </Card>
+
       {balance > 0 ? (
         <Card className="flex items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
@@ -167,6 +209,21 @@ function CustomerDues() {
           ))}
         </RowList>
       )}
+
+      <Sheet open={limitOpen} onClose={() => setLimitOpen(false)} label="বাকির সীমা">
+        <h2 className="text-lg font-bold">বাকির সীমা</h2>
+        <p className="text-muted">এর বেশি বাকি হতে চাইলে বিলের সময় সতর্ক করব। আপনি চাইলে তবুও বিল করতে পারবেন।</p>
+        <Field id="limit-amount" label="সর্বোচ্চ কত টাকা বাকি" inputMode="decimal" value={limitInput} onChange={(e) => setLimitInput(e.target.value)} autoFocus />
+        {limitError ? <Banner tone="danger">{limitError}</Banner> : null}
+        <Button full onClick={() => saveLimit(false)}>
+          সংরক্ষণ
+        </Button>
+        {customer.creditLimit ? (
+          <Button full variant="secondary" onClick={() => saveLimit(true)}>
+            সীমা তুলে দিন
+          </Button>
+        ) : null}
+      </Sheet>
 
       <Sheet open={receiptEntry !== undefined} onClose={() => setReceiptId(null)} label="জমার রসিদ">
         <h2 className="text-lg font-bold">জমা নেওয়া হয়েছে</h2>
