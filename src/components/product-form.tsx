@@ -81,7 +81,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
   return (
     <div className="space-y-4">
       {open ? <Banner tone="info">বারকোড ছাড়া পণ্য (যেমন খোলা ওষুধ, লুজ আইটেম)। নাম দিয়ে খুঁজে বিক্রি হবে।</Banner> : null}
-      <Field id="p-name" label="পণ্যের নাম" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+      <Field id="p-name" label="পণ্যের নাম" hint="ইংরেজি বা বাংলা — যেভাবে লেখা সহজ, যেমন Pond's Cream" lang="en" autoCapitalize="words" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
       {!open && !editing ? (
         <Field
           id="p-barcode"
@@ -114,7 +114,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
           {showExpiry ? <Field id="p-expiry" label="মেয়াদ (ঐচ্ছিক, মাস/বছর)" placeholder="০৬/২০২৭" inputMode="numeric" value={expiry} onChange={(e) => setExpiry(e.target.value)} /> : null}
         </div>
       ) : null}
-      <Field id="p-cat" label="ক্যাটেগরি (ঐচ্ছিক)" value={category} onChange={(e) => setCategory(e.target.value)} />
+      <Field id="p-cat" label="ক্যাটেগরি (ঐচ্ছিক)" lang="en" autoCapitalize="words" value={category} onChange={(e) => setCategory(e.target.value)} />
       {error ? <Banner tone="danger">{error}</Banner> : null}
       <Button full onClick={submit}>
         {submitLabel}
