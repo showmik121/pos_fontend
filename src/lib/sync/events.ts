@@ -1,4 +1,4 @@
-import type { Batch, Customer, Db, LedgerEntry, Note, Product, RemovedBatch, Sale } from "../store/types"
+import type { Batch, Customer, Db, Expense, ExpenseCategory, LedgerEntry, Note, Product, RemovedBatch, Sale } from "../store/types"
 
 /** সার্ভারের ইভেন্ট চুক্তি: id (UUID), kind, at (ISO), payload (JSON অবজেক্ট) */
 export interface SyncEvent {
@@ -18,6 +18,8 @@ export const EVENT_KINDS = {
   batchRemoved: "batch_removed",
   settings: "settings_updated",
   note: "note_upserted",
+  expenseCategory: "expense_category_upserted",
+  expense: "expense_upserted",
 } as const
 
 const make = (id: string, kind: string, at: Date | string, payload: Record<string, unknown>): SyncEvent => ({
@@ -69,3 +71,9 @@ export const settingsEvent = (id: string, settings: Db["settings"], at: Date | s
 
 /** নোট তৈরি বা বদল (পুরো স্ন্যাপশট; মোছাও এভাবে); শেষ-বদল জেতে */
 export const noteEvent = (id: string, note: Note, at: Date | string) => make(id, EVENT_KINDS.note, at, { note })
+
+/** খরচের ক্যাটেগরি তৈরি/বদল/মোছা; শেষ-বদল জেতে */
+export const expenseCategoryEvent = (id: string, category: ExpenseCategory, at: Date | string) => make(id, EVENT_KINDS.expenseCategory, at, { category })
+
+/** খরচ তৈরি/বদল/মোছা; শেষ-বদল জেতে */
+export const expenseEvent = (id: string, expense: Expense, at: Date | string) => make(id, EVENT_KINDS.expense, at, { expense })
