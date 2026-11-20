@@ -10,6 +10,13 @@ import { rescueBackup } from "@/lib/store/rescue"
 const box = { minHeight: "100dvh", display: "grid", placeContent: "center", gap: 12, padding: 24, textAlign: "center", maxWidth: 480, margin: "0 auto", fontFamily: "system-ui, sans-serif" } as const
 const btn = { padding: "12px 16px", borderRadius: 10, fontSize: 16, fontWeight: 600, border: "1px solid #2E6B3A" } as const
 
+/** ত্রুটির ছোট বিবরণ (স্ক্রিনশটে পাঠানোর জন্য); ব্যক্তিগত তথ্য থাকার কথা নয়, তবু ছাঁটা */
+function describeError(error: unknown): string {
+  if (error === undefined || error === null) return ""
+  const text = error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+  return text.slice(0, 200)
+}
+
 /** অ্যাপ ভেঙে গেলে দেখানো পাতা: আবার চেষ্টা, হোমে ফেরা, আর ডেটা নামানো */
 export function CrashScreen({ onRetry, error }: { onRetry: () => void; error?: unknown }) {
   const [note, setNote] = useState<string | null>(null)
@@ -32,6 +39,8 @@ export function CrashScreen({ onRetry, error }: { onRetry: () => void; error?: u
     }
   }
 
+  const detail = describeError(error)
+
   return (
     <div role="alert" style={box}>
       <p style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{tr("কিছু একটা গোলমাল হয়েছে")}</p>
@@ -47,6 +56,7 @@ export function CrashScreen({ onRetry, error }: { onRetry: () => void; error?: u
       <a href="/" style={{ color: "#2E6B3A", fontWeight: 600 }}>
         {tr("হোমে ফিরুন")}
       </a>
+      {detail ? <p style={{ margin: 0, color: "#64748B", fontSize: 12, wordBreak: "break-word" }}>{detail}</p> : null}
       {note ? <p style={{ margin: 0, color: "#2E6B3A" }}>{note}</p> : null}
     </div>
   )
