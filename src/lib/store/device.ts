@@ -44,12 +44,26 @@ export function parseDevice(raw: string): DeviceInfo | null {
   }
 }
 
-function write(storeId: string, info: DeviceInfo, storage: KeyValueStorage | null): void {
+/**
+ * স্টোরেজে লেখা না গেলে (ভরা/বন্ধ) এই সেশনের জন্য মেমরিতে রাখি। নইলে প্রতিবার নতুন id বানিয়ে সার্ভারে নিবন্ধন হতো
+ * আর দোকানের ২৬টি ডিভাইস-কোডের একটি করে পুড়ত। স্টোরেজে লেখা গেলে সেটিই সত্য-উৎস; মেমরির কপি লাগে না।
+ */
+const sessionDevices = new Map<string, DeviceInfo>()
+
+/** লেখা গেল কি না (গেলে true) */
+function write(storeId: string, info: DeviceInfo, storage: KeyValueStorage | null): boolean {
   try {
-    storage?.setItem(deviceStorageKey(storeId), JSON.stringify(info))
+    if (!storage) return false
+    storage.setItem(deviceStorageKey(storeId), JSON.stringify(info))
+    return true
   } catch {
-    // স্টোরেজ বন্ধ: পরের বার আবার চেষ্টা হবে
+    return false
   }
+}
+
+function remember(storeId: string, info: DeviceInfo, storage: KeyValueStorage | null): void {
+  if (write(storeId, info, storage)) sessionDevices.delete(storeId)
+  else sessionDevices.set(storeId, info)
 }
 
 export function loadDevice(storeId: string, storage: KeyValueStorage | null = defaultStorage()): DeviceInfo {
@@ -58,14 +72,16 @@ export function loadDevice(storeId: string, storage: KeyValueStorage | null = de
     const parsed = raw ? parseDevice(raw) : null
     if (parsed) return parsed
   } catch {
-    // নতুন করে বানাই
+    // পড়া গেল না: নিচে এই সেশনের কপি বা নতুন
   }
+  const held = sessionDevices.get(storeId)
+  if (held) return held
   const fresh: DeviceInfo = { id: newDeviceId(), code: null }
-  write(storeId, fresh, storage)
+  remember(storeId, fresh, storage)
   return fresh
 }
 
 export function saveDeviceCode(storeId: string, code: string, storage: KeyValueStorage | null = defaultStorage()): void {
   const current = loadDevice(storeId, storage)
-  write(storeId, { ...current, code }, storage)
+  remember(storeId, { ...current, code }, storage)
 }
