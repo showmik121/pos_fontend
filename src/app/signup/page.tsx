@@ -15,10 +15,10 @@ import type { StoreKind } from "@/lib/api/schemas"
 import { cn } from "@/lib/cn"
 import { normalizeBdPhone } from "@/lib/format/phone"
 
+// নতুন দোকানে দুটি বিকল্প। "রিটেইল" সংরক্ষিত হয় `other` হিসেবে; পুরনো `cosmetics` দোকানও সেটিংসে "রিটেইল" দেখায়।
 const KINDS: Array<{ value: StoreKind; label: string }> = [
   { value: "pharmacy", label: "ফার্মেসি" },
-  { value: "cosmetics", label: "কসমেটিক্স" },
-  { value: "other", label: "অন্যান্য" },
+  { value: "other", label: "রিটেইল" },
 ]
 
 type Errors = Partial<Record<"storeName" | "ownerName" | "phone" | "password", string>>
@@ -81,7 +81,7 @@ export default function SignupPage() {
 
         <fieldset className="space-y-1.5">
           <legend className="text-sm font-medium">দোকানের ধরন</legend>
-          <div role="radiogroup" aria-label="দোকানের ধরন" className="grid grid-cols-3 gap-2">
+          <div role="radiogroup" aria-label="দোকানের ধরন" className="grid grid-cols-2 gap-2">
             {KINDS.map((k) => (
               <button
                 key={k.value}

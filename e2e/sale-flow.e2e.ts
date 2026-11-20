@@ -65,7 +65,7 @@ test("দোকান খোলা থেকে বাকি আদায় প
   await test.step("দোকান খুলুন", async () => {
     await page.goto("/signup/")
     await page.locator("#storeName").fill(STORE.name)
-    await page.getByRole("radio", { name: "কসমেটিক্স" }).click()
+    await page.getByRole("radio", { name: "রিটেইল" }).click()
     await page.locator("#ownerName").fill("রহিম")
     await page.locator("#phone").fill(toBn(PHONE))
     await page.locator("#password").fill(PASSWORD)
@@ -209,7 +209,7 @@ test("লগআউটে ফোনের ডেটা মোছা: ব্যা
   await page.goto("/signup/")
   const shopName = REAL ? "মোছার দোকান" : STORE.name // নকল সার্ভার সবসময় STORE.name ফেরত দেয়
   await page.locator("#storeName").fill(shopName)
-  await page.getByRole("radio", { name: "কসমেটিক্স" }).click()
+  await page.getByRole("radio", { name: "রিটেইল" }).click()
   await page.locator("#ownerName").fill("রহিম")
   await page.locator("#phone").fill(toBn(phone))
   await page.locator("#password").fill(PASSWORD)
