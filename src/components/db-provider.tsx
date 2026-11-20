@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useAuth } from "./auth-provider"
 import { dbStorageKey, emptyDb, loadDb, newId, saveDb } from "@/lib/store/db"
 import type { Db } from "@/lib/store/types"
-import { eventsFromChange } from "@/lib/sync/diff"
+import { planCommit } from "@/lib/sync/commit"
 import { runSync, type SyncStatus, type Transport } from "@/lib/sync/engine"
 import { seedEvents } from "@/lib/sync/seed"
 import { loadSyncState, saveSyncState, type SyncState } from "@/lib/sync/state"
@@ -15,6 +15,8 @@ interface DbContextValue {
   ready: boolean
   /** সর্বশেষ সেভ ব্যর্থ হলে true (স্টোরেজ ভরা/বন্ধ) */
   saveFailed: boolean
+  /** সিংকের কিউতে বদল তোলা ব্যর্থ হয়েছে (ফোনে আছে, সার্ভারে পরের লোডে যাবে) */
+  queueFailed: boolean
   /** ডেটা বদলায়; ব্যর্থ হলে DomainError ছোঁড়ে (পর্দা ধরে বার্তা দেখাবে) */
   update: (fn: (db: Db) => Db) => void
   /** ডেটা বদলে একটি মান ফেরত দেয় (যেমন নতুন পণ্য বা বিল) */
@@ -53,6 +55,7 @@ export function DbProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<Db>(ref.current)
   const [ready, setReady] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
+  const [queueFailed, setQueueFailed] = useState(false)
   const [syncInfo, setSyncInfo] = useState<SyncInfo>(NO_SYNC)
   const running = useRef(false)
   const lastStatus = useRef<SyncStatus | null>(null)
@@ -108,17 +111,13 @@ export function DbProvider({ children }: { children: ReactNode }) {
     (next: Db) => {
       let out = next
       if (storeId) {
-        // স্থানীয় বদল থেকে সিংক ইভেন্ট বের করে কিউতে রাখা; এখানে ব্যর্থ হলেও ব্যবহারকারীর কাজ আটকায় না
-        try {
-          const diff = eventsFromChange(ref.current, next, newId, new Date())
-          out = diff.db
-          if (diff.events.length > 0) {
-            const st = readSync()
-            writeSync({ ...st, outbox: [...st.outbox, ...diff.events] })
-          }
-        } catch {
-          out = next
-        }
+        // স্থানীয় বদল থেকে সিংক ইভেন্ট বের করে কিউতে রাখা। ব্যর্থ হলেও ব্যবহারকারীর কাজ আটকায় না, কিন্তু আর চুপও থাকে না:
+        // queueFailed জানায়, আর পরের লোডে পুরো ডেটা আবার কিউতে তোলা হয় (lib/sync/commit.ts)
+        const st = readSync()
+        const plan = planCommit(ref.current, next, st, newId, new Date())
+        out = plan.db
+        if (plan.state !== st) writeSync(plan.state)
+        if (plan.queueFailed) setQueueFailed(true)
       }
       ref.current = out
       setDb(out)
@@ -126,6 +125,17 @@ export function DbProvider({ children }: { children: ReactNode }) {
     },
     [storeId, readSync, writeSync],
   )
+
+  // সেভ ব্যর্থ থাকলে সদ্য-করা বিল শুধু খোলা অ্যাপের মেমরিতে আছে: ভুলে পাতা বন্ধ/রিলোড করলে হারাবে, তাই আগে সতর্ক করি
+  useEffect(() => {
+    if (!saveFailed) return
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ""
+    }
+    window.addEventListener("beforeunload", warn)
+    return () => window.removeEventListener("beforeunload", warn)
+  }, [saveFailed])
 
   const syncNow = useCallback(
     async (transport: Transport): Promise<SyncStatus | "busy"> => {
@@ -172,6 +182,9 @@ export function DbProvider({ children }: { children: ReactNode }) {
     [commit],
   )
 
-  const value = useMemo(() => ({ db, ready, saveFailed, update, run, syncInfo, syncNow }), [db, ready, saveFailed, update, run, syncInfo, syncNow])
+  const value = useMemo(
+    () => ({ db, ready, saveFailed, queueFailed, update, run, syncInfo, syncNow }),
+    [db, ready, saveFailed, queueFailed, update, run, syncInfo, syncNow],
+  )
   return <DbContext.Provider value={value}>{children}</DbContext.Provider>
 }

@@ -51,7 +51,7 @@ export function Ready({ children }: { children: ReactNode }) {
 /** লগইন করা ইউজারের পর্দার কাঠামো: হেডার, মূল অংশ, নিচের মেনু বা অ্যাকশন বার। লগইন না থাকলে /login-এ পাঠায়। */
 export function AppShell({ title, backHref, action, nav = false, footer, art = nav, hero, children }: AppShellProps) {
   const { state } = useAuth()
-  const { ready, saveFailed } = useDb()
+  const { ready, saveFailed, queueFailed } = useDb()
   const router = useRouter()
 
   useEffect(() => {
@@ -74,8 +74,13 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
         </header>
       )}
       {saveFailed ? (
-        <div role="alert" className="bg-danger-bg px-4 py-2 text-sm text-danger">
-          {tr("ফোনের জায়গা ভরা বা সেভ বন্ধ — নতুন তথ্য সেভ হচ্ছে না। জায়গা খালি করুন।")}
+        <div role="alert" className="bg-danger-bg px-4 py-2 text-sm font-semibold text-danger">
+          {tr("ফোনের জায়গা ভরা বা সেভ বন্ধ — সর্বশেষ বিল/বদল ফোনে সেভ হয়নি, শুধু এই খোলা অ্যাপে আছে। পাতা বন্ধ বা রিলোড করবেন না; এখনই সেটিংস থেকে ব্যাকআপ নামান ও জায়গা খালি করুন।")}
+        </div>
+      ) : null}
+      {queueFailed ? (
+        <div role="alert" className="bg-warn-bg px-4 py-2 text-sm text-warn">
+          {tr("কিছু বদল সার্ভারে পাঠানোর লাইনে তোলা যায়নি। ডেটা ফোনে নিরাপদ আছে; অ্যাপ আবার খুললে নিজে থেকেই তোলা হবে। ততক্ষণ ব্যাকআপ নিয়ে রাখুন।")}
         </div>
       ) : null}
       <main className="flex-1 space-y-4 p-4">

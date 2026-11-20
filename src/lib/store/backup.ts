@@ -54,3 +54,11 @@ export function storageStatus(chars: number): { percent: number; level: StorageL
   const level: StorageLevel = ratio >= DANGER_AT ? "danger" : ratio >= WARN_AT ? "warn" : "ok"
   return { percent: Math.min(100, Math.round(ratio * 100)), level }
 }
+
+/**
+ * ব্যাকআপ ফেরানোর ফল। বিল-কাউন্টার কখনো পিছোয় না: ব্যাকআপের পরে এই ফোনে যে নম্বরগুলো দেওয়া হয়ে গেছে,
+ * সেগুলো ফের দিলে একই বিল নম্বর দুটি বিলে পড়ত।
+ */
+export function restoredDb(current: Db, backup: Db): Db {
+  return { ...backup, billCounter: Math.max(current.billCounter, backup.billCounter) }
+}

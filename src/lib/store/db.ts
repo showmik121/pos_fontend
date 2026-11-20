@@ -39,17 +39,32 @@ export function isDb(x: unknown): x is Db {
 }
 
 // localStorage প্রাইভেট মোড/ব্লকড অবস্থায় ছুঁড়তে পারে, তাই সবখানে try/catch
-export function loadDb(storeId: string): Db {
+/** নষ্ট বা অচেনা কাঁচা ডেটা আলাদা কপিতে রাখে। আগের কপি ঘষে না: সেটিই সবচেয়ে পুরনো, অর্থাৎ আসলের কাছাকাছি। */
+function keepCorruptCopy(storeId: string, raw: string): void {
   try {
-    const raw = window.localStorage.getItem(key(storeId))
-    if (!raw) return emptyDb()
+    const existing = window.localStorage.getItem(backupKey(storeId))
+    if (existing === null) window.localStorage.setItem(backupKey(storeId), raw)
+  } catch {
+    // জায়গা নেই: কিছু করার নেই; rescue.ts মূল কী থেকে কাঁচা ডেটা নামাতে পারে যতক্ষণ সেটি ঘষা না হয়
+  }
+}
+
+export function loadDb(storeId: string): Db {
+  let raw: string | null = null
+  try {
+    raw = window.localStorage.getItem(key(storeId))
+  } catch {
+    return emptyDb()
+  }
+  if (!raw) return emptyDb()
+  try {
     const parsed: unknown = JSON.parse(raw)
     if (isDb(parsed)) return parsed
-    // নষ্ট বা অচেনা ডেটা মুছে না ফেলে আলাদা কপি রেখে নতুন করে শুরু
-    window.localStorage.setItem(backupKey(storeId), raw)
   } catch {
-    // ফাঁকা থেকে শুরু
+    // JSON ভাঙা: নিচে কপি রেখে ফাঁকা ডেটা
   }
+  // নষ্ট বা অচেনা ডেটা মুছে না ফেলে আলাদা কপি রেখে নতুন করে শুরু (আগে JSON ভাঙলে কপি হতো না)
+  keepCorruptCopy(storeId, raw)
   return emptyDb()
 }
 

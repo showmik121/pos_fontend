@@ -6,8 +6,8 @@ import { downloadBackup } from "@/lib/browser/backup-download"
 import { requestPersistentStorage } from "@/lib/browser/persist"
 import { domainMessage } from "@/lib/domain/errors"
 import { toBanglaDigits } from "@/lib/format/bn"
-import { parseBackup, storageStatus, type ParsedBackup } from "@/lib/store/backup"
-import { dbStorageChars } from "@/lib/store/db"
+import { parseBackup, restoredDb, storageStatus, type ParsedBackup } from "@/lib/store/backup"
+import { dbStorageChars, loadDb } from "@/lib/store/db"
 import { useDb } from "./db-provider"
 import { Banner } from "./ui/banner"
 import { Button } from "./ui/button"
@@ -45,9 +45,17 @@ export function BackupSection({ storeId }: { storeId: string }) {
 
   const restore = () => {
     if (!pending) return
-    update(() => pending.db)
+    const target = restoredDb(db, pending.db)
+    update(() => target)
     setPending(null)
-    setMessage({ tone: "info", text: tr("ব্যাকআপ থেকে তথ্য ফেরানো হয়েছে।") })
+    // সেভ আদৌ হলো কি না ফোনের স্টোরেজ থেকে ফিরিয়ে পড়ে মিলিয়ে দেখি; আগে সফলতার বার্তা বিনা যাচাইয়ে দেখানো হতো
+    const saved = loadDb(storeId)
+    const ok = saved.sales.length === target.sales.length && saved.products.length === target.products.length && saved.billCounter === target.billCounter
+    setMessage(
+      ok
+        ? { tone: "info", text: tr("ব্যাকআপ থেকে তথ্য ফেরানো হয়েছে।") }
+        : { tone: "danger", text: tr("ফেরানো গেল না: ফোনে সেভ হয়নি (জায়গা ভরা হতে পারে)। জায়গা খালি করে আবার চেষ্টা করুন; পাতা রিলোড করবেন না।") },
+    )
   }
 
   return (
