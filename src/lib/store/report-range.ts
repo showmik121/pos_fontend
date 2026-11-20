@@ -1,4 +1,4 @@
-import { addDays, daysBetween } from "@/lib/domain/dates"
+import { addDays, daysBetween } from "../domain/dates"
 import { monthRange } from "./expenses"
 
 export type ReportPreset = "today" | "yesterday" | "week" | "month" | "day"
