@@ -11,6 +11,8 @@ import { greetingBn } from "../src/lib/format/datetime"
 afterEach(() => setCurrentLang("bn"))
 
 const BN_CHAR = /[ঀ-৿]/
+/** ৳ চিহ্ন (U+09F3) ইংরেজি লেখাতেও থাকে */
+const BN_LETTER = /[\u0980-\u09F2\u09F4-\u09FF]/
 const PLACEHOLDER = /\{\w+\}/g
 
 function sourceFiles(dir: string): string[] {
