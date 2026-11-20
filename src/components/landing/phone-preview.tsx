@@ -12,7 +12,6 @@ const TABS = ["হোম", "বিল", "স্টক", "বাকি", "রি�
 export function PhonePreview() {
   return (
     <div aria-hidden="true" className="relative mx-auto w-[17.5rem] select-none">
-      <div className="absolute -inset-6 rounded-[3rem] bg-gold/25 blur-2xl" />
       <div className="relative overflow-hidden rounded-[2.4rem] border-[7px] border-ink bg-canvas shadow-[0_30px_60px_-20px_rgb(107_68_35/0.55)]">
         <div className="mx-auto mt-2 h-4 w-20 rounded-full bg-ink" />
         <div className="space-y-3 px-3.5 pb-3 pt-3">
