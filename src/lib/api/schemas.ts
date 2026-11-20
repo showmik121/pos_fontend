@@ -23,6 +23,7 @@ export type Store = z.infer<typeof StoreSchema>
 
 export const AuthResponseSchema = z.object({ token: z.string().min(1), user: UserSchema })
 export const MeResponseSchema = z.object({ user: UserSchema, store: StoreSchema.nullable() })
+export const StoreResponseSchema = z.object({ store: StoreSchema })
 export const StaffListSchema = z.object({ staff: z.array(UserSchema) })
 export const UserResponseSchema = z.object({ user: UserSchema })
 
