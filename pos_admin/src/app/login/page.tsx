@@ -49,7 +49,7 @@ function SignIn() {
     void run(async () => {
       const r = await call("auth.2fa", { tokenOverride: step.pending, input: step.recovery ? { recoveryCode: value } : { code: value } })
       start(r.token, r.admin)
-      router.replace("/tenants/")
+      router.replace("/dashboard/")
     })
   }
 
@@ -139,7 +139,7 @@ function SignIn() {
             className={btnPrimaryCls}
             onClick={() => {
               start(step.token, step.admin)
-              router.replace("/tenants/")
+              router.replace("/dashboard/")
             }}
           >
             I have saved them

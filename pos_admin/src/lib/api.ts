@@ -35,6 +35,8 @@ export const tokenStore = {
 export interface CallOptions<K extends AdminRouteId> {
   /** `:id` path parameter */
   id?: string
+  /** `:fingerprint` path parameter (client-error triage) */
+  fingerprint?: string
   /** query string (GET) or JSON body (everything else) */
   input?: Partial<RequestOf<K>> | Record<string, unknown>
   /** use this token instead of the stored one (the pre-2FA "pending" token) */
@@ -42,9 +44,14 @@ export interface CallOptions<K extends AdminRouteId> {
   signal?: AbortSignal
 }
 
-function buildUrl(path: string, id: string | undefined, query: Record<string, unknown> | null): string {
-  const resolved = id === undefined ? path : path.replace(":id", encodeURIComponent(id))
+export function buildUrl(path: string, params: { id?: string; fingerprint?: string }, query: Record<string, unknown> | null): string {
+  let resolved = path
+  if (params.id !== undefined) resolved = resolved.replace(":id", encodeURIComponent(params.id))
+  // the server's fingerprints are 32 hex characters; anything else (".." included) never becomes a path segment
+  if (params.fingerprint !== undefined && !/^[0-9a-f]{32}$/.test(params.fingerprint)) throw new Error("invalid fingerprint")
+  if (params.fingerprint !== undefined) resolved = resolved.replace(":fingerprint", encodeURIComponent(params.fingerprint))
   const qs = new URLSearchParams()
+  if (/:[a-z]+/i.test(resolved)) throw new Error("missing path parameter")
   for (const [k, v] of Object.entries(query ?? {})) if (v !== undefined && v !== null && v !== "") qs.set(k, String(v))
   const tail = qs.toString()
   return `${BASE}/v1/admin${resolved}${tail ? `?${tail}` : ""}`
@@ -84,7 +91,7 @@ export function friendlyError(e: unknown): string {
 export async function call<K extends AdminRouteId>(route: K, opts: CallOptions<K> = {}): Promise<ResponseOf<K>> {
   const def = adminContract[route]
   const isGet = def.method === "GET"
-  const url = buildUrl(def.path, opts.id, isGet ? ((opts.input as Record<string, unknown> | undefined) ?? null) : null)
+  const url = buildUrl(def.path, { id: opts.id, fingerprint: opts.fingerprint }, isGet ? ((opts.input as Record<string, unknown> | undefined) ?? null) : null)
   const bearer = opts.tokenOverride ?? token
   const headers: Record<string, string> = { accept: "application/json" }
   if (bearer) headers.authorization = `Bearer ${bearer}`

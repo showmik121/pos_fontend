@@ -7,7 +7,7 @@ export default function Home() {
   const { admin } = useSession()
   const router = useRouter()
   useEffect(() => {
-    router.replace(admin ? "/tenants/" : "/login/")
+    router.replace(admin ? "/dashboard/" : "/login/")
   }, [admin, router])
   return <p className="p-6 text-sm text-[var(--muted)]">Loading…</p>
 }

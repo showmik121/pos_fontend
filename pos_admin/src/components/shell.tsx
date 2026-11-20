@@ -6,7 +6,9 @@ import { useSession } from "@/lib/session"
 import { btnCls } from "@/components/ui"
 
 const NAV = [
+  { href: "/dashboard/", label: "Dashboard" },
   { href: "/tenants/", label: "Shops" },
+  { href: "/health/", label: "Health" },
   { href: "/audit/", label: "Audit log" },
 ]
 

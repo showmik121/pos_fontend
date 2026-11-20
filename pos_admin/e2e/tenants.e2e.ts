@@ -49,6 +49,7 @@ async function mockApi(page: Page, role: AdminSummary["role"], opts: { failList?
     if (p === `/tenants/${SHOP}/suspend`) return reply(route, "tenants.suspend", { fromStatus: "active", toStatus: "suspended", changedAt: NOW })
     if (p === `/tenants/${SHOP}/reveal-phone`) return reply(route, "tenants.revealPhone", { phones: [{ name: "Karim", role: "owner", phone: "01711111030" }] })
     if (p === "/audit") return reply(route, "audit.list", { rows: [], nextCursor: null })
+    if (p === "/dashboard") return reply(route, "dashboard.get", { tenantsByStatus: { active: 4, trial: 2, suspended: 1 }, stuckSync: 3, newErrors: 5, negativeStockTenants: 2, signupsToday: 1, stuckHours: 24 })
     return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: { code: "not_found", message: "x", details: null } }) })
   })
   return calls
@@ -61,6 +62,8 @@ async function signIn(page: Page) {
   await page.getByRole("button", { name: "Continue" }).click()
   await page.getByLabel(/6-digit code/).fill("123456")
   await page.getByRole("button", { name: "Sign in" }).click()
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible()
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Shops" }).click()
   await expect(page.getByRole("heading", { name: "Shops" })).toBeVisible()
 }
 
