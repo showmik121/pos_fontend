@@ -13,6 +13,7 @@ import { formatTaka } from "@/lib/domain/money"
 import { formatTimeBn, greetingBn } from "@/lib/format/datetime"
 import { formatBillNo } from "@/lib/domain/bill"
 import { toBanglaDigits } from "@/lib/format/bn"
+import { pendingNoteCount } from "@/lib/store/notes"
 import { duePromises, reminderText, smsHref } from "@/lib/store/dues-view"
 import { daySummary, dueRows, expiringSoonCount, lowStockProducts, totalDue } from "@/lib/store/selectors"
 
@@ -37,7 +38,8 @@ function Dashboard() {
   const recent = [...db.sales].reverse().slice(0, 5)
   const promises = duePromises(dueRows(db), today)
   const shopName = state.status === "authed" ? (state.store?.name ?? "") : ""
-  const alerts = low > 0 || soon > 0 || dueCount > 0
+  const noteCount = pendingNoteCount(db)
+  const alerts = low > 0 || soon > 0 || dueCount > 0 || noteCount > 0
 
   return (
     <AppShell title={storeName} nav hero={<HomeHeader storeName={storeName} greeting={greetingBn(new Date().getHours())} />}>
@@ -95,11 +97,16 @@ function Dashboard() {
         </>
       ) : null}
 
+      <LinkButton href="/notes" variant="secondary" full>
+        আনতে হবে — নোট
+      </LinkButton>
+
       <SectionTitle>নজর দিন</SectionTitle>
       {alerts ? (
         <RowList>
           {low > 0 ? <Row href="/stock/low" dot="danger" title="স্টক কম" subtitle={`${toBanglaDigits(low)}টি পণ্য`} chevron /> : null}
           {soon > 0 ? <Row href="/stock/expiry" dot="amber" title="মেয়াদ কাছে" subtitle={`৩০ দিনের মধ্যে ${toBanglaDigits(soon)}টি ব্যাচ`} chevron /> : null}
+          {noteCount > 0 ? <Row href="/notes" dot="amber" title="আনতে হবে" subtitle={`${toBanglaDigits(noteCount)}টি নোট বাকি`} chevron /> : null}
           {dueCount > 0 ? <Row href="/dues" dot="amber" title="বাকি" subtitle={`${toBanglaDigits(dueCount)} জনের কাছে ${formatTaka(totalDue(db))}`} chevron /> : null}
         </RowList>
       ) : (

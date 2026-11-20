@@ -132,6 +132,21 @@ export interface Draft {
   customerId: string | null
 }
 
+/** বিক্রেতার নোট: কী আনতে হবে (স্টক শেষ / কাস্টমার চেয়েছে) */
+export interface Note {
+  id: string
+  text: string
+  kind: "out" | "request" | "other"
+  /** কোন কাস্টমার চেয়েছে (লেখা, ঐচ্ছিক) */
+  customerName: string
+  /** স্টক শেষের তালিকা থেকে তুললে ওই পণ্যের id (একই পণ্য দুবার না তোলার জন্য) */
+  productId?: string
+  done: boolean
+  /** মুছলে true (সিংকে শেষ-বদল জেতার জন্য আসল মোছা হয় না) */
+  deleted?: boolean
+  createdAt: string
+}
+
 export interface Db {
   v: 1
   products: Product[]
@@ -144,6 +159,8 @@ export interface Db {
   billCounter: number
   /** সরানো ব্যাচের খাতা; পুরনো ডেটায় নেই (ঐচ্ছিক), তাই মাইগ্রেশন লাগে না */
   removedBatches?: RemovedBatch[]
+  /** বিক্রেতার নোট; পুরনো ডেটায় নেই */
+  notes?: Note[]
   /** সিংক-মেটা: শেষ-বদল-জেতে ঘড়ি। কী = এন্টিটি-গ্রুপ, মান = "<at>|<ইভেন্ট id>"; পুরনো ডেটায় নেই */
   sync?: { clocks: Record<string, string> }
 }
