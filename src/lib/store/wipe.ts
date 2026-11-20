@@ -1,7 +1,7 @@
 import { reminderStorageKey } from "./backup-reminder"
 import { dbStorageKey } from "./db"
 import { deviceStorageKey } from "./device"
-import { syncStorageKey } from "../sync/state"
+import { syncCorruptKeys, syncStorageKey } from "../sync/state"
 
 /**
  * এই ফোন থেকে এক দোকানের স্থানীয় ডেটা মোছে: পণ্য-বিল-বাকি, নষ্ট-ব্যাকআপ কপি, ডিভাইস কোড ও ব্যাকআপ-স্মরণ।
@@ -16,6 +16,8 @@ export function wipeStoreData(storage: Pick<Storage, "removeItem"> | undefined, 
     storage.removeItem(deviceStorageKey(storeId))
     storage.removeItem(reminderStorageKey(storeId))
     storage.removeItem(syncStorageKey(storeId))
+    // নষ্ট সিংক-অবস্থার কাঁচা কপি: তাতে পুরনো কিউ (ক্রয়মূল্য, গ্রাহকের তথ্যসহ) থাকে; ওয়াইপের পর ফোনে থাকা চলবে না
+    for (const k of syncCorruptKeys(storeId)) storage.removeItem(k)
     return true
   } catch {
     return false

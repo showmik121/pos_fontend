@@ -85,11 +85,24 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
         </div>
       ) : null}
       {readOnlyTab ? (
-        <div role="alert" className="flex items-center gap-3 bg-warn-bg px-4 py-2 text-sm text-warn">
-          <span className="flex-1">{tr("অ্যাপটি আরেকটি ট্যাবে খোলা আছে, তাই এখানে বিক্রি বা বদল বন্ধ। দুই ট্যাবে একসাথে কাজ করলে বিল হারাতে পারে।")}</span>
-          <button type="button" onClick={takeOverTab} className="min-h-11 shrink-0 rounded-lg border border-warn/40 bg-white px-3 font-semibold text-ink">
-            {tr("এই ট্যাবে কাজ করুন")}
-          </button>
+        // পুরো পর্দা ঢাকে: শুধু-দেখা ট্যাবে বোতাম চাপলে ত্রুটি ছুঁড়ত; এখন নিচের কিছুই ছোঁয়া যায় না
+        <div role="alertdialog" aria-modal="true" className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-6">
+          <div className="max-w-sm space-y-4 rounded-2xl bg-white p-5 text-center shadow-xl">
+            <p className="text-sm text-ink">{tr("অ্যাপটি আরেকটি ট্যাবে খোলা আছে, তাই এখানে বিক্রি বা বদল বন্ধ। দুই ট্যাবে একসাথে কাজ করলে বিল হারাতে পারে।")}</p>
+            <button type="button" onClick={takeOverTab} className="min-h-11 w-full rounded-xl btn-primary-grad px-4 font-semibold text-white">
+              {tr("এই ট্যাবে কাজ করুন")}
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {syncInfo.status === "device_limit" || syncInfo.status === "error" || syncInfo.status === "auth" ? (
+        // সিংক থেমে থাকলে শুধু সেটিংসের ভেতরে নয়, সব পর্দায় জানাই (আগে কেউ সেটিংসে না গেলে দিনের পর দিন বোঝা যেত না)
+        <div role="alert" className="bg-warn-bg px-4 py-2 text-sm text-warn">
+          {syncInfo.status === "device_limit"
+            ? tr("এই দোকানে ২৬টি ডিভাইসের সীমা পূর্ণ — এই ফোন সিংক করতে পারছে না। ডেটা ফোনে নিরাপদ আছে; সাপোর্টে জানান।")
+            : syncInfo.status === "auth"
+              ? tr("সিংক থেমে আছে — লগআউট করে আবার লগইন করুন।")
+              : tr("সিংকে অপ্রত্যাশিত সমস্যা হয়েছে; ডেটা ফোনে নিরাপদ আছে। আবার চেষ্টা হবে।")}
         </div>
       ) : null}
       {syncSaveFailed ? (

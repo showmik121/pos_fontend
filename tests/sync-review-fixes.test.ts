@@ -157,6 +157,16 @@ describe("acquireWriter: নিজের আগের লক ছাড়ার 
     expect((await acquireWriter({ storeId: "race", locks, onLost: () => {} })).status).toBe("writer")
   })
 
+  it("StrictMode: পরপর দুটি acquire, প্রথমটির ফল আসামাত্র effect-cleanup ছাড়ে — দ্বিতীয়টি writer", async () => {
+    const locks = slowReleaseLocks()
+    const first = acquireWriter({ storeId: "strict", locks, onLost: () => {} })
+    void first.then((r) => {
+      if (r.status === "writer") r.release()
+    })
+    const second = await acquireWriter({ storeId: "strict", locks, onLost: () => {} })
+    expect(second.status).toBe("writer")
+  })
+
   it("অন্য ট্যাব ধরে থাকলে (নিজে ছাড়েনি) তখনও reader", async () => {
     const locks = slowReleaseLocks()
     await acquireWriter({ storeId: "other", locks, onLost: () => {} })
