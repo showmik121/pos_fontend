@@ -43,6 +43,10 @@ export interface Customer {
   name: string
   phone: string
   createdAt: string
+  /** আদায়ের প্রতিশ্রুতি: কাস্টমার কবে বাকি দেবে (তারিখ YYYY-MM-DD); পুরনো ডেটায় নেই */
+  promise?: { date: string; note: string } | null
+  /** বাকির সীমা (পয়সায়); null বা নেই = সীমা নেই */
+  creditLimit?: number | null
 }
 
 export interface SaleAllocation {
@@ -128,6 +132,46 @@ export interface Draft {
   customerId: string | null
 }
 
+/** বিক্রেতার নোট: কী আনতে হবে (স্টক শেষ / কাস্টমার চেয়েছে) */
+export interface Note {
+  id: string
+  text: string
+  kind: "out" | "request" | "other"
+  /** কোন কাস্টমার চেয়েছে (লেখা, ঐচ্ছিক) */
+  customerName: string
+  /** স্টক শেষের তালিকা থেকে তুললে ওই পণ্যের id (একই পণ্য দুবার না তোলার জন্য) */
+  productId?: string
+  done: boolean
+  /** মুছলে true (সিংকে শেষ-বদল জেতার জন্য আসল মোছা হয় না) */
+  deleted?: boolean
+  createdAt: string
+}
+
+/** খরচের ক্যাটেগরি (বেতন, ভাড়া ইত্যাদি) */
+export interface ExpenseCategory {
+  id: string
+  name: string
+  /** একটি ইমোজি */
+  icon: string
+  /** মুছলে true (সিংকে শেষ-বদল জেতার জন্য আসল মোছা হয় না); পুরনো খরচ খাতায় থাকে */
+  deleted?: boolean
+  createdAt: string
+}
+
+/** দোকানের একটি খরচ; amount পয়সায় */
+export interface Expense {
+  id: string
+  categoryId: string
+  amount: number
+  note: string
+  /** খরচের তারিখ YYYY-MM-DD */
+  date: string
+  /** এন্ট্রি করার সময় */
+  at: string
+  by: string
+  deleted?: boolean
+}
+
 export interface Db {
   v: 1
   products: Product[]
@@ -140,6 +184,11 @@ export interface Db {
   billCounter: number
   /** সরানো ব্যাচের খাতা; পুরনো ডেটায় নেই (ঐচ্ছিক), তাই মাইগ্রেশন লাগে না */
   removedBatches?: RemovedBatch[]
+  /** বিক্রেতার নোট; পুরনো ডেটায় নেই */
+  notes?: Note[]
+  /** খরচের ক্যাটেগরি ও খরচ; পুরনো ডেটায় নেই (ক্যাটেগরি undefined = এখনো ডিফল্ট বসেনি) */
+  expenseCategories?: ExpenseCategory[]
+  expenses?: Expense[]
   /** সিংক-মেটা: শেষ-বদল-জেতে ঘড়ি। কী = এন্টিটি-গ্রুপ, মান = "<at>|<ইভেন্ট id>"; পুরনো ডেটায় নেই */
   sync?: { clocks: Record<string, string> }
 }

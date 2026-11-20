@@ -51,15 +51,16 @@ export default function SellPage() {
     if (expiredStock(db, product.id, today).length > 0) setExpiredFor(product)
   }
 
-  const onScanned = (code: string) => {
-    setScanning(false)
+  /** স্ক্যানার খোলা থাকে (একটানা স্ক্যান); ফেরত লেখাটি স্ক্যানারের ভেতরে দেখায় */
+  const onScanned = (code: string): string => {
     const hit = findByBarcode(db, code)
     if (!hit) {
       setNotFound(code)
-      return
+      return `এই বারকোডের পণ্য নেই (${code})`
     }
     setNotFound(null)
     addProduct(hit.product, hit.packSize)
+    return `✓ ${hit.product.name} যোগ হলো`
   }
 
   const hasDiscount = totals != null && totals.lineDiscount + totals.billDiscount > 0
@@ -154,7 +155,7 @@ export default function SellPage() {
         </Button>
       ) : null}
 
-      <Scanner open={scanning} onClose={() => setScanning(false)} onCode={onScanned} />
+      <Scanner open={scanning} onClose={() => setScanning(false)} onCode={onScanned} continuous title="বিলে স্ক্যান করুন" />
 
       <Sheet open={expiredFor != null} onClose={() => setExpiredFor(null)} label="মেয়াদোত্তীর্ণ ব্যাচ">
         <h2 className="text-lg font-bold">মেয়াদোত্তীর্ণ ব্যাচ আছে</h2>

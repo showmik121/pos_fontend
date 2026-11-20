@@ -1,4 +1,4 @@
-import type { Batch, Customer, Db, LedgerEntry, Product, RemovedBatch, Sale } from "../store/types"
+import type { Batch, Customer, Db, Expense, ExpenseCategory, LedgerEntry, Note, Product, RemovedBatch, Sale } from "../store/types"
 import { EVENT_KINDS, type SyncEvent } from "./events"
 import { accepts, customerSchema, ledgerEntrySchema, productSchema, removedBatchSchema, saleSchema, settingsSchema } from "./schemas"
 
@@ -65,6 +65,30 @@ function applyCustomer(db: Db, e: SyncEvent): Outcome {
   const key = `customer:${customer.id}`
   if (!isNewer(db, key, e)) return { db }
   return { db: withClock({ ...db, customers: upsertById(db.customers, customer) }, key, e) }
+}
+
+function applyNote(db: Db, e: SyncEvent): Outcome {
+  const note = e.payload.note as Note | undefined
+  if (!isObj(note) || typeof note.id !== "string" || typeof note.text !== "string") return "ignore"
+  const key = `note:${note.id}`
+  if (!isNewer(db, key, e)) return { db }
+  return { db: withClock({ ...db, notes: upsertById(db.notes ?? [], note) }, key, e) }
+}
+
+function applyExpenseCategory(db: Db, e: SyncEvent): Outcome {
+  const category = e.payload.category as ExpenseCategory | undefined
+  if (!isObj(category) || typeof category.id !== "string" || typeof category.name !== "string") return "ignore"
+  const key = `expcat:${category.id}`
+  if (!isNewer(db, key, e)) return { db }
+  return { db: withClock({ ...db, expenseCategories: upsertById(db.expenseCategories ?? [], category) }, key, e) }
+}
+
+function applyExpense(db: Db, e: SyncEvent): Outcome {
+  const expense = e.payload.expense as Expense | undefined
+  if (!isObj(expense) || typeof expense.id !== "string" || !Number.isInteger(expense.amount)) return "ignore"
+  const key = `exp:${expense.id}`
+  if (!isNewer(db, key, e)) return { db }
+  return { db: withClock({ ...db, expenses: upsertById(db.expenses ?? [], expense) }, key, e) }
 }
 
 function applySettings(db: Db, e: SyncEvent): Outcome {
@@ -171,6 +195,9 @@ const APPLIERS: Record<string, (db: Db, e: SyncEvent) => Outcome> = {
   [EVENT_KINDS.due]: applyDue,
   [EVENT_KINDS.batchRemoved]: applyBatchRemoved,
   [EVENT_KINDS.settings]: applySettings,
+  [EVENT_KINDS.note]: applyNote,
+  [EVENT_KINDS.expenseCategory]: applyExpenseCategory,
+  [EVENT_KINDS.expense]: applyExpense,
 }
 
 /**

@@ -11,6 +11,8 @@ interface AuthContextValue {
   state: AuthState
   signIn: (session: Session) => void
   signOut: () => void
+  /** দোকানের নাম বদলের পর সেশনে নতুন দোকান বসায় */
+  setStore: (store: NonNullable<Session["store"]>) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -63,6 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
-  const value = useMemo(() => ({ state, signIn, signOut }), [state, signIn, signOut])
+  const setStore = useCallback((store: NonNullable<Session["store"]>) => {
+    setState((prev) => {
+      if (prev.status !== "authed") return prev
+      const next: Session = { token: prev.token, user: prev.user, store }
+      saveSession(next)
+      return { status: "authed", ...next }
+    })
+  }, [])
+
+  const value = useMemo(() => ({ state, signIn, signOut, setStore }), [state, signIn, signOut, setStore])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

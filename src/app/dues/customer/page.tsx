@@ -14,18 +14,31 @@ import { domainMessage } from "@/lib/domain/errors"
 import { formatTaka, parseTaka } from "@/lib/domain/money"
 import { formatDateTimeBn } from "@/lib/format/datetime"
 import { formatPhoneBn } from "@/lib/format/phone"
-import { formatBillNo } from "@/lib/domain/bill"
-import { receiveDue, setCartCustomer } from "@/lib/store/actions"
+import { receiveDue, setCartCustomer, setCreditLimit, setPromise } from "@/lib/store/actions"
+import { addDays, formatDayMonthBn, todayIso } from "@/lib/domain/dates"
 import { customerBalance } from "@/lib/store/selectors"
+import { buildStatement, ledgerTitle } from "@/lib/store/statement"
+import { drawStatementPng } from "@/lib/share/statement-image"
+import { balanceAfter, depositReceiptText, reminderText, smsHref } from "@/lib/store/dues-view"
 
 function CustomerDues() {
   const id = useSearchParams().get("id")
   const router = useRouter()
-  const { db, update } = useDb()
-  const { actor } = useSessionInfo()
+  const { db, update, run } = useDb()
+  const { actor, storeName } = useSessionInfo()
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [statementNote, setStatementNote] = useState<string | null>(null)
+  const [limitOpen, setLimitOpen] = useState(false)
+  const [limitInput, setLimitInput] = useState("")
+  const [limitError, setLimitError] = useState<string | null>(null)
+  const [receiptId, setReceiptId] = useState<string | null>(null)
+  const [shareNote, setShareNote] = useState<string | null>(null)
+  const [promiseOpen, setPromiseOpen] = useState(false)
+  const [promiseDate, setPromiseDate] = useState("")
+  const [promiseNote, setPromiseNote] = useState("")
+  const [promiseError, setPromiseError] = useState<string | null>(null)
 
   const customer = id ? db.customers.find((c) => c.id === id) : undefined
   if (!customer) {
@@ -44,12 +57,97 @@ function CustomerDues() {
     const poisha = parseTaka(amount)
     if (poisha == null || poisha <= 0) return setError("জমার পরিমাণ সঠিকভাবে দিন")
     try {
-      update((d) => receiveDue(d, customer.id, poisha, actor, new Date()))
+      const entryId = run((d) => {
+        const next = receiveDue(d, customer.id, poisha, actor, new Date())
+        return { db: next, value: next.ledger.find((e) => !d.ledger.some((x) => x.id === e.id))?.id ?? null }
+      })
       setOpen(false)
       setAmount("")
+      setShareNote(null)
+      setReceiptId(entryId)
     } catch (err) {
       setError(domainMessage(err))
     }
+  }
+
+  const openLimit = () => {
+    setLimitInput(customer.creditLimit ? String(customer.creditLimit / 100) : "")
+    setLimitError(null)
+    setLimitOpen(true)
+  }
+
+  const saveLimit = (clear: boolean) => {
+    setLimitError(null)
+    let value: number | null = null
+    if (!clear) {
+      const poisha = parseTaka(limitInput)
+      if (poisha == null || poisha <= 0) return setLimitError("সীমার পরিমাণ সঠিকভাবে দিন")
+      value = poisha
+    }
+    try {
+      update((d) => setCreditLimit(d, customer.id, value))
+      setLimitOpen(false)
+    } catch (err) {
+      setLimitError(domainMessage(err))
+    }
+  }
+
+  const openPromise = () => {
+    setPromiseDate(customer.promise?.date ?? "")
+    setPromiseNote(customer.promise?.note ?? "")
+    setPromiseError(null)
+    setPromiseOpen(true)
+  }
+
+  const savePromise = (date: string | null) => {
+    setPromiseError(null)
+    if (date !== null && !date) return setPromiseError("তারিখ বাছুন")
+    try {
+      update((d) => setPromise(d, customer.id, date, promiseNote, new Date()))
+      setPromiseOpen(false)
+    } catch (err) {
+      setPromiseError(domainMessage(err))
+    }
+  }
+
+  const receiptEntry = receiptId ? db.ledger.find((e) => e.id === receiptId && e.kind === "payment") : undefined
+  const receiptText = receiptEntry
+    ? depositReceiptText({ storeName, customerName: customer.name, at: receiptEntry.at, amount: receiptEntry.amount, balanceAfter: balanceAfter(db.ledger, customer.id, receiptEntry.id) })
+    : ""
+
+  const shareReceipt = async () => {
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ text: receiptText })
+        return
+      }
+      await navigator.clipboard.writeText(receiptText)
+      setShareNote("রসিদের লেখা কপি হয়েছে — মেসেজে পেস্ট করে পাঠান।")
+    } catch {
+      // শেয়ার বাতিল করলে কিছু করার নেই
+    }
+  }
+
+  const shareStatement = async () => {
+    setStatementNote(null)
+    const blob = await drawStatementPng({ storeName, customerName: customer.name, statement: buildStatement(db.ledger, customer.id), dateText: formatDayMonthBn(todayIso()) })
+    if (!blob) return setStatementNote("ছবি বানানো গেল না — আবার চেষ্টা করুন।")
+    const file = new File([blob], `khata-${customer.name}.png`, { type: "image/png" })
+    try {
+      if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: `${customer.name}-এর খাতা` })
+        return
+      }
+    } catch {
+      return // শেয়ার বাতিল
+    }
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = file.name
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    setStatementNote("খাতার ছবি নামানো হয়েছে — গ্যালারি থেকে পাঠান।")
   }
 
   const sellOnCredit = () => {
@@ -74,7 +172,63 @@ function CustomerDues() {
         </Button>
       </div>
 
-      <SectionTitle>খাতা</SectionTitle>
+      <Card className="flex items-center justify-between gap-3 px-4 py-3">
+        <div className="min-w-0">
+          <div className="text-sm text-muted">বাকির সীমা</div>
+          {customer.creditLimit ? (
+            <div className={`font-semibold ${balance > customer.creditLimit ? "text-danger" : ""}`}>
+              {formatTaka(customer.creditLimit)}
+              {balance > customer.creditLimit ? <span className="font-normal"> · সীমা ছাড়িয়েছে</span> : null}
+            </div>
+          ) : (
+            <div className="text-muted">সীমা নেই</div>
+          )}
+        </div>
+        <Button variant="secondary" className="min-h-10 px-3 text-sm" onClick={openLimit}>
+          {customer.creditLimit ? "বদলান" : "সীমা দিন"}
+        </Button>
+      </Card>
+
+      {balance > 0 ? (
+        <Card className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <div className="text-sm text-muted">কবে দেবে</div>
+            {customer.promise ? (
+              <div className={`font-semibold ${customer.promise.date < todayIso() ? "text-warn" : ""}`}>
+                {formatDayMonthBn(customer.promise.date)}
+                {customer.promise.note ? <span className="font-normal text-muted"> · {customer.promise.note}</span> : null}
+              </div>
+            ) : (
+              <div className="text-muted">তারিখ লেখা নেই</div>
+            )}
+          </div>
+          <Button variant="secondary" className="min-h-10 px-3 text-sm" onClick={openPromise}>
+            {customer.promise ? "বদলান" : "তারিখ দিন"}
+          </Button>
+        </Card>
+      ) : null}
+
+      {customer.phone ? (
+        <div className="grid grid-cols-2 gap-3">
+          <a href={`tel:${customer.phone}`} className="flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-white font-medium active:bg-canvas">কল করুন</a>
+          {balance > 0 ? (
+            <a href={smsHref(customer.phone, reminderText({ customerName: customer.name, balance, storeName }))} className="flex min-h-12 items-center justify-center rounded-xl border border-line-strong bg-white font-medium active:bg-canvas">এসএমএসে তাগাদা</a>
+          ) : null}
+        </div>
+      ) : null}
+
+      <SectionTitle
+        right={
+          entries.length > 0 ? (
+            <Button variant="ghost" className="min-h-9 px-2 text-sm" onClick={shareStatement}>
+              ছবি করে পাঠান
+            </Button>
+          ) : undefined
+        }
+      >
+        খাতা
+      </SectionTitle>
+      {statementNote ? <Banner tone="info">{statementNote}</Banner> : null}
       {entries.length === 0 ? (
         <Card className="px-4 py-5 text-center text-muted">কোনো লেনদেন নেই।</Card>
       ) : (
@@ -82,13 +236,69 @@ function CustomerDues() {
           {entries.map((e) => (
             <Row
               key={e.id}
-              title={e.kind === "payment" ? "জমা" : e.kind === "opening" ? "আগের বাকি" : e.kind === "void" ? `বিল #${e.saleNo != null ? formatBillNo({ no: e.saleNo, prefix: e.salePrefix }) : ""} বাতিল` : `বিল #${e.saleNo != null ? formatBillNo({ no: e.saleNo, prefix: e.salePrefix }) : ""}`}
+              onClick={e.kind === "payment" ? () => { setShareNote(null); setReceiptId(e.id) } : undefined}
+              title={ledgerTitle(e)}
               subtitle={`${formatDateTimeBn(e.at)}${e.by ? ` · ${e.by}` : ""}`}
               right={<span className={e.kind === "payment" || e.kind === "void" ? "font-semibold text-brand-dark" : "font-semibold"}>{e.kind === "payment" || e.kind === "void" ? `−${formatTaka(e.amount)}` : `+${formatTaka(e.amount)}`}</span>}
             />
           ))}
         </RowList>
       )}
+
+      <Sheet open={limitOpen} onClose={() => setLimitOpen(false)} label="বাকির সীমা">
+        <h2 className="text-lg font-bold">বাকির সীমা</h2>
+        <p className="text-muted">এর বেশি বাকি হতে চাইলে বিলের সময় সতর্ক করব। আপনি চাইলে তবুও বিল করতে পারবেন।</p>
+        <Field id="limit-amount" label="সর্বোচ্চ কত টাকা বাকি" inputMode="decimal" value={limitInput} onChange={(e) => setLimitInput(e.target.value)} autoFocus />
+        {limitError ? <Banner tone="danger">{limitError}</Banner> : null}
+        <Button full onClick={() => saveLimit(false)}>
+          সংরক্ষণ
+        </Button>
+        {customer.creditLimit ? (
+          <Button full variant="secondary" onClick={() => saveLimit(true)}>
+            সীমা তুলে দিন
+          </Button>
+        ) : null}
+      </Sheet>
+
+      <Sheet open={receiptEntry !== undefined} onClose={() => setReceiptId(null)} label="জমার রসিদ">
+        <h2 className="text-lg font-bold">জমা নেওয়া হয়েছে</h2>
+        <pre className="whitespace-pre-wrap rounded-xl bg-canvas px-3 py-3 font-[inherit] text-[15px] leading-relaxed">{receiptText}</pre>
+        {shareNote ? <Banner tone="info">{shareNote}</Banner> : null}
+        <Button full onClick={shareReceipt}>
+          রসিদ পাঠান
+        </Button>
+        <Button full variant="secondary" onClick={() => setReceiptId(null)}>
+          বন্ধ করুন
+        </Button>
+      </Sheet>
+
+      <Sheet open={promiseOpen} onClose={() => setPromiseOpen(false)} label="আদায়ের তারিখ">
+        <h2 className="text-lg font-bold">কবে দেবে?</h2>
+        <p className="text-muted">সেদিন হোম পেজে মনে করিয়ে দেব।</p>
+        <div className="flex flex-wrap gap-2">
+          {[
+            ["আজ", 0],
+            ["কাল", 1],
+            ["৩ দিন পর", 3],
+            ["৭ দিন পর", 7],
+          ].map(([label, n]) => (
+            <Button key={label} variant="secondary" className="min-h-10 px-3 text-sm" onClick={() => setPromiseDate(addDays(todayIso(), n as number))}>
+              {label}
+            </Button>
+          ))}
+        </div>
+        <Field id="promise-date" label="তারিখ" type="date" min={todayIso()} value={promiseDate} onChange={(e) => setPromiseDate(e.target.value)} hint={promiseDate ? formatDayMonthBn(promiseDate) : undefined} />
+        <Field id="promise-note" label="নোট (ইচ্ছা হলে)" placeholder="যেমন: বেতন পেয়ে দেবে" maxLength={120} value={promiseNote} onChange={(e) => setPromiseNote(e.target.value)} />
+        {promiseError ? <Banner tone="danger">{promiseError}</Banner> : null}
+        <Button full onClick={() => savePromise(promiseDate)}>
+          সংরক্ষণ
+        </Button>
+        {customer.promise ? (
+          <Button full variant="secondary" onClick={() => savePromise(null)}>
+            তারিখ মুছুন
+          </Button>
+        ) : null}
+      </Sheet>
 
       <Sheet open={open} onClose={() => setOpen(false)} label="টাকা জমা">
         <h2 className="text-lg font-bold">টাকা জমা নিন</h2>

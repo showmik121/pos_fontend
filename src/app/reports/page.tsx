@@ -11,7 +11,8 @@ import { useSessionInfo } from "@/lib/hooks/use-session"
 import { addDays, formatDateBn, todayIso } from "@/lib/domain/dates"
 import { formatTaka } from "@/lib/domain/money"
 import { toBanglaDigits } from "@/lib/format/bn"
-import { daySummary } from "@/lib/store/selectors"
+import { expenseTotal, monthRange } from "@/lib/store/expenses"
+import { daySummary, periodSummary } from "@/lib/store/selectors"
 
 function Bar({ label, value, total, tone }: { label: string; value: number; total: number; tone: string }) {
   const pct = total > 0 ? Math.round((Math.max(0, value) / total) * 100) : 0
@@ -35,6 +36,9 @@ export default function ReportsPage() {
   const [date, setDate] = useState(today)
   const s = daySummary(db, date)
   const sum = s.cash + s.mobile + s.due
+  const [monthFrom, monthTo] = monthRange(today)
+  const month = periodSummary(db, monthFrom, monthTo)
+  const monthExpense = expenseTotal(db, monthFrom, monthTo)
 
   return (
     <AppShell title="রিপোর্ট" nav>
@@ -90,6 +94,20 @@ export default function ReportsPage() {
             <KeyValue label="মোট" value={formatTaka(s.total)} strong />
           </RowList>
           <p className="text-[13px] text-muted">লাভ = বিক্রয় − ক্রয়মূল্য (যে ব্যাচ থেকে বিক্রি হয়েছে তার দামে)।</p>
+
+          <SectionTitle>এই মাসের হিসাব</SectionTitle>
+          <div className="flex gap-3">
+            <StatBox label="বিক্রি" value={formatTaka(month.total)} />
+            <StatBox label="আনুমানিক লাভ" value={formatTaka(month.profit)} />
+          </div>
+          <div className="flex gap-3">
+            <StatBox label="খরচ" value={formatTaka(monthExpense)} />
+            <StatBox label="নিট লাভ" value={formatTaka(month.profit - monthExpense)} />
+          </div>
+          <p className="text-[13px] text-muted">নিট লাভ = আনুমানিক লাভ − দোকানের খরচ (ভাড়া, বেতন ইত্যাদি)।</p>
+          <LinkButton href="/expenses" variant="secondary" full>
+            খরচের হিসাব
+          </LinkButton>
 
           <LinkButton href="/reports/top" variant="secondary" full>
             সেরা বিক্রির পণ্য

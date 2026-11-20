@@ -1,6 +1,6 @@
 // হাতে লেখা ছোট service worker: অ্যাপ শেল অফলাইনে খোলার জন্য।
 // API (অন্য origin) কখনো ক্যাশ হয় না; শুধু একই origin-এর GET অনুরোধ।
-const VERSION = "v17"
+const VERSION = "v19"
 const PAGES = `pos-pages-${VERSION}`
 const ASSETS = `pos-assets-${VERSION}`
 // ক্যাশ অনির্দিষ্ট বাড়তে দেওয়া যাবে না (ফোনের জায়গা সীমিত; কোয়েরিসহ পেজ ?id=… আলাদা এন্ট্রি হয়)।
@@ -14,6 +14,8 @@ const PRECACHE = [
   "/sell/",
   "/stock/",
   "/dues/",
+  "/expenses/",
+  "/notes/",
   "/reports/",
   "/settings/",
   "/manifest.webmanifest",
