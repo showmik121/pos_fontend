@@ -724,4 +724,9 @@ export const EN: Record<string, string> = {
   "হিসাব মেটানো": "Settled",
   "হিসাব মেটার আগে ডিলার মোছা যায় না": "A dealer cannot be deleted before the account is settled",
   "প্রোফাইল ও সেটিংস": "Profile and settings",
+  "ক্রয়মূল্য (ঐচ্ছিক)": "Cost price (optional)",
+  "দাম প্রতি পিসের হিসাবে লিখুন। ক্রয়মূল্য দিলে লাভের হিসাব মেলে।": "Enter prices per piece. Adding the cost price gives you profit reports.",
+  "এখন কতগুলো আছে (পিস)": "How many you have now (pcs)",
+  "আরও তথ্য (বারকোড, একক, ক্যাটেগরি)": "More details (barcode, unit, category)",
+  "কম দেখান": "Show less",
 }
