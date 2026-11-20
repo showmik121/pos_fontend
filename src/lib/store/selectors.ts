@@ -142,9 +142,13 @@ export interface DaySummary {
   due: number
 }
 
-export function daySummary(db: Db, date: string): DaySummary {
+/** from..to (দুটোই অন্তর্ভুক্ত) সময়ের বিক্রি, লাভ ও পেমেন্টের ভাগ (বাতিল বিল বাদ) */
+export function rangeSummary(db: Db, from: string, to: string): DaySummary {
   const out: DaySummary = { bills: 0, total: 0, profit: 0, cash: 0, mobile: 0, due: 0 }
-  for (const s of salesOn(db, date)) {
+  for (const s of db.sales) {
+    if (s.voided) continue
+    const d = saleDate(s)
+    if (d < from || d > to) continue
     out.bills += 1
     out.total += s.total
     out.due += s.due
@@ -158,6 +162,10 @@ export function daySummary(db: Db, date: string): DaySummary {
     out.cash -= s.change
   }
   return out
+}
+
+export function daySummary(db: Db, date: string): DaySummary {
+  return rangeSummary(db, date, date)
 }
 
 export interface TopRow {
