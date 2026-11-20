@@ -1,4 +1,4 @@
-import type { Batch, Customer, Db, LedgerEntry, Product, RemovedBatch, Sale } from "../store/types"
+import type { Batch, Customer, Db, LedgerEntry, Note, Product, RemovedBatch, Sale } from "../store/types"
 import { EVENT_KINDS, type SyncEvent } from "./events"
 
 /** সার্ভারের সীমার সাথে মেলে */
@@ -64,6 +64,14 @@ function applyCustomer(db: Db, e: SyncEvent): Outcome {
   const key = `customer:${customer.id}`
   if (!isNewer(db, key, e)) return { db }
   return { db: withClock({ ...db, customers: upsertById(db.customers, customer) }, key, e) }
+}
+
+function applyNote(db: Db, e: SyncEvent): Outcome {
+  const note = e.payload.note as Note | undefined
+  if (!isObj(note) || typeof note.id !== "string" || typeof note.text !== "string") return "ignore"
+  const key = `note:${note.id}`
+  if (!isNewer(db, key, e)) return { db }
+  return { db: withClock({ ...db, notes: upsertById(db.notes ?? [], note) }, key, e) }
 }
 
 function applySettings(db: Db, e: SyncEvent): Outcome {
@@ -167,6 +175,7 @@ const APPLIERS: Record<string, (db: Db, e: SyncEvent) => Outcome> = {
   [EVENT_KINDS.due]: applyDue,
   [EVENT_KINDS.batchRemoved]: applyBatchRemoved,
   [EVENT_KINDS.settings]: applySettings,
+  [EVENT_KINDS.note]: applyNote,
 }
 
 /**

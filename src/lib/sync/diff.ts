@@ -1,5 +1,5 @@
 import type { Batch, Db, LedgerEntry, Sale } from "../store/types"
-import { batchRemovedEvent, customerEvent, dueEvent, productEvent, saleEvent, settingsEvent, stockInEvent, voidEvent, type SyncEvent } from "./events"
+import { batchRemovedEvent, customerEvent, dueEvent, noteEvent, productEvent, saleEvent, settingsEvent, stockInEvent, voidEvent, type SyncEvent } from "./events"
 import { withClock } from "./replay"
 
 const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b)
@@ -30,6 +30,11 @@ export function eventsFromChange(before: Db, after: Db, newId: () => string, now
     for (const c of after.customers) {
       const prev = before.customers.find((x) => x.id === c.id)
       if (!prev || !same(prev, c)) clock(`customer:${c.id}`, customerEvent(newId(), c, at))
+    }
+  if (after.notes !== before.notes)
+    for (const n of after.notes ?? []) {
+      const prev = (before.notes ?? []).find((x) => x.id === n.id)
+      if (!prev || !same(prev, n)) clock(`note:${n.id}`, noteEvent(newId(), n, at))
     }
   if (!same(before.settings, after.settings)) clock("settings", settingsEvent(newId(), after.settings, at))
 
