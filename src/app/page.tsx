@@ -100,7 +100,7 @@ function Dashboard() {
 
       <div className={state.status === "authed" && state.user.role === "owner" ? "grid grid-cols-2 gap-3" : ""}>
         <LinkButton href="/notes" variant="secondary" full>
-          {tr("আনতে হবে — নোট")}
+          {tr("নোট")}
         </LinkButton>
         {state.status === "authed" && state.user.role === "owner" ? (
           <LinkButton href="/expenses" variant="secondary" full>

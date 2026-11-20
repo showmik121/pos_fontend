@@ -111,7 +111,7 @@ export const EN: Record<string, string> = {
   "আজকের সারসংক্ষেপ": "Today's summary",
   "আদায়ের তারিখ": "Collection date",
   "আনতে হবে": "To bring",
-  "আনতে হবে — নোট": "To bring — note",
+  "নোট": "Notes",
   "আনুমানিক লাভ": "Estimated profit",
   "আপনার ডেটা ফোনে ঠিকই আছে। আবার চেষ্টা করুন। না হলে আগে ডেটার কপি নামিয়ে রাখুন, তারপর অ্যাপ বন্ধ করে আবার খুলুন।": "Your data is still safe on this phone. Try again. If that does not work, first download a copy of your data, then close the app and open it again.",
   "আপনার তথ্য": "Your details",
