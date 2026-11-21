@@ -1,7 +1,7 @@
 # Netlify-র বিল্ড সেটিং কোডে রাখা হলো, যাতে সাইট নতুন করে তুললেও একই ভাবে বিল্ড হয়।
 # নিরাপত্তা হেডার আলাদা: public/_headers
 [build]
-  command = "npm run build"
+  command = "npm run build:site"
   publish = "out"
 
 [build.environment]

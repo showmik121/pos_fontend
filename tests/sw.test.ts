@@ -40,11 +40,30 @@ function boot(fetchImpl: (req: { url: string; method: string; mode: string }) =>
 const okRes = { ok: true, clone() { return this } }
 const badRes = { ok: false, clone() { return this } }
 
+describe("service worker ও /admin", () => {
+  it("/admin-এর কোনো অনুরোধে সাড়া দেয় না বা ক্যাশ করে না (একই ডোমেইনে আলাদা অ্যাপ)", async () => {
+    let handled = 0
+    const sw = boot(async () => (handled++, okRes))
+    await sw.request("https://app.test/admin/", "navigate")
+    await sw.request("https://app.test/admin", "navigate")
+    await sw.request("https://app.test/admin/_next/static/chunks/a.js")
+    expect(handled).toBe(0)
+    expect(sw.stores.get("pos-pages-v25")?.size ?? 0).toBe(0)
+    expect(sw.stores.get("pos-assets-v25")?.size ?? 0).toBe(0)
+  })
+  it("/administrator-এর মতো অন্য পথ আটকায় না", async () => {
+    let handled = 0
+    const sw = boot(async () => (handled++, okRes))
+    await sw.request("https://app.test/administrator/", "navigate")
+    expect(handled).toBe(1)
+  })
+})
+
 describe("service worker ক্যাশ", () => {
   it("পেজ ক্যাশ ৬০টির বেশি বাড়ে না, সবচেয়ে পুরনো আগে যায়", async () => {
     const sw = boot(async () => okRes)
     for (let i = 0; i < 80; i++) await sw.request(`https://app.test/dues/customer/?id=${i}`, "navigate")
-    const pages = sw.stores.get("pos-pages-v24")!
+    const pages = sw.stores.get("pos-pages-v25")!
     expect(pages.size).toBe(60)
     expect(pages.has("https://app.test/dues/customer/?id=79")).toBe(true)
     expect(pages.has("https://app.test/dues/customer/?id=0")).toBe(false)
@@ -53,15 +72,15 @@ describe("service worker ক্যাশ", () => {
   it("অ্যাসেট ক্যাশ ১৫০টির বেশি বাড়ে না", async () => {
     const sw = boot(async () => okRes)
     for (let i = 0; i < 200; i++) await sw.request(`https://app.test/_next/static/c${i}.js`)
-    expect(sw.stores.get("pos-assets-v24")!.size).toBe(150)
+    expect(sw.stores.get("pos-assets-v25")!.size).toBe(150)
   })
 
   it("ব্যর্থ উত্তর (৪০৪/৫০০) ক্যাশ হয় না", async () => {
     const sw = boot(async () => badRes)
     await sw.request("https://app.test/nope/", "navigate")
     await sw.request("https://app.test/_next/static/x.js")
-    expect(sw.stores.get("pos-pages-v24")?.size ?? 0).toBe(0)
-    expect(sw.stores.get("pos-assets-v24")?.size ?? 0).toBe(0)
+    expect(sw.stores.get("pos-pages-v25")?.size ?? 0).toBe(0)
+    expect(sw.stores.get("pos-assets-v25")?.size ?? 0).toBe(0)
   })
 
   it("অন্য origin (API) কখনো ক্যাশ হয় না", async () => {
