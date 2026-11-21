@@ -72,6 +72,30 @@ export function friendlyError(e: unknown): string {
         return "That item was not found."
       case "invalid_transition":
         return "The shop is already in a state where this action does not apply. Refresh and check."
+      case "duplicate_txn":
+        return "A payment with this method and transaction ID is already recorded."
+      case "idempotency_conflict":
+        return "This attempt was already used with different details. Close the form and start again."
+      case "payment_already_voided":
+        return "That payment is already voided."
+      case "plan_inactive":
+        return "That plan is switched off. Pick an active plan."
+      case "trial_cap":
+        return "A trial cannot run more than 60 days from today."
+      case "paid_too_old":
+        return "A payment cannot be dated more than 30 days back."
+      case "invalid_input":
+        return "Some value was not accepted. Check the form and try again."
+      case "busy":
+        return "Another change to this shop is in progress. Try again in a moment."
+      case "invalid_amount":
+        return "The amount is not valid."
+      case "amount_below_price":
+        return "The amount is below the plan price. Partial payments are not accepted."
+      case "txn_ref_required":
+        return "Enter the transaction ID (only cash payments can leave it empty)."
+      case "paid_in_future":
+        return "The payment time cannot be in the future."
       case "invalid_credentials":
         return "Email, password or code is not correct."
       case "unauthorized":

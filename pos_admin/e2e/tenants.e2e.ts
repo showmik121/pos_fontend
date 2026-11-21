@@ -48,6 +48,9 @@ async function mockApi(page: Page, role: AdminSummary["role"], opts: { failList?
     if (p === `/tenants/${SHOP}/notes`) return reply(route, "tenants.notes.list", { notes: [] })
     if (p === `/tenants/${SHOP}/suspend`) return reply(route, "tenants.suspend", { fromStatus: "active", toStatus: "suspended", changedAt: NOW })
     if (p === `/tenants/${SHOP}/reveal-phone`) return reply(route, "tenants.revealPhone", { phones: [{ name: "Karim", role: "owner", phone: "01711111030" }] })
+    // the shop page also loads its billing panel (plans + billing); keep it valid so the console stays clean
+    if (p === "/plans") return reply(route, "billing.plans.list", { plans: [] })
+    if (p === `/tenants/${SHOP}/billing`) return reply(route, "billing.tenant", { storeId: SHOP, status: "active", grandfathered: true, plan: null, trialEndsAt: null, currentPeriodEnd: null, payments: [], events: [] })
     if (p === "/audit") return reply(route, "audit.list", { rows: [], nextCursor: null })
     if (p === "/dashboard") return reply(route, "dashboard.get", { tenantsByStatus: { active: 4, trial: 2, suspended: 1 }, stuckSync: 3, newErrors: 5, negativeStockTenants: 2, signupsToday: 1, stuckHours: 24 })
     return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: { code: "not_found", message: "x", details: null } }) })

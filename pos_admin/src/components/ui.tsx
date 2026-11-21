@@ -50,7 +50,7 @@ export function Field({ label, hint, children }: FieldProps) {
   const id = useId()
   const hintId = hint ? `${id}-hint` : undefined
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-sm font-medium">
         {label}
       </label>
@@ -65,7 +65,7 @@ export function Field({ label, hint, children }: FieldProps) {
 }
 
 // controls use --control (>= 3:1 against the surface, WCAG 1.4.11); --line is only for decorative dividers
-export const inputCls = "w-full rounded border border-[var(--control)] bg-[var(--surface)] px-3 py-2 text-sm"
+export const inputCls = "w-full min-w-0 max-w-full rounded border border-[var(--control)] bg-[var(--surface)] px-3 py-2 text-sm"
 export const btnCls = "rounded border border-[var(--control)] bg-[var(--surface)] px-3 py-2 text-sm font-medium hover:border-[var(--brand)] disabled:opacity-50"
 export const btnPrimaryCls = "rounded bg-[var(--brand)] px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:text-black"
 export const btnDangerCls = "rounded bg-[var(--danger)] px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:text-black"
@@ -98,7 +98,7 @@ export function Dialog({ open, title, onClose, busy = false, children }: DialogP
     }
   }, [open])
   return (
-    <dialog ref={ref} aria-labelledby={titleId} onClose={onClose} onCancel={(e) => busy && e.preventDefault()} className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-lg border border-[var(--line)] bg-[var(--surface)] p-0 text-[var(--text)]">
+    <dialog ref={ref} aria-labelledby={titleId} onClose={onClose} onCancel={(e) => busy && e.preventDefault()} className="m-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-[var(--line)] bg-[var(--surface)] p-0 text-[var(--text)]">
       {open ? (
         <div className="flex flex-col gap-4 p-5">
           <h2 id={titleId} className="text-lg font-semibold">

@@ -3,6 +3,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import type { ResponseOf } from "@/contract/admin-api"
+import { BillingPanel } from "@/components/billing-panel"
 import { NotesPanel } from "@/components/notes-panel"
 import { RevealDialog } from "@/components/reveal-dialog"
 import { Shell } from "@/components/shell"
@@ -79,7 +80,7 @@ function TenantView() {
       {!t && !error ? <p className="text-sm text-[var(--muted)]">Loading…</p> : null}
 
       {t && detail ? (
-        <div className="flex flex-col gap-8">
+        <div className="flex min-w-0 flex-col gap-8">
           <header className="flex flex-wrap items-center gap-3">
             <h1 className="text-xl font-semibold">{t.name}</h1>
             <StatusBadge status={t.status} />
@@ -125,6 +126,8 @@ function TenantView() {
               <Row label="Read-only since">{formatDhaka(t.readOnlySince)}</Row>
             </dl>
           </section>
+
+          {allowed("billing.read") ? <BillingPanel key={t.id} tenantId={t.id} tenantName={t.name} onChanged={() => void load()} /> : null}
 
           <section aria-labelledby="people-h">
             <div className="mb-3 flex items-center gap-3">
