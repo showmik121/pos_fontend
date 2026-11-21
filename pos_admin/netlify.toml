@@ -1,0 +1,11 @@
+# Netlify settings for the operator panel as its OWN site (bipone-admin.netlify.app), separate origin from the shop app.
+# Site setting: Base directory = pos_admin. The shop site (repo root) never builds or serves the panel.
+# The panel's API is the shop's Supabase function; its origin is allowed by the panel's CSP (scripts/csp-headers.mjs).
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_PUBLIC_ADMIN_API_URL = "https://gaxzkbcomeexlnzquvzf.supabase.co/functions/v1/api"
+  ADMIN_API_ORIGIN = "https://gaxzkbcomeexlnzquvzf.supabase.co"
