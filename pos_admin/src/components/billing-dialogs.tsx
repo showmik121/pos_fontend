@@ -94,7 +94,7 @@ export function RecordPaymentDialog({ open, tenantId, tenantName, plans, default
     <Dialog open={open} title="Record a payment" onClose={onClose} busy={busy}>
       <form onSubmit={submit} className="flex flex-col gap-4">
         <p className="text-sm">
-          <strong>{tenantName}</strong>. One payment buys one 30-day period. It is added after the paid-until date if that is still ahead, otherwise it starts at the payment time.
+          <strong>{tenantName}</strong>. One payment buys one 30-day period. It is added after the paid-until date if that is still ahead, otherwise it starts at the payment time. A suspended, read-only or pending-deletion shop keeps its status: reactivate it separately after recording the payment.
         </p>
         <Field label="Plan">
           {(id) => (
