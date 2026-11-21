@@ -8,7 +8,6 @@
     "dev:proxy": "node scripts/dev-proxy.mjs",
     "dev:local": "node scripts/dev-proxy.mjs --next",
     "build": "next build",
-    "build:site": "next build && npm --prefix pos_admin ci && node scripts/embed-admin.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",

@@ -1,6 +1,6 @@
 // হাতে লেখা ছোট service worker: অ্যাপ শেল অফলাইনে খোলার জন্য।
 // API (অন্য origin) কখনো ক্যাশ হয় না; শুধু একই origin-এর GET অনুরোধ।
-const VERSION = "v25"
+const VERSION = "v24"
 const PAGES = `pos-pages-${VERSION}`
 const ASSETS = `pos-assets-${VERSION}`
 // ক্যাশ অনির্দিষ্ট বাড়তে দেওয়া যাবে না (ফোনের জায়গা সীমিত; কোয়েরিসহ পেজ ?id=… আলাদা এন্ট্রি হয়)।
@@ -52,8 +52,6 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return
   const url = new URL(req.url)
   if (url.origin !== self.location.origin) return
-  // /admin is a different app (the operator panel) on the same domain: never cache it and never answer it with the shop's offline shell
-  if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) return
 
   // পেজ: আগে নেটওয়ার্ক, না পেলে ক্যাশ, তাও না পেলে হোম শেল
   if (req.mode === "navigate") {
