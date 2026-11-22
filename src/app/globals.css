@@ -41,6 +41,8 @@
 }
 
 html {
+  /* ফোকাস/স্ক্রল করে আনা জিনিস নিচের মেনু ও বিল-বোতামের নিচে পড়বে না */
+  scroll-padding-bottom: 6.5rem;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }

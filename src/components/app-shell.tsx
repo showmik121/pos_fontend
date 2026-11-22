@@ -1,5 +1,6 @@
 "use client"
 
+import { cn } from "@/lib/cn"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { tf, tr } from "@/lib/i18n"
 import Link from "next/link"
@@ -118,12 +119,13 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
           {tf("সিংকে {p0}টি সমস্যা আছে: কিছু তথ্য সার্ভারে যায়নি বা এই ফোনে বসেনি। সেটিংস › ডেটা ও ব্যাকআপে দেখুন।", { p0: toBanglaDigits(String(syncInfo.problems)) })}
         </Link>
       ) : null}
-      <main className="flex-1 space-y-4 p-4">
+      {/* নিচের মেনুর বিল-বোতাম মেনুর ২২px ওপরে ওঠে; শেষ কার্ড যেন তার নিচে না পড়ে, তাই ছবি না থাকলে বাড়তি ফাঁক */}
+      <main className={cn("flex-1 space-y-4 p-4", nav && !art && "pb-12")}>
         {nav ? <BackupReminder /> : null}
         {nav ? <InstallBanner /> : null}
         {children}
       </main>
-      {art ? <div aria-hidden="true" className="app-skyline no-print" /> : null}
+      {art ? <div aria-hidden="true" className={cn("app-skyline no-print", nav && "mb-8")} /> : null}
       {footer ? (
         <div className="no-print sticky bottom-0 z-10 border-t border-line bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">{footer}</div>
       ) : nav ? (
