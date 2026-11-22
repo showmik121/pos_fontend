@@ -35,3 +35,8 @@ export const BagIcon = () => (
     <path d="M5 8h14l-1 12H6zM9 8V6.5a3 3 0 0 1 6 0V8" />
   </svg>
 )
+export const CosmeticsIcon = () => (
+  <svg {...base} width={26} height={26}>
+    <path d="M9 21v-7h6v7zM10 14V9.5l2.5-5L15 9.5V14M18.5 4v3M17 5.5h3" />
+  </svg>
+)

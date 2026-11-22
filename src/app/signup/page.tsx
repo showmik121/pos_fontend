@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { Logo } from "@/components/logo"
-import { BagIcon, LockIcon, PersonIcon, PhoneIcon, PillIcon, StoreIcon } from "@/components/signup-icons"
+import { BagIcon, CosmeticsIcon, LockIcon, PersonIcon, PhoneIcon, PillIcon, StoreIcon } from "@/components/signup-icons"
 import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -17,10 +17,11 @@ import type { StoreKind } from "@/lib/api/schemas"
 import { cn } from "@/lib/cn"
 import { normalizeBdPhone } from "@/lib/format/phone"
 
-// নতুন দোকানে দুটি বিকল্প। "রিটেইল" সংরক্ষিত হয় `other` হিসেবে; পুরনো `cosmetics` দোকানও সেটিংসে "রিটেইল" দেখায়।
+// নতুন দোকানে তিনটি বিকল্প: ফার্মেসি (`pharmacy`), কসমেটিক্স (`cosmetics`), রিটেইল (`other`)।
 const KINDS: Array<{ value: StoreKind; label: string; hint: string; icon: ReactNode }> = [
   { value: "pharmacy", label: "ফার্মেসি", hint: "ওষুধ — ব্যাচ ও মেয়াদের হিসাবসহ", icon: <PillIcon /> },
-  { value: "other", label: "রিটেইল", hint: "কসমেটিক্স, কাপড়, মুদি ইত্যাদি", icon: <BagIcon /> },
+  { value: "cosmetics", label: "কসমেটিক্স", hint: "মেকআপ, স্কিনকেয়ার, বিউটি পণ্য", icon: <CosmeticsIcon /> },
+  { value: "other", label: "রিটেইল", hint: "কাপড়, মুদি, জেনারেল স্টোর ইত্যাদি", icon: <BagIcon /> },
 ]
 
 type Errors = Partial<Record<"storeName" | "ownerName" | "phone" | "password", string>>
@@ -109,7 +110,7 @@ export default function SignupPage() {
                       aria-checked={on}
                       aria-label={tr(k.label)}
                       onClick={() => setStoreKind(k.value)}
-                      className={cn("flex min-h-[132px] flex-col items-start gap-2 rounded-2xl border-[1.5px] p-3.5 text-left transition-colors", on ? "border-brand bg-brand-soft" : "border-line bg-white active:bg-canvas")}
+                      className={cn("flex min-h-[132px] flex-col items-start gap-2 rounded-2xl border-[1.5px] p-3.5 text-left transition-colors", k.value === "other" && "col-span-2 min-h-[104px]", on ? "border-brand bg-brand-soft" : "border-line bg-white active:bg-canvas")}
                     >
                       <span className={cn("grid size-11 place-items-center rounded-xl", on ? "bg-brand text-white" : "bg-chip text-brand-dark")}>{k.icon}</span>
                       <span className="text-[16px] font-bold text-ink">{tr(k.label)}</span>
