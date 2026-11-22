@@ -22,12 +22,12 @@ type Errors = Partial<Record<"storeName" | "ownerName" | "phone" | "password", s
 /** ক্রমিক সংখ্যাসহ ফর্মের একটি ধাপ */
 function Step({ n, title, children }: { n: string; title: string; children: ReactNode }) {
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div className="flex items-center gap-3">
-        <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-full bg-gold text-[15px] font-extrabold text-ink">
+        <span aria-hidden="true" className="grid size-7 flex-none place-items-center rounded-full bg-gold text-[14px] font-extrabold text-ink">
           {n}
         </span>
-        <h2 className="text-[17px] font-bold text-ink">{title}</h2>
+        <h2 className="text-[16px] font-bold text-ink">{title}</h2>
         <span aria-hidden="true" className="h-px flex-1 bg-line" />
       </div>
       {children}
@@ -77,20 +77,22 @@ export default function SignupPage() {
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-x-clip bg-canvas">
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-gold to-canvas" />
-      <div className="relative mx-auto w-full max-w-md flex-1 px-5 pb-6 pt-6">
-        <Link href="/login" className="mb-5 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white/70 px-3.5 text-sm font-medium text-ink2 active:bg-white">
-          <span aria-hidden="true">←</span> {tr("লগইনে ফিরুন")}
-        </Link>
-        <Logo size={44} />
-        <h1 className="mt-5 text-[26px] font-extrabold leading-tight tracking-tight text-ink">{tr("আপনার দোকান খুলুন")}</h1>
-        <p className="mt-1 text-[15px] text-ink2">{tr("মিনিটখানেকেই তৈরি — নাম, ধরন আর আপনার মোবাইল নম্বর হলেই চলবে।")}</p>
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-gold to-canvas" />
+      <div className="relative mx-auto w-full max-w-md flex-1 px-4 pb-4 pt-3">
+        <div className="flex items-center justify-between gap-2">
+          <Logo size={40} />
+          <Link href="/login" className="inline-flex min-h-11 flex-none items-center gap-1 rounded-full bg-white/70 px-3 text-[13px] font-medium text-ink2 active:bg-white">
+            <span aria-hidden="true">←</span> {tr("লগইনে ফিরুন")}
+          </Link>
+        </div>
+        <h1 className="mt-3 text-[24px] font-extrabold leading-tight tracking-tight text-ink">{tr("আপনার দোকান খুলুন")}</h1>
+        <p className="mt-0.5 text-sm leading-snug text-ink2">{tr("মিনিটখানেকেই তৈরি — নাম, ধরন আর আপনার মোবাইল নম্বর হলেই চলবে।")}</p>
 
-        <form onSubmit={onSubmit} noValidate className="card-surface mt-5 space-y-7 rounded-3xl border border-line bg-white p-5">
+        <form onSubmit={onSubmit} noValidate className="card-surface mt-4 space-y-5 rounded-3xl border border-line bg-white p-4">
           <Step n={tr("১")} title={tr("দোকানের তথ্য")}>
             <Field id="storeName" label={tr("দোকানের নাম")} leading={<StoreIcon />} autoComplete="organization" hint={tr("রসিদে ও অ্যাপে এই নাম দেখাবে")} value={storeName} onChange={(e) => setStoreName(e.target.value)} error={errors.storeName} />
 
-            <fieldset className="space-y-2.5">
+            <fieldset className="space-y-2">
               <legend className="text-sm font-medium">{tr("দোকানের ধরন")}</legend>
               <ShopKindPicker value={storeKind} onChange={setStoreKind} />
             </fieldset>
@@ -115,15 +117,15 @@ export default function SignupPage() {
           </Step>
 
           {error ? <Banner tone="danger">{error}</Banner> : null}
-          <div className="space-y-2.5">
-            <Button type="submit" full loading={busy} className="min-h-14 text-base">
+          <div className="space-y-2">
+            <Button type="submit" full loading={busy} className="min-h-12 text-base">
               {tr("দোকান খুলুন")}
             </Button>
             <p className="text-center text-[13px] text-muted">{tr("সব ঘর পূরণ করা লাগবে। দোকানের নাম পরে সেটিংসে বদলানো যাবে।")}</p>
           </div>
         </form>
 
-        <p className="mt-6 text-center text-sm text-muted">
+        <p className="mt-4 text-center text-sm text-muted">
           {tr("আগেই অ্যাকাউন্ট আছে?")}{" "}
           <Link href="/login" className="font-semibold text-brand">
             {tr("লগইন করুন")}
