@@ -47,7 +47,7 @@ export function LandingHero() {
         </div>
 
         <div className="relative mx-auto w-full max-w-sm lg:max-w-none">
-          <div aria-hidden="true" className="absolute left-1/2 top-1/2 -z-10 size-[22rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold/30 blur-3xl" />
+          <div aria-hidden="true" className="absolute left-1/2 top-1/2 -z-10 size-[18rem] -translate-x-1/2 lg:size-[22rem] -translate-y-1/2 rounded-full bg-gold/30 blur-3xl" />
           <div className="max-h-[27rem] overflow-hidden [mask-image:linear-gradient(to_bottom,#000_72%,transparent)] lg:max-h-none lg:[mask-image:none]">
             <PhonePreview />
           </div>

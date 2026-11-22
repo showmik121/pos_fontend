@@ -87,12 +87,11 @@ export function Steps() {
 export function CtaBand() {
   return (
     <section className="px-4 pb-14 sm:px-6 md:pb-20">
-      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand to-brand-dark px-6 py-12 text-center text-white md:py-16">
-        <div aria-hidden="true" className="absolute -right-16 -top-16 size-64 rounded-full border-[36px] border-white/10" />
-        <div aria-hidden="true" className="absolute -bottom-24 -left-10 size-72 rounded-full bg-gold/15 blur-2xl" />
-        <h2 className="relative mx-auto max-w-2xl text-[26px] font-extrabold leading-tight tracking-tight md:text-4xl">{tr("আজই আপনার দোকানের খাতা ফোনে তুলুন")}</h2>
-        <p className="relative mx-auto mt-3 max-w-md text-[16px] text-white/85">{tr("নাম আর মোবাইল নম্বর দিলেই দোকান তৈরি।")}</p>
-        <Link href="/signup" className="relative mt-7 inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-gold px-9 text-base font-bold text-ink shadow-lg shadow-black/20 active:bg-[#d98a00]">
+      {/* সাজের বৃত্তগুলো ::before/::after-এ, যাতে বাড়তি DOM-উপাদান পর্দার বাইরে না যায় */}
+      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand to-brand-dark px-6 py-12 text-center text-white before:absolute before:-right-16 before:-top-16 before:size-64 before:rounded-full before:border-[36px] before:border-white/10 before:content-[''] after:absolute after:-bottom-24 after:-left-10 after:size-72 after:rounded-full after:bg-gold/15 after:blur-2xl after:content-[''] md:py-16">
+        <h2 className="relative z-10 mx-auto max-w-2xl text-[26px] font-extrabold leading-tight tracking-tight md:text-4xl">{tr("আজই আপনার দোকানের খাতা ফোনে তুলুন")}</h2>
+        <p className="relative z-10 mx-auto mt-3 max-w-md text-[16px] text-white/85">{tr("নাম আর মোবাইল নম্বর দিলেই দোকান তৈরি।")}</p>
+        <Link href="/signup" className="relative z-10 mt-7 inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-gold px-9 text-base font-bold text-ink shadow-lg shadow-black/20 active:bg-[#d98a00]">
           {tr("দোকান খুলুন")}
           <Icon name="chevron" size={18} />
         </Link>
