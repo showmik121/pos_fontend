@@ -115,10 +115,10 @@ textarea {
   position: relative;
   overflow: hidden;
   color: var(--color-ink);
-  /* নরম আমের সোনালি: আগের চেয়ে হালকা ও কম ঝলমলে, যাতে সংখ্যাগুলো আগে চোখে পড়ে */
+  /* লোগোর সোনালির (#ffc61f → #f2a900 → #d98a00) কাছাকাছি, তবে একটু নরম; সাজ ও চার্ট ম্লান রেখে সংখ্যাগুলো আগে চোখে পড়ে */
   background-image: radial-gradient(120% 90% at 100% 0%, rgb(255 255 255 / 0.22) 0%, rgb(255 255 255 / 0) 55%),
-    linear-gradient(135deg, #fbd763 0%, #f8c93f 55%, #f2b72c 100%);
-  box-shadow: 0 12px 24px -16px rgb(217 138 0 / 0.5);
+    linear-gradient(135deg, #fdc72e 0%, #f5ad0c 55%, #e39a06 100%);
+  box-shadow: 0 12px 24px -15px rgb(217 138 0 / 0.62);
 }
 .hero-card::after {
   content: "";
