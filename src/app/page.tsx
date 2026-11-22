@@ -50,7 +50,7 @@ function Dashboard() {
   const storeKind = state.status === "authed" ? state.store?.kind : undefined
   const payable = isOwner ? payableSummary(dealerRows(db, today)) : null
   const alertCards = buildAlertCards({ low, soon, noteCount, dueCount, dueTotal: totalDue(db), payable })
-  const quickActions = buildQuickActions({ isOwner, dueCount, soon, noteCount, payableCount: payable?.count ?? 0 })
+  const quickActions = buildQuickActions({ isOwner, soon, noteCount, payableCount: payable?.count ?? 0 })
   const yesterdayTotal = daySummary(db, addDays(today, -1)).total
   const trend = dailyTotals(db, today)
 
@@ -155,21 +155,16 @@ function buildAlertCards(x: { low: number; soon: number; noteCount: number; dueC
   return cards
 }
 
-function buildQuickActions(x: { isOwner: boolean; dueCount: number; soon: number; noteCount: number; payableCount: number }): QuickAction[] {
+/** নিচের মেনুতে (হোম, স্টক, বিল, বাকি, রিপোর্ট) যা আছে তা এখানে নেই; স্টক জমা স্টক পাতার বোতামে */
+function buildQuickActions(x: { isOwner: boolean; soon: number; noteCount: number; payableCount: number }): QuickAction[] {
   const n = (v: number) => toBanglaDigits(v)
   const actions: QuickAction[] = [
-    {
-      key: "due", href: "/dues", icon: "banknote", tone: "coral", label: tr("বাকি আদায়"), subtitle: tr("কার কাছে কত বাকি"),
-      badge: x.dueCount > 0 ? { text: tf("{p0} জন বাকি", { p0: n(x.dueCount) }), icon: "book" } : undefined,
-    },
-    { key: "stockin", href: "/stock/in", icon: "box", tone: "gold", label: tr("স্টক জমা"), subtitle: tr("নতুন মাল তুলুন") },
-    { key: "expiry", href: "/stock/expiry", icon: "calendar", tone: "gold", label: tr("মেয়াদ"), count: x.soon > 0 ? n(x.soon) : undefined },
-    { key: "notes", href: "/notes", icon: "note", tone: "plum", label: tr("নোট"), count: x.noteCount > 0 ? n(x.noteCount) : undefined },
+    { key: "expiry", href: "/stock/expiry", icon: "calendar", tone: "gold", label: tr("মেয়াদ"), subtitle: tr("কোন ব্যাচ কবে শেষ"), count: x.soon > 0 ? n(x.soon) : undefined },
+    { key: "notes", href: "/notes", icon: "note", tone: "plum", label: tr("নোট"), subtitle: tr("যা আনতে হবে"), count: x.noteCount > 0 ? n(x.noteCount) : undefined },
   ]
   if (x.isOwner) {
-    actions.push({ key: "expenses", href: "/expenses", icon: "wallet", tone: "plum", label: tr("খরচ") })
-    actions.push({ key: "dealers", href: "/dealers", icon: "van", tone: "green", label: tr("ডিলার"), count: x.payableCount > 0 ? n(x.payableCount) : undefined })
+    actions.push({ key: "expenses", href: "/expenses", icon: "wallet", tone: "plum", label: tr("খরচ"), subtitle: tr("ভাড়া, বেতন, অন্যান্য") })
+    actions.push({ key: "dealers", href: "/dealers", icon: "van", tone: "green", label: tr("ডিলার"), subtitle: tr("কাকে কত দিতে হবে"), count: x.payableCount > 0 ? n(x.payableCount) : undefined })
   }
-  actions.push({ key: "reports", href: "/reports", icon: "chart", tone: "teal", label: tr("রিপোর্ট") })
   return actions
 }
