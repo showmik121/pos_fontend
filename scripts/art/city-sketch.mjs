@@ -22,8 +22,9 @@ const SKIN = ["#e0b08a", "#d29f78", "#c68e66", "#b9835d"];
 // ---------- মৌলিক হাতিয়ার ----------
 const jit = (a, n = 0.5) => [a[0] + R(r0, -n, n), a[1] + R(r0, -n, n)];
 /** এক টানে কালির দাগ (ওঠানামা + সরু হয়ে আসা) */
+const LINE_K = 0.8; // সব কালির রেখা একটু সরু: ছবি হালকা ও মার্জিত দেখায়
 const ln = (pts, w = 1.2, o = {}, col = INK, op = 1) =>
-  stroke(key("l"), pts, { w, t0: 2.5, t1: 4, wob: 0.3, nib: 0.25, wv: 0.15, min: 0.3, step: 2, ...o }, col, op);
+  stroke(key("l"), pts, { w: w * LINE_K, t0: 2.5, t1: 4, wob: 0.3, nib: 0.25, wv: 0.15, min: 0.3, step: 2, ...o }, col, op);
 /** সোজা প্রান্তে সামান্য বাঁক + মাঝখানে কাঁপন */
 const seg = (a, b, w = 1.2, o = {}, col = INK, op = 1) => {
   const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
@@ -576,6 +577,30 @@ const shrink = (str) => str.replace(/ d="(M-?[\d.]+,-?[\d.]+(?:L-?[\d.]+,-?[\d.]
   return ` d="${out}${d.endsWith("Z") ? "z" : ""}"`;
 });
 
+// ---------- রঙের সুর: ব্যাকগ্রাউন্ডের (#fff6dd) সাথে মেলানো নরম, ধুলো-ধরা গাউয়াশ রং ----------
+const PAPER = [255, 246, 221];
+const hex2rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const rgb2hex = (c) => "#" + c.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+const mixRgb = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+function softColor(hex) {
+  const h = hex.toLowerCase();
+  if (h === "#1d1a18") return "#54463a"; // কালি: কালচে-বাদামি (খাঁটি কালো নয়)
+  if (h === "#ffffff") return "#fffcf2";
+  let c = hex2rgb(h);
+  const lum = (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255;
+  const gray = c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11;
+  c = c.map((v) => gray + (v - gray) * 0.74); // রং ফিকে (সংপৃক্তি কমানো)
+  c = mixRgb(c, PAPER, 0.26); // কাগজের রঙের দিকে টানা
+  if (lum < 0.3) c = mixRgb(c, [120, 104, 88], 0.4); // খুব গাঢ় অংশ (টায়ার, ছায়া) নরম করা
+  return rgb2hex(c);
+}
+/** লোগো (ভেতরের <svg x=…>) ছাড়া সব fill/stroke রঙ নরম করা: ব্র্যান্ড-লোগো উজ্জ্বলই থাকে */
+const tone = (str) =>
+  str
+    .split(/(<svg x=[\s\S]*?<\/svg>)/)
+    .map((part) => (part.startsWith("<svg x=") ? part : part.replace(/\b(fill|stroke)="(#[0-9a-fA-F]{6})"/g, (m, k, hx) => `${k}="${softColor(hx)}"`)))
+    .join("");
+
 // ---------- লেখা ----------
 const W = 480, H = 230;
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bipone">
@@ -583,10 +608,18 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" rol
 <filter id="bz-rough" x="0" y="0" width="${W}" height="${H}" filterUnits="userSpaceOnUse"><feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="1" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="0.7" xChannelSelector="R" yChannelSelector="G"/></filter>
 <filter id="bz-mottle"><feTurbulence type="fractalNoise" baseFrequency="0.035 0.06" numOctaves="3" seed="11" result="t"/><feColorMatrix in="t" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 2.6 -1.25" result="a"/><feComposite in="SourceGraphic" in2="a" operator="in"/></filter>
 ${K.defs.join("\n")}
+<linearGradient id="bz-vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.07" stop-color="#fff"/><stop offset="0.8" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<linearGradient id="bz-hg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.035" stop-color="#fff"/><stop offset="0.965" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<mask id="bz-mv" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="url(#bz-vg)"/></mask>
+<mask id="bz-mh" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="url(#bz-hg)"/></mask>
+<radialGradient id="bz-sun" cx="0.62" cy="0.42" r="0.6"><stop offset="0" stop-color="#f2a900" stop-opacity="0.2"/><stop offset="0.6" stop-color="#f2a900" stop-opacity="0.05"/><stop offset="1" stop-color="#f2a900" stop-opacity="0"/></radialGradient>
 </defs>
+<g mask="url(#bz-mv)"><g mask="url(#bz-mh)">
+<rect width="${W}" height="${H}" fill="url(#bz-sun)"/>
 <g filter="url(#bz-rough)">
-${shrink(K.el.join("\n"))}
+${tone(shrink(K.el.join("\n")))}
 </g>
+</g></g>
 </svg>
 `;
 fs.writeFileSync(OUT, svg);
