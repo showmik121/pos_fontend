@@ -144,9 +144,9 @@ textarea {
 }
 .home-hero[data-kind="retail"] {
   --hero-art: url("/art/home-hero-retail.webp");
-  /* এই ছবিতে বিলবোর্ড একদম ওপরে ও দোকানের লোকজন নিচে, তাই কম ছাঁটা (~১৩%) */
-  --hero-ratio: 2.3 / 1;
-  --hero-y: 15%;
+  /* এই ছবিতে বিলবোর্ড একদম ওপরে ও দোকানের লোকজন নিচে, তাই কম ছাঁটা (~১১%) */
+  --hero-ratio: 2.25 / 1;
+  --hero-y: 18%;
 }
 .home-hero::after {
   content: "";
