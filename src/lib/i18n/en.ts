@@ -802,4 +802,6 @@ export const EN: Record<string, string> = {
   "গতকালের চেয়ে {p0}% কম": "{p0}% less than yesterday",
   "গতকালের সমান": "Same as yesterday",
   "গত ৭ দিন": "Last 7 days",
+  "{p0} জন বাকি": "{p0} owing",
+  "নতুন মাল তুলুন": "Receive new stock",
 }

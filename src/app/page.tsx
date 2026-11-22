@@ -156,17 +156,20 @@ function buildAlertCards(x: { low: number; soon: number; noteCount: number; dueC
 }
 
 function buildQuickActions(x: { isOwner: boolean; dueCount: number; soon: number; noteCount: number; payableCount: number }): QuickAction[] {
+  const n = (v: number) => toBanglaDigits(v)
   const actions: QuickAction[] = [
-    { key: "product", href: "/products/new", icon: "capsule", label: tr("পণ্য যোগ") },
-    { key: "stockin", href: "/stock/in", icon: "box", label: tr("স্টক জমা") },
-    { key: "due", href: "/dues", icon: "banknote", label: tr("বাকি আদায়"), badge: x.dueCount > 0 ? tf("{p0} জন", { p0: toBanglaDigits(x.dueCount) }) : undefined },
-    { key: "expiry", href: "/stock/expiry", icon: "calendar", label: tr("মেয়াদ"), badge: x.soon > 0 ? tf("{p0}টি", { p0: toBanglaDigits(x.soon) }) : undefined },
-    { key: "notes", href: "/notes", icon: "note", label: tr("নোট"), badge: x.noteCount > 0 ? tf("{p0}টি", { p0: toBanglaDigits(x.noteCount) }) : undefined },
+    {
+      key: "due", href: "/dues", icon: "banknote", tone: "coral", label: tr("বাকি আদায়"), subtitle: tr("কার কাছে কত বাকি"),
+      badge: x.dueCount > 0 ? { text: tf("{p0} জন বাকি", { p0: n(x.dueCount) }), icon: "book" } : undefined,
+    },
+    { key: "stockin", href: "/stock/in", icon: "box", tone: "gold", label: tr("স্টক জমা"), subtitle: tr("নতুন মাল তুলুন") },
+    { key: "expiry", href: "/stock/expiry", icon: "calendar", tone: "gold", label: tr("মেয়াদ"), count: x.soon > 0 ? n(x.soon) : undefined },
+    { key: "notes", href: "/notes", icon: "note", tone: "plum", label: tr("নোট"), count: x.noteCount > 0 ? n(x.noteCount) : undefined },
   ]
   if (x.isOwner) {
-    actions.push({ key: "expenses", href: "/expenses", icon: "wallet", label: tr("খরচ") })
-    actions.push({ key: "dealers", href: "/dealers", icon: "van", label: tr("ডিলার"), badge: x.payableCount > 0 ? tf("{p0} জন", { p0: toBanglaDigits(x.payableCount) }) : undefined })
+    actions.push({ key: "expenses", href: "/expenses", icon: "wallet", tone: "plum", label: tr("খরচ") })
+    actions.push({ key: "dealers", href: "/dealers", icon: "van", tone: "green", label: tr("ডিলার"), count: x.payableCount > 0 ? n(x.payableCount) : undefined })
   }
-  actions.push({ key: "reports", href: "/reports", icon: "chart", label: tr("রিপোর্ট") })
+  actions.push({ key: "reports", href: "/reports", icon: "chart", tone: "teal", label: tr("রিপোর্ট") })
   return actions
 }

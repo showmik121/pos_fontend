@@ -4,10 +4,6 @@ import type { ReactElement } from "react"
 
 const SVG_PROPS = { viewBox: "0 0 100 100", "aria-hidden": true, className: "block size-full" } as const
 
-function StickerCapsule(): ReactElement {
-  return <svg {...SVG_PROPS}><defs><linearGradient id="st-cpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#6fbf7d"/><stop offset="1" stopColor="#2e6b3a"/></linearGradient><linearGradient id="st-cpw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff"/><stop offset="1" stopColor="#e6dfcb"/></linearGradient><linearGradient id="st-cpt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff"/><stop offset="1" stopColor="#dcd5c0"/></linearGradient><linearGradient id="st-cpy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffd566"/><stop offset="1" stopColor="#e39a00"/></linearGradient><filter id="st-cpb" x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><ellipse cx="50" cy="88" rx="30" ry="5" fill="#2a2315" opacity=".22" filter="url(#st-cpb)"/><ellipse cx="50" cy="88" rx="30" ry="5" fill="#2a2315" opacity="0"/><circle cx="28" cy="72" r="13" fill="url(#st-cpt)"/><path d="M19 71h18" stroke="#c9c0a5" strokeWidth="2" strokeLinecap="round"/><ellipse cx="23" cy="66" rx="5" ry="2.4" fill="#fff" opacity=".8" transform="rotate(-30 23 66)"/><g transform="rotate(-38 56 44)"><path d="M34 32H56V56H34A12 12 0 0 1 34 32Z" fill="url(#st-cpg)"/><path d="M56 32H78A12 12 0 0 1 78 56H56Z" fill="url(#st-cpw)"/><rect x="30" y="35" width="44" height="3.6" rx="1.8" fill="#fff" opacity=".55"/><rect x="56" y="50" width="22" height="2.4" rx="1.2" fill="#2a2315" opacity=".1"/></g></svg>
-}
-
 function StickerBox(): ReactElement {
   return <svg {...SVG_PROPS}><defs><linearGradient id="st-bxt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f2d9a6"/><stop offset="1" stopColor="#dbb877"/></linearGradient><linearGradient id="st-bxl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d9b378"/><stop offset="1" stopColor="#b88c4e"/></linearGradient><linearGradient id="st-bxr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#c39a5d"/><stop offset="1" stopColor="#9c7238"/></linearGradient><filter id="st-bxb" x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="2.2"/></filter></defs><ellipse cx="50" cy="88" rx="32" ry="5" fill="#2a2315" opacity=".22" filter="url(#st-bxb)"/><polygon points="50,22 82,36 50,50 18,36" fill="url(#st-bxt)"/><polygon points="18,36 50,50 50,84 18,70" fill="url(#st-bxl)"/><polygon points="50,50 82,36 82,70 50,84" fill="url(#st-bxr)"/><polygon points="38.8,26.9 70.8,40.9 61.2,45.1 29.2,31.1" fill="#fff" opacity=".42"/><polygon points="23,52 41,60 41,70 23,62" fill="#fffaf0"/><polygon points="26,56 38,61 38,62.4 26,57.4" fill="#2e6b3a"/><polygon points="26,59 34,62.4 34,63.6 26,60.2" fill="#2a2315" opacity=".5"/><polyline points="18,36 50,50 82,36" fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="1.2"/></svg>
 }
@@ -37,7 +33,6 @@ function StickerChart(): ReactElement {
 }
 
 export const STICKER_ICONS = {
-  capsule: StickerCapsule,
   box: StickerBox,
   banknote: StickerBanknote,
   calendar: StickerCalendar,
@@ -48,16 +43,3 @@ export const STICKER_ICONS = {
 } as const
 
 export type StickerName = keyof typeof STICKER_ICONS
-
-/** ধূসর-বালি গোল টাইলে ত্রিমাত্রিক আইকন; badge থাকলে ওপরে লাল ট্যাগ */
-export function StickerTile({ name, badge }: { name: StickerName; badge?: string }) {
-  const Art = STICKER_ICONS[name]
-  return (
-    <span className="relative block size-full rounded-full bg-sticker-tile p-[11%]">
-      <Art />
-      {badge ? (
-        <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl bg-alert px-2 py-[5px] text-xs font-extrabold leading-none text-white shadow-[0_2px_0_#fff]">{badge}</span>
-      ) : null}
-    </span>
-  )
-}
