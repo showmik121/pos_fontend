@@ -111,7 +111,7 @@ test("দোকান খোলা থেকে বাকি আদায় প
   await test.step("বাকিতে বিক্রি (১ পিস, ১০০ টাকা নগদ)", async () => {
     await addToBill(page, "ফেস", "ফেসওয়াশ")
     await page.getByRole("link", { name: "পেমেন্ট নিন" }).click()
-    await page.locator("#pay-cash").fill("100")
+    await page.locator("#pay-amount").fill("100")
     await expect(page.getByRole("button", { name: "বিল সম্পন্ন করুন" })).toBeDisabled() // কাস্টমার ছাড়া বাকি হয় না
     await page.getByText("কাস্টমার বাছুন", { exact: true }).first().click()
     await page.getByRole("button", { name: "+ নতুন কাস্টমার" }).click()

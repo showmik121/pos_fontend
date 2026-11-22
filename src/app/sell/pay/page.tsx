@@ -8,25 +8,31 @@ import { CustomerPicker } from "@/components/customer-picker"
 import { useDb } from "@/components/db-provider"
 import { useReadOnlyShop } from "@/components/tenant-notice"
 import { Banner } from "@/components/ui/banner"
-import { Button, LinkButton } from "@/components/ui/button"
-import { Card, KeyValue, Row, RowList } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Card, Row, RowList, SectionTitle } from "@/components/ui/card"
 import { AmountInput } from "@/components/ui/inputs"
+import { MethodTiles } from "@/components/pay/method-tiles"
 import { Segmented } from "@/components/ui/segmented"
 import { useSessionInfo } from "@/lib/hooks/use-session"
 import { computeCart, settlePayments, type MobileMethod } from "@/lib/domain/cart"
+import { PAY_METHODS, quickCashAmounts, resolveEntry, type PayMethod } from "@/lib/domain/pay-entry"
 import { domainMessage } from "@/lib/domain/errors"
-import { formatTaka, parseTaka, takaInputValue } from "@/lib/domain/money"
+import { formatTaka, takaInputValue } from "@/lib/domain/money"
+import { toBanglaDigits } from "@/lib/format/bn"
 import { completeSale, setCartCustomer } from "@/lib/store/actions"
 import { limitStatus } from "@/lib/store/dues-view"
 import { customerBalance } from "@/lib/store/selectors"
 import { loadDevice } from "@/lib/store/device"
 import { findProduct } from "@/lib/store/selectors"
 
-const METHODS = [
+// ভাগ করে নেওয়ার সময় মোবাইলের মাধ্যম (রকেট নতুন বিলে নেই)
+const MOBILE_METHODS = [
   { value: "bkash", label: "বিকাশ" },
   { value: "nagad", label: "নগদ" },
-  { value: "rocket", label: "রকেট" },
 ] as const
+
+const chipClass = (on: boolean) =>
+  `press h-10 whitespace-nowrap rounded-full px-3.5 text-sm ${on ? "border-[1.5px] border-brand bg-brand-soft font-semibold text-brand-dark" : "border border-line-strong/70 bg-white font-medium text-ink"}`
 
 function PayScreen() {
   const { db, update, run } = useDb()
@@ -35,9 +41,12 @@ function PayScreen() {
   const router = useRouter()
   const { actor, storeId } = useSessionInfo()
   const [picking, setPicking] = useState(false)
-  const [method, setMethod] = useState<MobileMethod>("bkash")
+  const [mode, setMode] = useState<"single" | "split">("single")
+  const [method, setMethod] = useState<PayMethod>("cash") // একক মোডে বাছা মাধ্যম
+  const [amount, setAmount] = useState<string | null>(null) // null = পুরো মোট (স্বয়ংক্রিয়)
+  const [splitMethod, setSplitMethod] = useState<MobileMethod>("bkash")
   const [mobileInput, setMobileInput] = useState("")
-  const [cashInput, setCashInput] = useState<string | null>(null) // null = মোটের সমান (স্বয়ংক্রিয়)
+  const [cashInput, setCashInput] = useState<string | null>(null) // null = মোটের বাকি অংশ (স্বয়ংক্রিয়)
   const [error, setError] = useState<string | null>(null)
   const completed = useRef(false)
 
@@ -63,26 +72,27 @@ function PayScreen() {
     }
   }, [lines, db.draft.bill])
 
-  const mobile = mobileInput.trim() ? parseTaka(mobileInput) : 0
-  // নগদ ঘর ফাঁকা থাকলে: মোটের বাকি অংশটুকু ধরা হয়
-  const cash = cashInput === null ? Math.max(0, total - (mobile ?? 0)) : cashInput.trim() ? parseTaka(cashInput) : 0
+  const entry = useMemo(
+    () => resolveEntry({ mode, method, amount, cashInput, mobileInput, splitMethod, total }),
+    [mode, method, amount, cashInput, mobileInput, splitMethod, total],
+  )
 
   const settled = useMemo(() => {
-    if (mobile == null || cash == null) return { error: tr("টাকার পরিমাণ সঠিক নয়") }
+    if (!entry.ok) return { error: tr("টাকার পরিমাণ সঠিক নয়") }
     try {
-      return { ...settlePayments({ total, cash, mobile, mobileMethod: method, hasCustomer: customer != null }), error: null as string | null }
+      return { ...settlePayments({ total, cash: entry.cash, mobile: entry.mobile, mobileMethod: entry.mobileMethod, hasCustomer: customer != null }), error: null as string | null }
     } catch (err) {
       return { error: domainMessage(err) }
     }
-  }, [total, cash, mobile, method, customer])
+  }, [total, entry, customer])
 
   const confirm = () => {
     setError(null)
-    if (mobile == null || cash == null) return
+    if (!entry.ok) return
     try {
       completed.current = true
       const sale = run((d) => {
-        const out = completeSale(d, { cashier: actor, cash, mobile, mobileMethod: method, devicePrefix: storeId ? loadDevice(storeId).code : null }, new Date())
+        const out = completeSale(d, { cashier: actor, cash: entry.cash, mobile: entry.mobile, mobileMethod: entry.mobileMethod, devicePrefix: storeId ? loadDevice(storeId).code : null }, new Date())
         return { db: out.db, value: out.sale }
       })
       router.replace(`/sell/receipt?id=${sale.id}`)
@@ -96,6 +106,15 @@ function PayScreen() {
   const limit = customer && due > 0 ? limitStatus(customer.creditLimit, customerBalance(db, customer.id), due) : null
   const change = settled.error ? 0 : (settled as { change: number }).change
 
+  const quick = method === "cash" ? quickCashAmounts(total) : []
+  const amountText = amount ?? takaInputValue(total)
+  const isFull = amount === null || (entry.ok && entry.cash + entry.mobile === total)
+
+  const pickMethod = (m: PayMethod) => {
+    setMethod(m)
+    setAmount(null) // মাধ্যম বদলালে আবার পুরো মোট
+  }
+
   return (
     <AppShell
       title={tr("পেমেন্ট")}
@@ -108,30 +127,83 @@ function PayScreen() {
     >
       <Card className="px-4 py-4 text-center">
         <div className="text-sm text-muted">{tr("মোট প্রাপ্য")}</div>
-        <div className="text-[32px] font-bold leading-tight">{formatTaka(total)}</div>
+        <div className="text-[36px] font-bold leading-tight">{formatTaka(total)}</div>
+        <div className="mt-0.5 text-[13px] text-muted">
+          {tr("পণ্যের সংখ্যা")}: {tf("{p0}টি", { p0: toBanglaDigits(lines.length) })}
+        </div>
       </Card>
 
-      <h2 className="text-[15px] font-semibold">{tr("কত পেলেন")}</h2>
-      <Card className="space-y-3 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <span className="font-medium">{tr("ক্যাশ")}</span>
-          <AmountInput id="pay-cash" label={tr("ক্যাশ টাকা")} value={cashInput ?? takaInputValue(cash ?? 0)} onChange={(e) => setCashInput(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-medium">{tr("মোবাইল ব্যাংকিং")}</span>
-            <AmountInput id="pay-mobile" label={tr("মোবাইল ব্যাংকিংয়ে পাওয়া")} placeholder={tr("০")} value={mobileInput} onChange={(e) => setMobileInput(e.target.value)} />
-          </div>
-          <Segmented label={tr("মোবাইল ব্যাংকিংয়ের মাধ্যম")} options={METHODS} value={method} onChange={setMethod} />
-        </div>
-      </Card>
+      {mode === "single" ? (
+        <>
+          <SectionTitle>{tr("কীভাবে নিলেন")}</SectionTitle>
+          <MethodTiles options={PAY_METHODS} value={method} onChange={pickMethod} label={tr("পেমেন্টের মাধ্যম")} />
+
+          <SectionTitle>{tr("কত পেলেন")}</SectionTitle>
+          <Card className="space-y-3 p-4">
+            <label htmlFor="pay-amount" className="sr-only">
+              {tr("পাওয়া টাকার পরিমাণ")}
+            </label>
+            <div className="flex h-14 items-center rounded-xl border border-line-strong bg-white px-3 focus-within:border-brand">
+              <span aria-hidden="true" className="text-xl font-semibold text-muted">৳</span>
+              <input
+                id="pay-amount"
+                inputMode="decimal"
+                autoComplete="off"
+                value={amountText}
+                onChange={(e) => setAmount(e.target.value)}
+                onFocus={(e) => e.currentTarget.select()}
+                className="h-full min-w-0 flex-1 bg-transparent pl-2 text-right text-2xl font-bold text-ink outline-none"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" aria-pressed={isFull} onClick={() => setAmount(null)} className={chipClass(isFull)}>
+                {tr("পুরো টাকা")}
+              </button>
+              {quick.map((q) => (
+                <button key={q} type="button" aria-pressed={amount === takaInputValue(q)} onClick={() => setAmount(takaInputValue(q))} className={chipClass(amount === takaInputValue(q))}>
+                  {formatTaka(q)}
+                </button>
+              ))}
+              <button type="button" aria-pressed={amount !== null && amount.trim() === "0"} onClick={() => setAmount("0")} className={chipClass(amount !== null && amount.trim() === "0")}>
+                {tr("পুরোটা বাকি")}
+              </button>
+            </div>
+          </Card>
+          <Button variant="ghost" full onClick={() => setMode("split")}>
+            {tr("ক্যাশ ও মোবাইল ভাগ করে নিন")}
+          </Button>
+        </>
+      ) : (
+        <>
+          <SectionTitle>{tr("কত পেলেন")}</SectionTitle>
+          <Card className="space-y-3 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-medium">{tr("ক্যাশ")}</span>
+              <AmountInput id="pay-cash" label={tr("ক্যাশ টাকা")} value={cashInput ?? takaInputValue(entry.ok ? entry.cash : 0)} onChange={(e) => setCashInput(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium">{tr("মোবাইল ব্যাংকিং")}</span>
+                <AmountInput id="pay-mobile" label={tr("মোবাইল ব্যাংকিংয়ে পাওয়া")} placeholder={tr("০")} value={mobileInput} onChange={(e) => setMobileInput(e.target.value)} />
+              </div>
+              <Segmented label={tr("মোবাইল ব্যাংকিংয়ের মাধ্যম")} options={MOBILE_METHODS} value={splitMethod} onChange={setSplitMethod} />
+            </div>
+          </Card>
+          <Button variant="ghost" full onClick={() => { setMode("single"); setAmount(null) }}>
+            {tr("একটি মাধ্যমে নিন")}
+          </Button>
+        </>
+      )}
 
       {settled.error ? (
         <Banner tone="danger">{settled.error}</Banner>
       ) : due > 0 ? (
         <Banner tone="warn">{tr("বাকি থাকছে")} {formatTaka(due)} {tr("— কাস্টমারের খাতায় উঠবে")}</Banner>
       ) : change > 0 ? (
-        <Banner tone="info">{tr("ফেরত দিন")} {formatTaka(change)}</Banner>
+        <div role="status" className="flex items-center justify-between rounded-xl bg-gold-soft px-4 py-3 text-ink">
+          <span className="text-[15px] font-semibold">{tr("ফেরত দিন")}</span>
+          <span className="text-2xl font-bold">{formatTaka(change)}</span>
+        </div>
       ) : (
         <Banner tone="info">{tr("হিসাব মিলেছে")}</Banner>
       )}
@@ -140,7 +212,7 @@ function PayScreen() {
         <Banner tone="danger">{tr("বাকির সীমা")} {formatTaka(limit.limit)}{tr("। এই বিলের পর")} {customer?.name}{tr("-এর বাকি হবে")} {formatTaka(limit.after)}{tr("। চাইলে তবুও বিল করতে পারেন।")}</Banner>
       ) : null}
 
-      <h2 className="text-[15px] font-semibold">{tr("কাস্টমার")} {due > 0 ? tr("(বাকির জন্য দরকার)") : tr("(ঐচ্ছিক)")}</h2>
+      <SectionTitle>{tr("কাস্টমার")} {due > 0 ? tr("(বাকির জন্য দরকার)") : tr("(ঐচ্ছিক)")}</SectionTitle>
       <RowList>
         {customer ? (
           <>
@@ -157,12 +229,6 @@ function PayScreen() {
       </RowList>
 
       {error ? <Banner tone="danger">{error}</Banner> : null}
-      <RowList>
-        <KeyValue label={tr("পণ্যের সংখ্যা")} value={tf("{p0}টি", { p0: (lines.length) })} />
-      </RowList>
-      <LinkButton href="/sell" variant="ghost" full>
-        {tr("বিলে ফিরে যান")}
-      </LinkButton>
 
       <CustomerPicker
         open={picking}
