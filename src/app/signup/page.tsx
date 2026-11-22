@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { Logo } from "@/components/logo"
-import { BagIcon, CosmeticsIcon, LockIcon, PersonIcon, PhoneIcon, PillIcon, StoreIcon } from "@/components/signup-icons"
+import { ShopKindPicker } from "@/components/shop-kind-picker"
+import { LockIcon, PersonIcon, PhoneIcon, StoreIcon } from "@/components/signup-icons"
 import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -14,15 +15,7 @@ import { PasswordField } from "@/components/ui/password-field"
 import { errorMessage } from "@/lib/api/client"
 import { registerStore } from "@/lib/api/endpoints"
 import type { StoreKind } from "@/lib/api/schemas"
-import { cn } from "@/lib/cn"
 import { normalizeBdPhone } from "@/lib/format/phone"
-
-// নতুন দোকানে তিনটি বিকল্প: ফার্মেসি (`pharmacy`), কসমেটিক্স (`cosmetics`), রিটেইল (`other`)।
-const KINDS: Array<{ value: StoreKind; label: string; hint: string; icon: ReactNode }> = [
-  { value: "pharmacy", label: "ফার্মেসি", hint: "ওষুধ — ব্যাচ ও মেয়াদের হিসাবসহ", icon: <PillIcon /> },
-  { value: "cosmetics", label: "কসমেটিক্স", hint: "মেকআপ, স্কিনকেয়ার, বিউটি পণ্য", icon: <CosmeticsIcon /> },
-  { value: "other", label: "রিটেইল", hint: "কাপড়, মুদি, জেনারেল স্টোর ইত্যাদি", icon: <BagIcon /> },
-]
 
 type Errors = Partial<Record<"storeName" | "ownerName" | "phone" | "password", string>>
 
@@ -97,28 +90,9 @@ export default function SignupPage() {
           <Step n={tr("১")} title={tr("দোকানের তথ্য")}>
             <Field id="storeName" label={tr("দোকানের নাম")} leading={<StoreIcon />} autoComplete="organization" hint={tr("রসিদে ও অ্যাপে এই নাম দেখাবে")} value={storeName} onChange={(e) => setStoreName(e.target.value)} error={errors.storeName} />
 
-            <fieldset className="space-y-2">
+            <fieldset className="space-y-2.5">
               <legend className="text-sm font-medium">{tr("দোকানের ধরন")}</legend>
-              <div role="radiogroup" aria-label={tr("দোকানের ধরন")} className="grid grid-cols-2 gap-3">
-                {KINDS.map((k) => {
-                  const on = storeKind === k.value
-                  return (
-                    <button
-                      key={k.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={on}
-                      aria-label={tr(k.label)}
-                      onClick={() => setStoreKind(k.value)}
-                      className={cn("flex min-h-[132px] flex-col items-start gap-2 rounded-2xl border-[1.5px] p-3.5 text-left transition-colors", k.value === "other" && "col-span-2 min-h-[104px]", on ? "border-brand bg-brand-soft" : "border-line bg-white active:bg-canvas")}
-                    >
-                      <span className={cn("grid size-11 place-items-center rounded-xl", on ? "bg-brand text-white" : "bg-chip text-brand-dark")}>{k.icon}</span>
-                      <span className="text-[16px] font-bold text-ink">{tr(k.label)}</span>
-                      <span className="text-[13px] leading-snug text-muted">{tr(k.hint)}</span>
-                    </button>
-                  )
-                })}
-              </div>
+              <ShopKindPicker value={storeKind} onChange={setStoreKind} />
             </fieldset>
           </Step>
 
