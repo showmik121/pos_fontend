@@ -115,9 +115,10 @@ textarea {
   position: relative;
   overflow: hidden;
   color: var(--color-ink);
-  background-image: radial-gradient(120% 90% at 100% 0%, rgb(255 255 255 / 0.32) 0%, rgb(255 255 255 / 0) 55%),
-    linear-gradient(135deg, #f7b500 0%, #f2a900 50%, #d98a00 100%);
-  box-shadow: 0 14px 28px -14px rgb(217 138 0 / 0.75);
+  /* নরম আমের সোনালি: আগের চেয়ে হালকা ও কম ঝলমলে, যাতে সংখ্যাগুলো আগে চোখে পড়ে */
+  background-image: radial-gradient(120% 90% at 100% 0%, rgb(255 255 255 / 0.22) 0%, rgb(255 255 255 / 0) 55%),
+    linear-gradient(135deg, #fbd763 0%, #f8c93f 55%, #f2b72c 100%);
+  box-shadow: 0 12px 24px -16px rgb(217 138 0 / 0.5);
 }
 .hero-card::after {
   content: "";
@@ -127,7 +128,7 @@ textarea {
   width: 150px;
   height: 150px;
   border-radius: 50%;
-  border: 22px solid rgb(255 255 255 / 0.18);
+  border: 22px solid rgb(255 255 255 / 0.09);
 }
 
 /* হোমের হেডার: ওপরে নরম আমের আভা, নিচে বাজারের দৃশ্য (রং ওপরের স্ট্যাটাস-বার ও ক্যানভাসের সাথে মেলানো) */

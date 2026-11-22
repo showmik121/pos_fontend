@@ -29,12 +29,12 @@ function Trend({ totals }: { totals: number[] }) {
         {totals.map((t, i) => (
           <span
             key={i}
-            className={cn("w-[9px] rounded-[3px]", i === totals.length - 1 ? "bg-brand" : "bg-brand-dark/25")}
+            className={cn("w-[9px] rounded-[3px]", i === totals.length - 1 ? "bg-brand/70" : "bg-ink/10")}
             style={{ height: Math.max(BAR_MIN_PX, Math.round((t / max) * BAR_MAX_PX)) }}
           />
         ))}
       </div>
-      <span className="text-[11px] font-semibold text-ink2">{tr("গত ৭ দিন")}</span>
+      <span className="text-[11px] font-medium text-ink2/70">{tr("গত ৭ দিন")}</span>
     </div>
   )
 }
