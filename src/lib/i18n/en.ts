@@ -778,4 +778,11 @@ export const EN: Record<string, string> = {
   "অ্যাকাউন্ট সাময়িক বন্ধ": "Account temporarily suspended",
   "মুছে ফেলার অপেক্ষায়": "Pending deletion",
   "মুছে ফেলা হয়েছে": "Deleted",
+  "সুবিধা": "Features",
+  "শুরুর ধাপ": "How it works",
+  "ইনস্টল": "Install",
+  "মূল মেনু": "Main menu",
+  "ফুটার মেনু": "Footer menu",
+  "আপনার দোকান যে ধরনেরই হোক": "Whatever kind of shop you run",
+  "ফার্মেসি, কসমেটিক্স বা অন্য যেকোনো দোকান — শুরুতে নিজের ধরন বেছে নিন।": "Pharmacy, cosmetics or any other shop — just pick your type to begin.",
 }

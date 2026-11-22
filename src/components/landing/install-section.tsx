@@ -31,11 +31,11 @@ export function InstallButton({ className, variant = "primary" }: { className?: 
 export function InstallSection() {
   const { mode } = useInstall(false)
   return (
-    <section className="mx-auto max-w-5xl px-5 pb-12 md:pb-16" aria-labelledby="install-title">
-      <div className="card-surface overflow-hidden rounded-3xl border border-line bg-white">
-        <div className="grid gap-6 p-6 md:grid-cols-[1fr_1.4fr] md:p-8">
+    <section id="install" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-14 sm:px-6 md:pb-20" aria-labelledby="install-title">
+      <div className="card-surface overflow-hidden rounded-[2rem] border border-line bg-white">
+        <div className="grid gap-8 p-6 md:grid-cols-[1fr_1.4fr] md:p-10">
           <div>
-            <h2 id="install-title" className="text-2xl font-extrabold tracking-tight text-ink">
+            <h2 id="install-title" className="text-[24px] font-extrabold leading-tight tracking-tight text-ink md:text-3xl">
               {tr("অ্যাপ স্টোর ছাড়াই, ব্রাউজার থেকে ইনস্টল")}
             </h2>
             <p className="mt-2 text-[15px] leading-relaxed text-ink2">{tr("ইনস্টল করলে হোম স্ক্রিন থেকে অ্যাপের মতো সরাসরি খুলবে, ইন্টারনেট না থাকলেও চলবে।")}</p>

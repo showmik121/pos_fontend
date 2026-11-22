@@ -6,10 +6,10 @@ import type { StoreKind } from "@/lib/api/schemas"
 import { cn } from "@/lib/cn"
 import { tr } from "@/lib/i18n"
 
-type Option = { value: StoreKind; label: string; hint: string; art: ReactNode; tile: string }
+export type Option = { value: StoreKind; label: string; hint: string; art: ReactNode; tile: string }
 
 // তিনটি বিকল্প: ফার্মেসি (`pharmacy`), কসমেটিক্স (`cosmetics`), রিটেইল (`other`)।
-const OPTIONS: Option[] = [
+export const SHOP_KIND_OPTIONS: Option[] = [
   { value: "pharmacy", label: "ফার্মেসি", hint: "ওষুধ — ব্যাচ ও মেয়াদের হিসাবসহ", art: <PharmacyArt />, tile: "from-[#e6f2df] to-[#cfe5c8]" },
   { value: "cosmetics", label: "কসমেটিক্স", hint: "মেকআপ, স্কিনকেয়ার, বিউটি পণ্য", art: <CosmeticsArt />, tile: "from-[#fde7ec] to-[#f9cdd8]" },
   { value: "other", label: "রিটেইল", hint: "কাপড়, মুদি, জেনারেল স্টোর ইত্যাদি", art: <RetailArt />, tile: "from-[#fff0c2] to-[#ffdf86]" },
@@ -31,14 +31,14 @@ function Check() {
  */
 export function ShopKindPicker({ value, onChange }: { value: StoreKind; onChange: (kind: StoreKind) => void }) {
   const refs = useRef<Array<HTMLButtonElement | null>>([])
-  const selected = OPTIONS.find((o) => o.value === value)
+  const selected = SHOP_KIND_OPTIONS.find((o) => o.value === value)
 
   function onKeyDown(e: KeyboardEvent<HTMLButtonElement>, index: number) {
     const step = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : e.key === "ArrowUp" || e.key === "ArrowLeft" ? -1 : 0
     if (step === 0) return
     e.preventDefault()
-    const next = (index + step + OPTIONS.length) % OPTIONS.length
-    const option = OPTIONS[next]
+    const next = (index + step + SHOP_KIND_OPTIONS.length) % SHOP_KIND_OPTIONS.length
+    const option = SHOP_KIND_OPTIONS[next]
     if (!option) return
     onChange(option.value)
     refs.current[next]?.focus()
@@ -47,7 +47,7 @@ export function ShopKindPicker({ value, onChange }: { value: StoreKind; onChange
   return (
     <div className="space-y-2">
       <div role="radiogroup" aria-label={tr("দোকানের ধরন")} className="grid grid-cols-3 gap-2">
-        {OPTIONS.map((o, i) => {
+        {SHOP_KIND_OPTIONS.map((o, i) => {
           const on = value === o.value
           return (
             <button

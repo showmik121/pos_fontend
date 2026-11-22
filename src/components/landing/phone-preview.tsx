@@ -11,7 +11,21 @@ const TABS = ["হোম", "বিল", "স্টক", "বাকি", "রি�
 
 export function PhonePreview() {
   return (
-    <div aria-hidden="true" className="relative mx-auto w-[17.5rem] select-none">
+    <div aria-hidden="true" className="relative mx-auto w-[17.5rem] select-none lg:w-[19rem]">
+      <div className="card-surface absolute -left-24 top-28 z-10 hidden items-center gap-2.5 rounded-2xl border border-line bg-white px-3.5 py-2.5 lg:flex">
+        <span className="size-2.5 rounded-full bg-danger" />
+        <div>
+          <div className="text-[13px] font-bold text-ink">{tr("স্টক কম")}</div>
+          <div className="text-[12px] text-muted">{tr("৩টি পণ্য")}</div>
+        </div>
+      </div>
+      <div className="card-surface absolute -right-20 bottom-32 z-10 hidden items-center gap-2.5 rounded-2xl border border-line bg-white px-3.5 py-2.5 lg:flex">
+        <span className="size-2.5 rounded-full bg-gold" />
+        <div>
+          <div className="text-[13px] font-bold text-ink">{tr("মেয়াদ কাছে")}</div>
+          <div className="text-[12px] text-muted">{tr("৩০ দিনের মধ্যে ২টি ব্যাচ")}</div>
+        </div>
+      </div>
       <div className="relative overflow-hidden rounded-[2.4rem] border-[7px] border-ink bg-canvas shadow-[0_30px_60px_-20px_rgb(107_68_35/0.55)]">
         <div className="mx-auto mt-2 h-4 w-20 rounded-full bg-ink" />
         <div className="space-y-3 px-3.5 pb-3 pt-3">
