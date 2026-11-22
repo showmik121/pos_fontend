@@ -2,7 +2,7 @@
 
 import { tr, tf } from "@/lib/i18n"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
 import { Scanner } from "@/components/scanner"
@@ -26,6 +26,16 @@ export default function SellPage() {
   const [scanning, setScanning] = useState(false)
   const [notFound, setNotFound] = useState<string | null>(null)
   const [expiredFor, setExpiredFor] = useState<Product | null>(null)
+
+  // হোমের স্ক্যান বোতাম (/sell?scan=1) থেকে এলে সরাসরি স্ক্যানার খোলে; ঠিকানা থেকে চিহ্নটা সরিয়ে দেয়, যাতে রিফ্রেশে আবার না খোলে
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("scan") !== "1") return
+    params.delete("scan")
+    const rest = params.toString()
+    window.history.replaceState(null, "", `${window.location.pathname}${rest ? `?${rest}` : ""}`)
+    setScanning(true)
+  }, [])
 
   const lines = useMemo(
     () =>

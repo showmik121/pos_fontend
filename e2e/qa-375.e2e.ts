@@ -88,11 +88,19 @@ async function inspect(page: Page, screen: string, extra: Pick<Finding, "console
       return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && cs.display !== "none"
     }
     const label = (el: Element) => ((el.getAttribute("aria-label") || (el as HTMLElement).innerText || el.getAttribute("placeholder") || el.getAttribute("href") || el.tagName) + "").trim().replace(/\s+/g, " ").slice(0, 40)
+    // ইচ্ছাকৃত পাশে-টানা সারি (যেমন হোমের "নজর দিন" কার্ড): নিজে পর্দার ভেতরে থেকে ভেতরের জিনিস কেটে রাখে, তাই উপচে পড়া নয়
+    const insideScroller = (el: Element) => {
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        const cs = getComputedStyle(p)
+        if ((cs.overflowX === "auto" || cs.overflowX === "scroll") && p.getBoundingClientRect().right <= maxW + 1) return true
+      }
+      return false
+    }
     const overflow: string[] = []
     for (const el of Array.from(document.querySelectorAll("body *"))) {
       if (!vis(el)) continue
       const r = el.getBoundingClientRect()
-      const fixedOrClipped = getComputedStyle(el).position === "fixed"
+      const fixedOrClipped = getComputedStyle(el).position === "fixed" || insideScroller(el)
       if (!fixedOrClipped && r.right > maxW + 1) overflow.push(`${el.tagName.toLowerCase()} "${label(el)}" ডান-প্রান্ত ${Math.round(r.right)}px`)
     }
     if (document.documentElement.scrollWidth > maxW) overflow.unshift(`পাতা অনুভূমিক স্ক্রলযোগ্য: scrollWidth ${document.documentElement.scrollWidth}px`)

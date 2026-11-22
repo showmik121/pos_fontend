@@ -21,6 +21,8 @@
   --color-ink2: #4a3f26;
   --color-amber: #a8660b;
   --color-line-strong: #bfaf85;
+  --color-sticker-tile: #f1eee6; /* ত্রিমাত্রিক আইকনের গোল টাইল */
+  --color-alert: #e8452c; /* ছোট লাল ব্যাজ: শুধু খবর থাকলে */
   --font-sans: "Noto Sans Bengali", system-ui, sans-serif;
   /* পর্দার কলামের প্রস্থ: ফোনে ৪৮০px, ট্যাবলেটে বড়, ডেস্কটপে আরও বড় */
   --app-col: 30rem;
@@ -154,4 +156,35 @@ textarea {
 }
 .home-hero-space {
   aspect-ratio: 2 / 1;
+}
+
+/* চাপলে ছোট হওয়া: ট্যাপে সাড়া টের পাওয়ার জন্য (৮০ms); অ্যানিমেশন কমানো থাকলে শুধু ছোট হওয়া বন্ধ, রং বদল থাকে */
+.press {
+  transition: transform 80ms ease-out, background-color 80ms ease-out;
+}
+.press:active {
+  transform: scale(0.95);
+}
+@media (prefers-reduced-motion: reduce) {
+  .press {
+    transition: background-color 80ms ease-out;
+  }
+  .press:active {
+    transform: none;
+  }
+}
+/* নজর-দিন কার্ডের সারি: পাশে টানা যায়, কার্ডে এসে থামে; স্ক্রলবার লুকানো */
+.snap-row {
+  display: flex;
+  gap: 0.625rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 1rem;
+  scrollbar-width: none;
+}
+.snap-row::-webkit-scrollbar {
+  display: none;
+}
+.snap-row > * {
+  scroll-snap-align: start;
 }
