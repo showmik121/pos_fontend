@@ -150,6 +150,8 @@ test("দোকান খোলা থেকে বাকি আদায় প
     const kinds = new Set(pushed.values())
     for (const k of ["product_upserted", "stock_in", "customer_upserted", "sale_completed", "due_received"]) expect(kinds).toContain(k)
   }
+  // সিংক বদলের ৩ সেকেন্ড পরে চলে; আসল সার্ভারে আগে কোনো অপেক্ষা ছিল না, তাই টেস্ট শেষ হয়ে গেলে পুশ দেখা যেত না
+  await expect.poll(() => seen.some((s) => s.startsWith("POST /v1/sync/push")), { timeout: 15_000 }).toBe(true)
   // শুধু প্রত্যাশিত API ডাকা হয়েছে
   expect(new Set(seen.map((s) => s.replace(/ .*\?.*/, "")))).toEqual(
     new Set(["POST /v1/auth/register-store", "GET /v1/me", "POST /v1/sync/register-device", "POST /v1/sync/push", "GET /v1/sync/pull"]),
