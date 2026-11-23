@@ -96,6 +96,10 @@ export function friendlyError(e: unknown): string {
         return "Enter the transaction ID (only cash payments can leave it empty)."
       case "paid_in_future":
         return "The payment time cannot be in the future."
+      case "email_taken":
+        return "An admin with this email already exists."
+      case "last_super_admin":
+        return "The last active super admin cannot be demoted or deactivated. Make another super admin first."
       case "invalid_credentials":
         return "Email, password or code is not correct."
       case "unauthorized":
