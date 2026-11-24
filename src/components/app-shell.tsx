@@ -9,7 +9,6 @@ import { useEffect, type ReactNode } from "react"
 import { useAuth } from "./auth-provider"
 import { BottomNav } from "./bottom-nav"
 import { useDb } from "./db-provider"
-import { BackupReminder } from "./backup-reminder"
 import { InstallBanner } from "./install-banner"
 import { TenantBanner } from "./tenant-notice"
 import { Icon } from "./ui/icons"
@@ -121,7 +120,6 @@ export function AppShell({ title, backHref, action, nav = false, footer, art = n
       ) : null}
       {/* নিচের মেনুর বিল-বোতাম মেনুর ২২px ওপরে ওঠে; শেষ কার্ড যেন তার নিচে না পড়ে, তাই ছবি না থাকলে বাড়তি ফাঁক */}
       <main className={cn("flex-1 space-y-4 p-4", nav && !art && "pb-12")}>
-        {nav ? <BackupReminder /> : null}
         {nav ? <InstallBanner /> : null}
         {children}
       </main>

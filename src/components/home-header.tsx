@@ -1,6 +1,9 @@
+"use client"
+
 import type { StoreKind } from "@/lib/api/schemas"
 import { tr } from "@/lib/i18n"
 import Link from "next/link"
+import { useBackupDue } from "./backup-reminder"
 import { Icon } from "./ui/icons"
 
 interface HomeHeaderProps {
@@ -12,6 +15,7 @@ interface HomeHeaderProps {
 
 /** হোমের ছবিওয়ালা হেডার: শুভেচ্ছা, দোকানের নাম, প্রোফাইল বোতাম (সেটিংসে যায়); নিচে জলরঙের শহুরে দৃশ্য (ফার্মেসি, কসমেটিক্স ও জেনারেল স্টোরের ছবি আলাদা) */
 export function HomeHeader({ storeName, greeting, kind }: HomeHeaderProps) {
+  const backupDue = useBackupDue()
   return (
     <header className="home-hero no-print" data-kind={kind === "pharmacy" || kind === "cosmetics" ? kind : "retail"}>
       <div className="relative z-10 flex items-center gap-3 px-4 pb-2 pt-5">
@@ -26,10 +30,11 @@ export function HomeHeader({ storeName, greeting, kind }: HomeHeaderProps) {
         </div>
         <Link
           href="/settings"
-          aria-label={tr("প্রোফাইল ও সেটিংস")}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-white/70 text-ink shadow-sm active:bg-white"
+          aria-label={backupDue ? tr("প্রোফাইল ও সেটিংস — আজকের ব্যাকআপ বাকি") : tr("প্রোফাইল ও সেটিংস")}
+          className="relative grid size-11 shrink-0 place-items-center rounded-full bg-white/70 text-ink shadow-sm active:bg-white"
         >
           <Icon name="user" size={22} />
+          {backupDue ? <span aria-hidden="true" className="absolute right-1 top-1 size-3 rounded-full bg-amber-500 ring-2 ring-white" /> : null}
         </Link>
       </div>
       <div aria-hidden="true" className="home-hero-space" />
