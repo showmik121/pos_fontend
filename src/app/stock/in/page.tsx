@@ -16,6 +16,8 @@ import { SearchBox } from "@/components/ui/inputs"
 import { Segmented } from "@/components/ui/segmented"
 import { useSessionInfo } from "@/lib/hooks/use-session"
 import { parseMonthYear } from "@/lib/domain/dates"
+import { formatExpiryInput, normalizeExpiryInput } from "@/lib/domain/expiry-input"
+import { addToQty } from "@/lib/domain/qty-input"
 import { DomainError, domainMessage } from "@/lib/domain/errors"
 import { formatCount, formatTaka, parseTaka, takaInputValue } from "@/lib/domain/money"
 import type { StockUnit } from "@/lib/domain/units"
@@ -24,6 +26,9 @@ import { stockIn } from "@/lib/store/actions"
 import { searchProducts } from "@/lib/store/search"
 import { newProductFromScanHref } from "@/lib/store/flow"
 import { findByBarcode, findProduct, totalStock } from "@/lib/store/selectors"
+
+/** পরিমাণ দ্রুত বাড়ানোর বোতাম */
+const QTY_STEPS = [1, 5, 10, 20, 50] as const
 
 const UNITS = [
   { value: "piece", label: "পিস" },
@@ -39,8 +44,11 @@ function StockInForm() {
   const { isPharmacy } = useSessionInfo()
   const [productId, setProductId] = useState<string | null>(params.get("product"))
   const [query, setQuery] = useState("")
-  const [scanning, setScanning] = useState(false)
+  // ?scan=1 হলে পাতা খুলেই ক্যামেরা চালু (একটানা অনেক পণ্যের স্টক তোলার সময় সুবিধা)
+  const [scanning, setScanning] = useState(params.get("scan") === "1")
   const [scanMiss, setScanMiss] = useState<string | null>(null)
+  // সর্বশেষ যোগ হওয়া পণ্য: "সেভ করে পরের পণ্য"-র পর নিশ্চিতকরণ দেখায়
+  const [lastAdded, setLastAdded] = useState<string | null>(null)
 
   const [unit, setUnit] = useState<StockUnit>("piece")
   const [qty, setQty] = useState("")
@@ -70,10 +78,11 @@ function StockInForm() {
   if (!product) {
     return (
       <AppShell title={tr("স্টক যোগ")} backHref="/stock">
-        <SearchBox id="si-search" label={tr("পণ্য খুঁজুন")} placeholder={tr("কোন পণ্যের স্টক যোগ করবেন?")} value={query} onChange={(e) => setQuery(e.target.value)} />
-        <Button variant="secondary" full onClick={() => setScanning(true)}>
+        {lastAdded ? <Banner tone="info">{lastAdded}</Banner> : null}
+        <Button full onClick={() => setScanning(true)}>
           <Icon name="scan" /> {tr("বারকোড স্ক্যান করুন")}
         </Button>
+        <SearchBox id="si-search" label={tr("পণ্য খুঁজুন")} placeholder={tr("কোন পণ্যের স্টক যোগ করবেন?")} value={query} onChange={(e) => setQuery(e.target.value)} />
         {scanMiss ? (
           <Banner tone="warn">
             <div className="space-y-2">
@@ -112,7 +121,9 @@ function StockInForm() {
     )
   }
 
-  const submit = () => {
+  /** next = true হলে সেভের পর পরের পণ্যের জন্য ক্যামেরা খোলে; নইলে পণ্যের পাতায় যায় */
+  const submit = (next: boolean) => {
+    if (!product) return
     setError(null)
     const q = Number(toAsciiDigits(qty))
     if (!Number.isInteger(q) || q < 1) return setError(tr("পরিমাণ ১ বা তার বেশি পূর্ণসংখ্যা দিন"))
@@ -121,20 +132,37 @@ function StockInForm() {
     if (costPoisha == null || (price.trim() && pricePoisha == null)) return setError(tr("টাকার পরিমাণ সঠিক নয়"))
     let expiryDate: string | null = null
     if (expiry.trim()) {
-      expiryDate = parseMonthYear(expiry)
+      expiryDate = parseMonthYear(normalizeExpiryInput(expiry))
       if (!expiryDate) return setError(tr("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)"))
     }
     try {
       update((d) => stockIn(d, { productId: product.id, qty: q, unit, batchNo, expiryDate, costPoisha, pricePoisha, requireBatchAndExpiry: isPharmacy }, new Date()))
-      router.replace(`/products/detail?id=${product.id}`)
     } catch (err) {
-      setError(err instanceof DomainError ? err.message : domainMessage(err))
+      return setError(err instanceof DomainError ? err.message : domainMessage(err))
     }
+    if (!next) return router.replace(`/products/detail?id=${product.id}`)
+    setLastAdded(tf("✓ {p0}: {p1} যোগ হলো। পরের পণ্য বাছুন।", { p0: product.name, p1: `${formatCount(q)} ${unit === "carton" ? tr("কার্টন") : tr("পিস")}` }))
+    setProductId(null)
+    setQty("")
+    setBatchNo("")
+    setExpiry("")
+    setScanMiss(null)
+    setQuery("")
+    setScanning(true)
   }
 
   const perCarton = product.cartonSize > 1
   return (
-    <AppShell title={tr("স্টক যোগ")} backHref="/stock" footer={<Button full onClick={submit} disabled={readOnlyShop}>{tr("স্টকে যোগ করুন")}</Button>}>
+    <AppShell title={tr("স্টক যোগ")} backHref="/stock" footer={
+        <div className="flex gap-2">
+          <Button variant="secondary" className="flex-1" onClick={() => submit(true)} disabled={readOnlyShop}>
+            {tr("সেভ করে পরের পণ্য")}
+          </Button>
+          <Button className="flex-1" onClick={() => submit(false)} disabled={readOnlyShop}>
+            {tr("স্টকে যোগ করুন")}
+          </Button>
+        </div>
+      }>
       <Card className="px-4 py-3">
         <div className="font-medium">{product.name}</div>
         <div className="text-[13px] text-muted">
@@ -157,10 +185,18 @@ function StockInForm() {
         inputMode="numeric"
         value={qty}
         onChange={(e) => setQty(e.target.value)}
+        autoFocus
       />
+      <div className="flex flex-wrap gap-2" role="group" aria-label={tr("দ্রুত পরিমাণ যোগ")}>
+        {QTY_STEPS.map((n) => (
+          <Button key={n} variant="secondary" className="min-w-14" onClick={() => setQty((q) => addToQty(q, n))}>
+            +{formatCount(n)}
+          </Button>
+        ))}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <Field id="si-batch" label={isPharmacy ? tr("ব্যাচ নম্বর") : tr("ব্যাচ (ঐচ্ছিক)")} value={batchNo} onChange={(e) => setBatchNo(e.target.value)} />
-        <Field id="si-expiry" label={isPharmacy ? tr("মেয়াদ (মাস/বছর)") : tr("মেয়াদ (ঐচ্ছিক)")} placeholder={tr("০৬/২০২৭")} inputMode="numeric" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+        <Field id="si-expiry" label={isPharmacy ? tr("মেয়াদ (মাস/বছর)") : tr("মেয়াদ (ঐচ্ছিক)")} placeholder={tr("০৬/২০২৭")} inputMode="numeric" value={expiry} onChange={(e) => setExpiry(formatExpiryInput(e.target.value))} onBlur={() => setExpiry((x) => normalizeExpiryInput(x))} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field id="si-cost" label={unit === "carton" ? tr("ক্রয়মূল্য (প্রতি কার্টন)") : tr("ক্রয়মূল্য (প্রতি পিস)")} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
