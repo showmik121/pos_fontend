@@ -2,6 +2,7 @@
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useState, type FormEvent } from "react"
 import { btnCls, btnPrimaryCls, ErrorNote, Field, inputCls } from "@/components/ui"
+import { QrCode } from "@/components/qr-code"
 import { call, friendlyError } from "@/lib/api"
 import { useSession } from "@/lib/session"
 
@@ -105,10 +106,14 @@ function SignIn() {
       {step.kind === "enroll" && (
         <div className="flex flex-col gap-4">
           <p className="text-sm">Two-factor sign-in is required. Add this account to an authenticator app, then enter the 6-digit code.</p>
-          {step.secret ? (
+          {step.secret && step.uri ? (
             <>
+              <div className="flex flex-col items-center gap-2">
+                <QrCode value={step.uri} label="QR code to add this account to your authenticator app" />
+                <p className="text-center text-xs text-[var(--muted)]">Scan this with your authenticator app (Google Authenticator, Microsoft Authenticator, Authy…).</p>
+              </div>
               <p className="text-sm">
-                Setup key: <code className="break-all font-mono">{step.secret}</code>
+                Can’t scan? Enter this setup key instead: <code className="break-all font-mono">{step.secret}</code>
               </p>
               <p className="break-all text-xs text-[var(--muted)]">Or open this link on the device with your authenticator: {step.uri}</p>
               <form onSubmit={onEnrollConfirm} className="flex flex-col gap-4">
