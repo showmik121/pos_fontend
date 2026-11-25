@@ -26,6 +26,11 @@ export const productSchema = z.looseObject({
   pricePoisha: poisha,
   minStock: count,
   category: text(2000),
+  // ফার্মেসির ঐচ্ছিক ঘর (পুরনো ডেটা ও অন্য ডিভাইসে নেই)
+  generic: text(300).optional(),
+  strength: text(100).optional(),
+  form: z.enum(["tablet", "capsule", "syrup", "injection", "drop", "cream", "inhaler", "saline", "other"]).optional(),
+  company: text(300).optional(),
   open: z.boolean(),
   createdAt: text(40),
 })

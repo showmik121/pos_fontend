@@ -2,7 +2,7 @@ import { parseMonthYear } from "../domain/dates"
 import { parseTaka } from "../domain/money"
 import { toAsciiDigits } from "../format/bn"
 import { findByBarcode } from "./selectors"
-import type { Db, UnitLabel } from "./types"
+import { DOSAGE_FORMS, PHARMA_TEXT_MAX, type Db, type DosageForm, type UnitLabel } from "./types"
 
 // Excel থেকে "CSV UTF-8" হিসেবে সেভ করা ফাইল পড়ার জন্য। কোটেশন, কমা, নতুন লাইন সামলায়।
 export function parseCsv(text: string): string[][] {
@@ -43,9 +43,9 @@ export function parseCsv(text: string): string[][] {
 export const MAX_IMPORT_BYTES = 1_000_000
 export const MAX_IMPORT_ROWS = 5000
 
-export const IMPORT_HEADERS = ["barcode", "name", "cost", "price", "unit", "carton_size", "min_stock", "category", "batch", "expiry", "qty"] as const
+export const IMPORT_HEADERS = ["barcode", "name", "cost", "price", "unit", "carton_size", "min_stock", "category", "batch", "expiry", "qty", "generic", "strength", "form", "company"] as const
 
-export const IMPORT_TEMPLATE_CSV = `${IMPORT_HEADERS.join(",")}\n8901234567890,পন্ডস ক্রিম ১০০ মি.লি.,200,240,piece,10,5,স্কিন কেয়ার,B2407,06/2027,30\n`
+export const IMPORT_TEMPLATE_CSV = `${IMPORT_HEADERS.join(",")}\n8901234567890,পন্ডস ক্রিম ১০০ মি.লি.,200,240,piece,10,5,স্কিন কেয়ার,B2407,06/2027,30,,,,\n8901234567891,Napa,1,1.2,strip,10,50,ওষুধ,B1,06/2027,100,Paracetamol,500 mg,tablet,Beximco\n`
 
 export interface ImportRow {
   line: number
@@ -60,12 +60,22 @@ export interface ImportRow {
   batchNo: string
   expiryDate: string | null
   qty: number
+  generic?: string
+  strength?: string
+  form?: DosageForm
+  company?: string
 }
 
 export interface ImportRowError {
   line: number
   message: string
 }
+
+const FORM_ALIASES: Record<string, DosageForm> = {
+  tablet: "tablet", tab: "tablet", capsule: "capsule", cap: "capsule", syrup: "syrup", suspension: "syrup", injection: "injection", inj: "injection",
+  drop: "drop", drops: "drop", cream: "cream", ointment: "cream", gel: "cream", inhaler: "inhaler", saline: "saline", powder: "saline", other: "other",
+}
+for (const [key, label] of Object.entries(DOSAGE_FORMS)) FORM_ALIASES[label.toLowerCase()] = key as DosageForm
 
 const UNIT_ALIASES: Record<string, UnitLabel> = { piece: "piece", pcs: "piece", "পিস": "piece", strip: "strip", "পাতা": "strip", box: "box", "বক্স": "box" }
 
@@ -121,7 +131,15 @@ export function validateImport(csvRows: string[][], db: Db): { ok: ImportRow[]; 
     const qty = qtyText ? toInt(qtyText) : 0
     if (qty == null) return fail("পরিমাণ সঠিক নয়")
 
-    ok.push({ line, barcode, name, costPoisha: cost, pricePoisha: price, unit, cartonSize: carton, minStock: min, category: get(r, "category"), batchNo: get(r, "batch"), expiryDate: expiry, qty })
+    const generic = get(r, "generic")
+    const strength = get(r, "strength")
+    const company = get(r, "company")
+    if (generic.length > PHARMA_TEXT_MAX.generic || strength.length > PHARMA_TEXT_MAX.strength || company.length > PHARMA_TEXT_MAX.company) return fail("জেনেরিক/শক্তি/কোম্পানির লেখা বেশি লম্বা")
+    const formText = get(r, "form").toLowerCase()
+    const form = formText ? (Object.prototype.hasOwnProperty.call(FORM_ALIASES, formText) ? FORM_ALIASES[formText] : undefined) : undefined
+    if (formText && !form) return fail("ধরন হবে tablet / capsule / syrup / injection / drop / cream / inhaler / saline / other")
+
+    ok.push({ line, barcode, name, costPoisha: cost, pricePoisha: price, unit, cartonSize: carton, minStock: min, category: get(r, "category"), batchNo: get(r, "batch"), expiryDate: expiry, qty, generic, strength, form, company })
   })
   return { ok, errors }
 }

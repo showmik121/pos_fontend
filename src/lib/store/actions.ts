@@ -8,7 +8,7 @@ import { normalizeBdPhone } from "../format/phone"
 import type { ImportRow } from "./csv"
 import { newId } from "./db"
 import { customerBalance, findByBarcode, findProduct } from "./selectors"
-import type { Batch, Customer, Db, Draft, LedgerEntry, Product, RemovedBatch, Sale, SaleLine, UnitLabel } from "./types"
+import { DOSAGE_FORMS, PHARMA_TEXT_MAX, type Batch, type Customer, type Db, type Draft, type DosageForm, type LedgerEntry, type Product, type RemovedBatch, type Sale, type SaleLine, type UnitLabel } from "./types"
 
 // সব ফাংশন বিশুদ্ধ: পুরনো Db বদলায় না, নতুন Db ফেরত দেয়। ব্যর্থ হলে DomainError ছোঁড়ে।
 
@@ -20,8 +20,26 @@ export interface ProductInput {
   pricePoisha: number
   minStock: number
   category: string
+  /** ফার্মেসির ঐচ্ছিক ঘর; ফাঁকা/না দিলে পণ্যে লেখা হয় না */
+  generic?: string
+  strength?: string
+  form?: DosageForm | null
+  company?: string
   barcode: string | null
   open: boolean
+}
+
+/** ঐচ্ছিক ওষুধের তথ্য ছেঁটে নেয়; ফাঁকা ঘর বাদ যায় যাতে পুরনো পণ্যের আকার বদলায় না */
+function pharmaFields(input: Pick<ProductInput, "generic" | "strength" | "form" | "company">): Pick<Product, "generic" | "strength" | "form" | "company"> {
+  const out: Pick<Product, "generic" | "strength" | "form" | "company"> = {}
+  const generic = input.generic?.trim()
+  const strength = input.strength?.trim()
+  const company = input.company?.trim()
+  if (generic) out.generic = generic
+  if (strength) out.strength = strength
+  if (input.form) out.form = input.form
+  if (company) out.company = company
+  return out
 }
 
 function validateProductFields(input: ProductInput): void {
@@ -30,6 +48,10 @@ function validateProductFields(input: ProductInput): void {
   requireNonNegativeInt(input.costPoisha, "ক্রয়মূল্য")
   requirePositiveInt(input.cartonSize, "কার্টনে পিসের সংখ্যা")
   requireNonNegativeInt(input.minStock, "সর্বনিম্ন স্টক")
+  if ((input.generic?.trim().length ?? 0) > PHARMA_TEXT_MAX.generic) throw new DomainError("generic_too_long", tr("জেনেরিক নাম বেশি লম্বা"))
+  if ((input.strength?.trim().length ?? 0) > PHARMA_TEXT_MAX.strength) throw new DomainError("strength_too_long", tr("শক্তি বেশি লম্বা (যেমন ৫০০ mg)"))
+  if ((input.company?.trim().length ?? 0) > PHARMA_TEXT_MAX.company) throw new DomainError("company_too_long", tr("কোম্পানির নাম বেশি লম্বা"))
+  if (input.form && !Object.prototype.hasOwnProperty.call(DOSAGE_FORMS, input.form)) throw new DomainError("form_invalid", tr("ওষুধের ধরন সঠিক নয়"))
 }
 
 export function createProduct(db: Db, input: ProductInput, now: Date): { db: Db; product: Product } {
@@ -46,6 +68,7 @@ export function createProduct(db: Db, input: ProductInput, now: Date): { db: Db;
     pricePoisha: input.pricePoisha,
     minStock: input.minStock,
     category: input.category.trim(),
+    ...pharmaFields(input),
     open: input.open && !code,
     createdAt: now.toISOString(),
   }
@@ -57,9 +80,12 @@ export function updateProduct(db: Db, id: string, input: Omit<ProductInput, "bar
   if (!findProduct(db, id)) throw new DomainError("not_found", tr("পণ্যটি পাওয়া যায়নি"))
   return {
     ...db,
-    products: db.products.map((p) =>
-      p.id === id ? { ...p, name: input.name.trim(), unit: input.unit, cartonSize: input.cartonSize, costPoisha: input.costPoisha, pricePoisha: input.pricePoisha, minStock: input.minStock, category: input.category.trim() } : p,
-    ),
+    products: db.products.map((p) => {
+      if (p.id !== id) return p
+      // পুরনো ওষুধের তথ্য সরিয়ে নতুনটা বসে, তাই ঘর ফাঁকা করলে তথ্য মুছে যায়
+      const { generic: _g, strength: _s, form: _f, company: _c, ...rest } = p
+      return { ...rest, name: input.name.trim(), unit: input.unit, cartonSize: input.cartonSize, costPoisha: input.costPoisha, pricePoisha: input.pricePoisha, minStock: input.minStock, category: input.category.trim(), ...pharmaFields(input) }
+    }),
   }
 }
 
@@ -343,7 +369,7 @@ export function importProducts(db: Db, rows: readonly ImportRow[], now: Date): D
   for (const r of rows) {
     const created = createProduct(
       next,
-      { name: r.name, unit: r.unit, cartonSize: r.cartonSize, costPoisha: r.costPoisha, pricePoisha: r.pricePoisha, minStock: r.minStock, category: r.category, barcode: r.barcode || null, open: !r.barcode },
+      { name: r.name, unit: r.unit, cartonSize: r.cartonSize, costPoisha: r.costPoisha, pricePoisha: r.pricePoisha, minStock: r.minStock, category: r.category, generic: r.generic, strength: r.strength, form: r.form, company: r.company, barcode: r.barcode || null, open: !r.barcode },
       now,
     )
     next = created.db

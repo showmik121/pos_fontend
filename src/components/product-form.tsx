@@ -13,8 +13,9 @@ import { domainMessage } from "@/lib/domain/errors"
 import { parseMonthYear } from "@/lib/domain/dates"
 import { parseTaka, takaInputValue } from "@/lib/domain/money"
 import type { ProductInput } from "@/lib/store/actions"
-import { UNIT_LABELS, type Product, type UnitLabel } from "@/lib/store/types"
+import { DOSAGE_FORMS, PHARMA_TEXT_MAX, UNIT_LABELS, type DosageForm, type Product, type UnitLabel } from "@/lib/store/types"
 
+const FORM_KEYS = Object.keys(DOSAGE_FORMS) as DosageForm[]
 const UNIT_OPTIONS = (Object.keys(UNIT_LABELS) as UnitLabel[]).map((value) => ({ value, label: UNIT_LABELS[value] }))
 
 interface Props {
@@ -30,6 +31,8 @@ interface Props {
   withInitialStock?: boolean
   /** ওষুধের দোকানে মেয়াদের ঐচ্ছিক ঘরও দেখায় */
   showExpiry?: boolean
+  /** ফার্মেসি: জেনেরিক নাম, শক্তি, ধরন ও কোম্পানির ঘর দেখায় */
+  pharmacy?: boolean
   onSubmit: (input: ProductInput, stock: InitialStock) => void
 }
 
@@ -40,7 +43,7 @@ export interface InitialStock {
 }
 
 /** নতুন পণ্য / খোলা পণ্য / পণ্য সম্পাদনার ফর্ম */
-export function ProductForm({ initial, initialBarcode = "", open = false, defaultMinStock, submitLabel, withInitialStock = false, showExpiry = false, onSubmit }: Props) {
+export function ProductForm({ initial, initialBarcode = "", open = false, defaultMinStock, submitLabel, withInitialStock = false, showExpiry = false, pharmacy = false, onSubmit }: Props) {
   const editing = Boolean(initial)
   const [name, setName] = useState(initial?.name ?? "")
   const [barcode, setBarcode] = useState(initialBarcode)
@@ -50,6 +53,10 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
   const [carton, setCarton] = useState(initial ? String(initial.cartonSize) : "1")
   const [minStock, setMinStock] = useState(String(initial?.minStock ?? defaultMinStock))
   const [category, setCategory] = useState(initial?.category ?? "")
+  const [generic, setGeneric] = useState(initial?.generic ?? "")
+  const [strength, setStrength] = useState(initial?.strength ?? "")
+  const [form, setForm] = useState<DosageForm | "">(initial?.form ?? "")
+  const [company, setCompany] = useState(initial?.company ?? "")
   const [error, setError] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
   const [stockQty, setStockQty] = useState("")
@@ -83,7 +90,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
       if (!expiryDate) return setError(tr("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)"))
     }
     try {
-      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate })
+      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, generic, strength, form: form || null, company, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate })
     } catch (err) {
       setError(domainMessage(err))
     }
@@ -92,7 +99,29 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
   return (
     <div className="space-y-4">
       {open ? <Banner tone="info">{tr("বারকোড ছাড়া পণ্য (যেমন খোলা ওষুধ, লুজ আইটেম)। নাম দিয়ে খুঁজে বিক্রি হবে।")}</Banner> : null}
-      <Field id="p-name" label={tr("পণ্যের নাম")} hint={tr("ইংরেজি বা বাংলা — যেভাবে লেখা সহজ, যেমন Pond's Cream")} lang="en" autoCapitalize="words" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+      <Field id="p-name" label={tr("পণ্যের নাম")} hint={pharmacy ? tr("ব্র্যান্ড নাম, ইংরেজি বা বাংলা — যেমন Napa") : tr("ইংরেজি বা বাংলা — যেভাবে লেখা সহজ, যেমন Pond's Cream")} lang="en" autoCapitalize="words" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+      {pharmacy ? (
+        <>
+          <Field id="p-generic" label={tr("জেনেরিক নাম (ঐচ্ছিক)")} hint={tr("যেমন Paracetamol — বাংলা বা ইংরেজি, দুটো দিয়েই খোঁজা যাবে")} maxLength={PHARMA_TEXT_MAX.generic} autoCapitalize="words" value={generic} onChange={(e) => setGeneric(e.target.value)} autoComplete="off" />
+          <div className="grid grid-cols-2 gap-3">
+            <Field id="p-strength" label={tr("শক্তি (ঐচ্ছিক)")} placeholder="500 mg" maxLength={PHARMA_TEXT_MAX.strength} value={strength} onChange={(e) => setStrength(e.target.value)} autoComplete="off" />
+            <div className="space-y-1.5">
+              <label htmlFor="p-form" className="block text-sm font-medium text-ink">
+                {tr("ধরন (ঐচ্ছিক)")}
+              </label>
+              <select id="p-form" value={form} onChange={(e) => setForm(e.target.value as DosageForm | "")} className="min-h-12 w-full rounded-xl border border-line-strong bg-white px-3 text-base text-ink focus:border-brand focus:outline-2 focus:outline-brand/30">
+                <option value="">{tr("— বাছুন —")}</option>
+                {FORM_KEYS.map((k) => (
+                  <option key={k} value={k}>
+                    {tr(DOSAGE_FORMS[k])}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <Field id="p-company" label={tr("কোম্পানি (ঐচ্ছিক)")} hint={tr("যেমন Square, Beximco")} maxLength={PHARMA_TEXT_MAX.company} autoCapitalize="words" value={company} onChange={(e) => setCompany(e.target.value)} autoComplete="off" />
+        </>
+      ) : null}
       {!open && !editing ? (
         <Field
           id="p-barcode"

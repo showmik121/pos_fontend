@@ -12,6 +12,7 @@ import { todayIso } from "@/lib/domain/dates"
 import { formatCount, formatTaka } from "@/lib/domain/money"
 import { addToCart } from "@/lib/store/actions"
 import { searchProducts } from "@/lib/store/search"
+import { withDetail } from "@/components/product-subtitle"
 import { sellableStock } from "@/lib/store/selectors"
 
 export default function SellSearchPage() {
@@ -39,7 +40,7 @@ export default function SellSearchPage() {
               <Row
                 key={p.id}
                 title={p.name}
-                subtitle={tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: (formatCount(sellable)) })}
+                subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: (formatCount(sellable)) }))}
                 right={sellable <= 0 ? <Pill tone="danger">{tr("স্টক নেই")}</Pill> : undefined}
                 onClick={
                   sellable <= 0

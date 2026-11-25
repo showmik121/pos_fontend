@@ -3,6 +3,21 @@ import type { BillDiscount, MobileMethod, Payment } from "../domain/cart"
 export type UnitLabel = "piece" | "strip" | "box"
 export const UNIT_LABELS: Record<UnitLabel, string> = { piece: "পিস", strip: "পাতা", box: "বক্স" }
 
+/** ওষুধের ধরন (ফার্মেসির পণ্যে ঐচ্ছিক) */
+export type DosageForm = "tablet" | "capsule" | "syrup" | "injection" | "drop" | "cream" | "inhaler" | "saline" | "other"
+export const DOSAGE_FORMS: Record<DosageForm, string> = {
+  tablet: "ট্যাবলেট",
+  capsule: "ক্যাপসুল",
+  syrup: "সিরাপ",
+  injection: "ইনজেকশন",
+  drop: "ড্রপ",
+  cream: "ক্রিম/মলম",
+  inhaler: "ইনহেলার",
+  saline: "স্যালাইন/পাউডার",
+  other: "অন্যান্য",
+}
+export const PHARMA_TEXT_MAX = { generic: 120, strength: 40, company: 120 } as const
+
 export interface ProductBarcode {
   code: string
   /** এই বারকোডে কত পিস (১ = একটি পিস, ১০ = কার্টন) */
@@ -20,6 +35,14 @@ export interface Product {
   pricePoisha: number // প্রতি পিস
   minStock: number
   category: string
+  /** জেনেরিক নাম (যেমন Paracetamol); ফার্মেসির পণ্যে ঐচ্ছিক, পুরনো ডেটায় নেই */
+  generic?: string
+  /** শক্তি (যেমন 500 mg) */
+  strength?: string
+  /** ওষুধের ধরন */
+  form?: DosageForm
+  /** কোম্পানি/প্রস্তুতকারক */
+  company?: string
   /** বারকোড ছাড়া "খোলা" পণ্য */
   open: boolean
   createdAt: string

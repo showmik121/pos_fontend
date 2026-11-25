@@ -23,6 +23,7 @@ function NewProduct() {
         submitLabel={tr("পণ্য সেভ করুন")}
         withInitialStock
         showExpiry={isPharmacy}
+        pharmacy={isPharmacy}
         onSubmit={(input, stock) => {
           const product = run((d) => {
             const now = new Date()

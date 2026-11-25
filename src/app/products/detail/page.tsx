@@ -21,7 +21,7 @@ import { splitCartons } from "@/lib/domain/units"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { addBarcode } from "@/lib/store/actions"
 import { batchesOf, findByBarcode, findProduct, sellableStock, totalStock } from "@/lib/store/selectors"
-import { UNIT_LABELS } from "@/lib/store/types"
+import { DOSAGE_FORMS, UNIT_LABELS } from "@/lib/store/types"
 
 function ProductDetail() {
   const id = useSearchParams().get("id")
@@ -86,6 +86,10 @@ function ProductDetail() {
           <KeyValue label={tr("বিক্রয়মূল্য")} value={formatTaka(product.pricePoisha)} />
           <KeyValue label={tr("ক্রয়মূল্য")} value={formatTaka(product.costPoisha)} />
           <KeyValue label={tr("একক")} value={UNIT_LABELS[product.unit]} />
+          {product.generic ? <KeyValue label={tr("জেনেরিক নাম")} value={product.generic} /> : null}
+          {product.strength ? <KeyValue label={tr("শক্তি")} value={product.strength} /> : null}
+          {product.form ? <KeyValue label={tr("ধরন")} value={tr(DOSAGE_FORMS[product.form])} /> : null}
+          {product.company ? <KeyValue label={tr("কোম্পানি")} value={product.company} /> : null}
           {product.category ? <KeyValue label={tr("ক্যাটেগরি")} value={product.category} /> : null}
         </div>
       </Card>

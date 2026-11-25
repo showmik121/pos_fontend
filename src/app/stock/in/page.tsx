@@ -24,6 +24,7 @@ import type { StockUnit } from "@/lib/domain/units"
 import { toAsciiDigits } from "@/lib/format/bn"
 import { stockIn } from "@/lib/store/actions"
 import { searchProducts } from "@/lib/store/search"
+import { withDetail } from "@/components/product-subtitle"
 import { newProductFromScanHref } from "@/lib/store/flow"
 import { findByBarcode, findProduct, totalStock } from "@/lib/store/selectors"
 
@@ -101,7 +102,7 @@ function StockInForm() {
         ) : (
           <RowList>
             {results.map((p) => (
-              <Row key={p.id} title={p.name} subtitle={tf("স্টক {p0}", { p0: (formatCount(totalStock(db, p.id))) })} onClick={() => choose(p.id)} chevron />
+              <Row key={p.id} title={p.name} subtitle={withDetail(p, tf("স্টক {p0}", { p0: (formatCount(totalStock(db, p.id))) }))} onClick={() => choose(p.id)} chevron />
             ))}
           </RowList>
         )}
