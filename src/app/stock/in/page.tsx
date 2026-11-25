@@ -16,7 +16,8 @@ import { SearchBox } from "@/components/ui/inputs"
 import { Segmented } from "@/components/ui/segmented"
 import { useSessionInfo } from "@/lib/hooks/use-session"
 import { parseMonthYear } from "@/lib/domain/dates"
-import { formatExpiryInput, normalizeExpiryInput } from "@/lib/domain/expiry-input"
+import { normalizeExpiryInput } from "@/lib/domain/expiry-input"
+import { ExpiryField } from "@/components/expiry-field"
 import { addToQty } from "@/lib/domain/qty-input"
 import { DomainError, domainMessage } from "@/lib/domain/errors"
 import { formatCount, formatTaka, parseTaka, takaInputValue } from "@/lib/domain/money"
@@ -207,7 +208,7 @@ function StockInForm() {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field id="si-batch" label={isPharmacy ? tr("ব্যাচ নম্বর") : tr("ব্যাচ (ঐচ্ছিক)")} value={batchNo} onChange={(e) => setBatchNo(e.target.value)} />
-        <Field id="si-expiry" label={isPharmacy ? tr("মেয়াদ (মাস/বছর)") : tr("মেয়াদ (ঐচ্ছিক)")} placeholder={tr("০৬/২০২৭")} inputMode="numeric" value={expiry} onChange={(e) => setExpiry(formatExpiryInput(e.target.value))} onBlur={() => setExpiry((x) => normalizeExpiryInput(x))} />
+        <ExpiryField id="si-expiry" label={isPharmacy ? tr("মেয়াদ (মাস/বছর)") : tr("মেয়াদ (ঐচ্ছিক)")} value={expiry} onChange={setExpiry} quick={isPharmacy} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field id="si-cost" label={unitCost[unit]} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />

@@ -58,3 +58,20 @@ describe("ক্যামেরা কনফিগ", () => {
     expect(torchSupported({})).toBe(false)
   })
 })
+
+import { expiryAfterYears } from "../src/lib/domain/expiry-input"
+import { COMMON_COMPANIES, companyOptions } from "../src/lib/store/companies"
+
+describe("দ্রুত মেয়াদ ও কোম্পানি তালিকা", () => {
+  test("আজ থেকে n বছর পরের মাস/বছর", () => {
+    expect(expiryAfterYears(2, new Date(2026, 10, 25))).toBe("11/2028")
+    expect(expiryAfterYears(1, new Date(2026, 0, 5))).toBe("01/2027")
+  })
+  test("কোম্পানির তালিকায় আগে ব্যবহার-করা নাম আগে, বড়-ছোট হাতের তফাতে দুবার নয়, বর্তমান মান বাদ পড়ে না", () => {
+    const opts = companyOptions({ products: [{ company: "square" }, { company: "Zeta Pharma" }, {}] as never }, "My Local")
+    expect(opts.slice(0, 2)).toEqual(["square", "Zeta Pharma"])
+    expect(opts.filter((o) => o.toLowerCase() === "square")).toHaveLength(1)
+    expect(opts).toContain("My Local")
+    expect(opts.length).toBe(COMMON_COMPANIES.length + 2)
+  })
+})

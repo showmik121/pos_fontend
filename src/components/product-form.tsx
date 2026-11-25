@@ -11,6 +11,9 @@ import { Icon } from "./ui/icons"
 import { toAsciiDigits } from "@/lib/format/bn"
 import { domainMessage } from "@/lib/domain/errors"
 import { parseMonthYear } from "@/lib/domain/dates"
+import { normalizeExpiryInput } from "@/lib/domain/expiry-input"
+import { CompanyPicker } from "./company-picker"
+import { ExpiryField } from "./expiry-field"
 import { parseTaka, takaInputValue } from "@/lib/domain/money"
 import type { ProductInput } from "@/lib/store/actions"
 import { DOSAGE_FORMS, PHARMA_TEXT_MAX, UNIT_LABELS, type DosageForm, type Product, type UnitLabel } from "@/lib/store/types"
@@ -99,8 +102,9 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
     const qty = stockQty.trim() ? Number(toAsciiDigits(stockQty)) : 0
     if (withInitialStock && (!Number.isInteger(qty) || qty < 0)) return setError(tr("শুরুর স্টক ০ বা পূর্ণসংখ্যা দিন"))
     let expiryDate: string | null = null
+    if (pharmacy && withInitialStock && showExpiry && qty > 0 && !expiry.trim()) return setError(tr("মেয়াদ দিন (মাস/বছর)"))
     if (withInitialStock && showExpiry && qty > 0 && expiry.trim()) {
-      expiryDate = parseMonthYear(expiry)
+      expiryDate = parseMonthYear(normalizeExpiryInput(expiry))
       if (!expiryDate) return setError(tr("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)"))
     }
     try {
@@ -134,7 +138,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
             </div>
           </div>
           <Field id="p-strip" label={tr("১ পাতায় কত পিস (ঐচ্ছিক)")} hint={tr("যেমন ১০ — দিলে পাতা ও খুচরা পিস দুভাবেই বিক্রি ও স্টক হবে")} inputMode="numeric" value={strip} onChange={(e) => setStrip(e.target.value)} autoComplete="off" />
-          <Field id="p-company" label={tr("কোম্পানি (ঐচ্ছিক)")} hint={tr("যেমন Square, Beximco")} maxLength={PHARMA_TEXT_MAX.company} autoCapitalize="words" value={company} onChange={(e) => setCompany(e.target.value)} autoComplete="off" />
+          <CompanyPicker value={company} onChange={setCompany} />
         </>
       ) : null}
       {!open && !editing ? (
@@ -175,7 +179,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
       {withInitialStock ? (
         <>
           <Field id="p-stock" label={tr("এখন কতগুলো আছে (পিস)")} placeholder={tr("০")} inputMode="numeric" value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
-          {showExpiry && Number(toAsciiDigits(stockQty)) > 0 ? <Field id="p-expiry" label={tr("মেয়াদ (ঐচ্ছিক, মাস/বছর)")} placeholder={tr("০৬/২০২৭")} inputMode="numeric" value={expiry} onChange={(e) => setExpiry(e.target.value)} /> : null}
+          {showExpiry && Number(toAsciiDigits(stockQty)) > 0 ? <ExpiryField id="p-expiry" label={pharmacy ? tr("মেয়াদ (মাস/বছর)") : tr("মেয়াদ (ঐচ্ছিক, মাস/বছর)")} value={expiry} onChange={setExpiry} quick={pharmacy} /> : null}
         </>
       ) : null}
       <button

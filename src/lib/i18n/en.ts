@@ -889,4 +889,8 @@ export const EN: Record<string, string> = {
   "ডিলার বাছুন": "Choose a dealer",
   "ফেরত: {p0}{p1}": "Return: {p0}{p1}",
   "কোম্পানি দেওয়া নেই": "No company given",
+  "অন্য (নিজে লিখুন)": "Other (type it)",
+  "কোম্পানির নাম": "Company name",
+  "দ্রুত মেয়াদ": "Quick expiry",
+  "বছর": "years",
 }
