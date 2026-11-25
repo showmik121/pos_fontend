@@ -57,6 +57,9 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
   const [strength, setStrength] = useState(initial?.strength ?? "")
   const [form, setForm] = useState<DosageForm | "">(initial?.form ?? "")
   const [company, setCompany] = useState(initial?.company ?? "")
+  const [strip, setStrip] = useState(initial?.stripSize ? String(initial.stripSize) : "")
+  // পাতার দাম লেখার ঘর: লেখার সময় নিজের লেখা, নইলে পিসের দাম থেকে হিসাব করা
+  const [stripPriceDraft, setStripPriceDraft] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
   const [stockQty, setStockQty] = useState("")
@@ -66,12 +69,23 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
     (initial !== undefined && (initial.unit !== "piece" || initial.cartonSize !== 1 || initial.minStock !== defaultMinStock || Boolean(initial.category))),
   )
 
+  const stripN = pharmacy ? Number(toAsciiDigits(strip)) || 1 : 1
+  const pricePoishaNow = parseTaka(price)
+  const stripPriceShown = pricePoishaNow != null && stripN > 1 ? takaInputValue(pricePoishaNow * stripN) : ""
+  const typedStrip = stripPriceDraft != null ? parseTaka(stripPriceDraft) : null
+  const stripPriceHint =
+    typedStrip != null && typedStrip % stripN !== 0
+      ? tr("এই দামে পিসের দাম পূর্ণ পয়সা হয় না — প্রতি পিসের দাম নিজে লিখুন")
+      : tr("পাতার দাম লিখলে প্রতি পিসের দাম নিজেই বসে যায়")
+
   const submit = () => {
     setError(null)
     const pricePoisha = parseTaka(price)
     const costPoisha = cost.trim() ? parseTaka(cost) : 0
     const cartonSize = Number(toAsciiDigits(carton))
     const min = Number(toAsciiDigits(minStock))
+    const stripSize = strip.trim() ? Number(toAsciiDigits(strip)) : 1
+    if (pharmacy && (!Number.isInteger(stripSize) || stripSize < 1)) return setError(tr("পাতায় পিসের সংখ্যা ১ বা তার বেশি হতে হবে"))
     if (pricePoisha == null) return setError(tr("বিক্রয়মূল্য সঠিকভাবে দিন (যেমন ২৪০)"))
     if (costPoisha == null) return setError(tr("ক্রয়মূল্য সঠিক নয়"))
     if (!Number.isInteger(cartonSize) || cartonSize < 1) {
@@ -90,7 +104,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
       if (!expiryDate) return setError(tr("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)"))
     }
     try {
-      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, generic, strength, form: form || null, company, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate })
+      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, stripSize: pharmacy ? stripSize : undefined, generic, strength, form: form || null, company, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate })
     } catch (err) {
       setError(domainMessage(err))
     }
@@ -119,6 +133,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
               </select>
             </div>
           </div>
+          <Field id="p-strip" label={tr("১ পাতায় কত পিস (ঐচ্ছিক)")} hint={tr("যেমন ১০ — দিলে পাতা ও খুচরা পিস দুভাবেই বিক্রি ও স্টক হবে")} inputMode="numeric" value={strip} onChange={(e) => setStrip(e.target.value)} autoComplete="off" />
           <Field id="p-company" label={tr("কোম্পানি (ঐচ্ছিক)")} hint={tr("যেমন Square, Beximco")} maxLength={PHARMA_TEXT_MAX.company} autoCapitalize="words" value={company} onChange={(e) => setCompany(e.target.value)} autoComplete="off" />
         </>
       ) : null}
@@ -141,6 +156,22 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
         <Field id="p-price" label={tr("বিক্রয়মূল্য")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
       <p className="-mt-2 text-sm text-muted">{tr("দাম প্রতি পিসের হিসাবে লিখুন। ক্রয়মূল্য দিলে লাভের হিসাব মেলে।")}</p>
+      {stripN > 1 ? (
+        <Field
+          id="p-strip-price"
+          label={tr("প্রতি পাতার বিক্রয়মূল্য")}
+          hint={stripPriceHint}
+          inputMode="decimal"
+          value={stripPriceDraft ?? stripPriceShown}
+          onChange={(e) => {
+            const text = e.target.value
+            setStripPriceDraft(text)
+            const poisha = parseTaka(text)
+            if (poisha != null && poisha % stripN === 0) setPrice(takaInputValue(poisha / stripN))
+          }}
+          onBlur={() => setStripPriceDraft(null)}
+        />
+      ) : null}
       {withInitialStock ? (
         <>
           <Field id="p-stock" label={tr("এখন কতগুলো আছে (পিস)")} placeholder={tr("০")} inputMode="numeric" value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
@@ -164,7 +195,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
             <Segmented label={tr("একক")} options={UNIT_OPTIONS} value={unit} onChange={setUnit} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Field id="p-carton" label={tr("১ কার্টনে কত পিস")} inputMode="numeric" value={carton} onChange={(e) => setCarton(e.target.value)} />
+            <Field id="p-carton" label={pharmacy ? tr("১ বক্সে কত পিস") : tr("১ কার্টনে কত পিস")} inputMode="numeric" value={carton} onChange={(e) => setCarton(e.target.value)} />
             <Field id="p-min" label={tr("সর্বনিম্ন স্টক")} inputMode="numeric" value={minStock} onChange={(e) => setMinStock(e.target.value)} />
           </div>
           <Field id="p-cat" label={tr("ক্যাটেগরি (ঐচ্ছিক)")} lang="en" autoCapitalize="words" value={category} onChange={(e) => setCategory(e.target.value)} />

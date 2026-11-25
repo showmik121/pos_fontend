@@ -20,7 +20,7 @@ import { formatExpiryInput, normalizeExpiryInput } from "@/lib/domain/expiry-inp
 import { addToQty } from "@/lib/domain/qty-input"
 import { DomainError, domainMessage } from "@/lib/domain/errors"
 import { formatCount, formatTaka, parseTaka, takaInputValue } from "@/lib/domain/money"
-import type { StockUnit } from "@/lib/domain/units"
+import { hasStrips, packText } from "@/lib/store/pack-text"
 import { toAsciiDigits } from "@/lib/format/bn"
 import { stockIn } from "@/lib/store/actions"
 import { searchProducts } from "@/lib/store/search"
@@ -31,10 +31,7 @@ import { findByBarcode, findProduct, totalStock } from "@/lib/store/selectors"
 /** পরিমাণ দ্রুত বাড়ানোর বোতাম */
 const QTY_STEPS = [1, 5, 10, 20, 50] as const
 
-const UNITS = [
-  { value: "piece", label: "পিস" },
-  { value: "carton", label: "কার্টন" },
-] as const
+type CountUnitValue = "piece" | "strip" | "carton"
 
 function StockInForm() {
   const params = useSearchParams()
@@ -51,7 +48,7 @@ function StockInForm() {
   // সর্বশেষ যোগ হওয়া পণ্য: "সেভ করে পরের পণ্য"-র পর নিশ্চিতকরণ দেখায়
   const [lastAdded, setLastAdded] = useState<string | null>(null)
 
-  const [unit, setUnit] = useState<StockUnit>("piece")
+  const [unit, setUnit] = useState<CountUnitValue>("piece")
   const [qty, setQty] = useState("")
   const [batchNo, setBatchNo] = useState("")
   const [expiry, setExpiry] = useState("")
@@ -142,7 +139,7 @@ function StockInForm() {
       return setError(err instanceof DomainError ? err.message : domainMessage(err))
     }
     if (!next) return router.replace(`/products/detail?id=${product.id}`)
-    setLastAdded(tf("✓ {p0}: {p1} যোগ হলো। পরের পণ্য বাছুন।", { p0: product.name, p1: `${formatCount(q)} ${unit === "carton" ? tr("কার্টন") : tr("পিস")}` }))
+    setLastAdded(tf("✓ {p0}: {p1} যোগ হলো। পরের পণ্য বাছুন।", { p0: product.name, p1: `${formatCount(q)} ${unit === "carton" ? (hasStrips(product) ? tr("বক্স") : tr("কার্টন")) : unit === "strip" ? tr("পাতা") : tr("পিস")}` }))
     setProductId(null)
     setQty("")
     setBatchNo("")
@@ -153,6 +150,19 @@ function StockInForm() {
   }
 
   const perCarton = product.cartonSize > 1
+  const strips = hasStrips(product)
+  const unitOptions = [
+    { value: "piece" as const, label: "পিস" },
+    ...(strips ? [{ value: "strip" as const, label: "পাতা" }] : []),
+    ...(perCarton ? [{ value: "carton" as const, label: strips ? "বক্স" : "কার্টন" }] : []),
+  ]
+  const unitCost: Record<CountUnitValue, string> = { piece: tr("ক্রয়মূল্য (প্রতি পিস)"), strip: tr("ক্রয়মূল্য (প্রতি পাতা)"), carton: strips ? tr("ক্রয়মূল্য (প্রতি বক্স)") : tr("ক্রয়মূল্য (প্রতি কার্টন)") }
+  const qtyLabel =
+    unit === "carton"
+      ? tf(strips ? "বক্স (১ বক্স = {p0} পিস)" : "কার্টন (১ কার্টন = {p0} পিস)", { p0: formatCount(product.cartonSize) })
+      : unit === "strip"
+        ? tf("পাতা (১ পাতা = {p0} পিস)", { p0: formatCount(product.stripSize ?? 1) })
+        : tr("পরিমাণ (পিস)")
   return (
     <AppShell title={tr("স্টক যোগ")} backHref="/stock" footer={
         <div className="flex gap-2">
@@ -167,22 +177,22 @@ function StockInForm() {
       <Card className="px-4 py-3">
         <div className="font-medium">{product.name}</div>
         <div className="text-[13px] text-muted">
-          {tr("এখন স্টক")} {formatCount(totalStock(db, product.id))} {tr("পিস · বিক্রয়মূল্য")} {formatTaka(product.pricePoisha)}
+          {tr("এখন স্টক")} {formatCount(totalStock(db, product.id))} {tr("পিস")}{strips ? ` (${packText(totalStock(db, product.id), product)})` : ""} {tr("· বিক্রয়মূল্য")} {formatTaka(product.pricePoisha)}
         </div>
         <button type="button" onClick={() => setProductId(null)} className="mt-1 min-h-11 text-sm text-brand-dark underline">
           {tr("অন্য পণ্য বাছুন")}
         </button>
       </Card>
 
-      {perCarton ? (
+      {unitOptions.length > 1 ? (
         <div className="space-y-1.5">
           <span className="block text-sm font-medium">{tr("কীভাবে গুনছেন")}</span>
-          <Segmented label={tr("একক")} options={UNITS} value={unit} onChange={setUnit} />
+          <Segmented label={tr("একক")} options={unitOptions} value={unit} onChange={setUnit} />
         </div>
       ) : null}
       <Field
         id="si-qty"
-        label={unit === "carton" ? tf("কার্টন (১ কার্টন = {p0} পিস)", { p0: (formatCount(product.cartonSize)) }) : tr("পরিমাণ (পিস)")}
+        label={qtyLabel}
         inputMode="numeric"
         value={qty}
         onChange={(e) => setQty(e.target.value)}
@@ -200,7 +210,7 @@ function StockInForm() {
         <Field id="si-expiry" label={isPharmacy ? tr("মেয়াদ (মাস/বছর)") : tr("মেয়াদ (ঐচ্ছিক)")} placeholder={tr("০৬/২০২৭")} inputMode="numeric" value={expiry} onChange={(e) => setExpiry(formatExpiryInput(e.target.value))} onBlur={() => setExpiry((x) => normalizeExpiryInput(x))} />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field id="si-cost" label={unit === "carton" ? tr("ক্রয়মূল্য (প্রতি কার্টন)") : tr("ক্রয়মূল্য (প্রতি পিস)")} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
+        <Field id="si-cost" label={unitCost[unit]} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
         <Field id="si-price" label={tr("বিক্রয়মূল্য (প্রতি পিস)")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
       {error ? <Banner tone="danger">{error}</Banner> : null}

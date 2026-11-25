@@ -10,9 +10,10 @@ import { Icon } from "@/components/ui/icons"
 import { SearchBox } from "@/components/ui/inputs"
 import { Chips } from "@/components/ui/segmented"
 import { todayIso } from "@/lib/domain/dates"
-import { formatCount, formatTaka } from "@/lib/domain/money"
+import { formatTaka } from "@/lib/domain/money"
 import { searchProducts } from "@/lib/store/search"
 import { withDetail } from "@/components/product-subtitle"
+import { stockCountText } from "@/lib/store/pack-text"
 import { expiringSoonCount, isLowStock, lowStockProducts, nearestExpiryDays, sellableStock } from "@/lib/store/selectors"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { DEMO_ENABLED } from "@/lib/config"
@@ -89,7 +90,7 @@ export default function StockPage() {
                 key={p.id}
                 href={`/products/detail?id=${p.id}`}
                 title={p.name}
-                subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: (formatCount(sellable)) }))}
+                subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: stockCountText(p, sellable) }))}
                 right={
                   days != null && days <= 30 ? <Pill tone="warn">{tr("মেয়াদ")} {toBanglaDigits(days)} {tr("দিন")}</Pill> : low ? <Pill tone="danger">{tr("স্টক কম")}</Pill> : undefined
                 }

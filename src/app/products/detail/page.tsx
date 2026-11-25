@@ -17,7 +17,7 @@ import { classifyExpiry, daysUntil } from "@/lib/domain/expiry"
 import { sellableBatches } from "@/lib/domain/fifo"
 import { domainMessage } from "@/lib/domain/errors"
 import { formatCount, formatTaka } from "@/lib/domain/money"
-import { splitCartons } from "@/lib/domain/units"
+import { hasStrips, packText } from "@/lib/store/pack-text"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { addBarcode } from "@/lib/store/actions"
 import { batchesOf, findByBarcode, findProduct, sellableStock, totalStock } from "@/lib/store/selectors"
@@ -29,7 +29,7 @@ function ProductDetail() {
   const today = todayIso()
   const [scanning, setScanning] = useState(false)
   const [pending, setPending] = useState<string | null>(null)
-  const [pack, setPack] = useState<"piece" | "carton">("piece")
+  const [pack, setPack] = useState<"piece" | "strip" | "carton">("piece")
   const [error, setError] = useState<string | null>(null)
 
   const product = id ? findProduct(db, id) : undefined
@@ -45,7 +45,7 @@ function ProductDetail() {
   const sellable = sellableStock(db, product.id, today)
   const batches = batchesOf(db, product.id).filter((b) => b.qtyRemaining > 0)
   const firstSellableId = sellableBatches(batches, today)[0]?.id
-  const split = product.cartonSize > 1 ? splitCartons(total, product.cartonSize) : null
+  const packed = hasStrips(product) || product.cartonSize > 1
   const low = sellable < product.minStock
 
   const onScanned = (code: string) => {
@@ -63,7 +63,7 @@ function ProductDetail() {
   const saveBarcode = () => {
     if (!pending) return
     try {
-      update((d) => addBarcode(d, product.id, pending, pack === "carton" ? product.cartonSize : 1))
+      update((d) => addBarcode(d, product.id, pending, pack === "carton" ? product.cartonSize : pack === "strip" ? (product.stripSize ?? 1) : 1))
       setPending(null)
     } catch (err) {
       setPending(null)
@@ -86,6 +86,8 @@ function ProductDetail() {
           <KeyValue label={tr("বিক্রয়মূল্য")} value={formatTaka(product.pricePoisha)} />
           <KeyValue label={tr("ক্রয়মূল্য")} value={formatTaka(product.costPoisha)} />
           <KeyValue label={tr("একক")} value={UNIT_LABELS[product.unit]} />
+          {hasStrips(product) ? <KeyValue label={tr("১ পাতায়")} value={tf("{p0} পিস", { p0: formatCount(product.stripSize ?? 1) })} /> : null}
+          {hasStrips(product) ? <KeyValue label={tr("প্রতি পাতার দাম")} value={formatTaka(product.pricePoisha * (product.stripSize ?? 1))} /> : null}
           {product.generic ? <KeyValue label={tr("জেনেরিক নাম")} value={product.generic} /> : null}
           {product.strength ? <KeyValue label={tr("শক্তি")} value={product.strength} /> : null}
           {product.form ? <KeyValue label={tr("ধরন")} value={tr(DOSAGE_FORMS[product.form])} /> : null}
@@ -101,7 +103,7 @@ function ProductDetail() {
         </div>
         <div className="text-[28px] font-bold leading-tight">{formatCount(sellable)} {tr("পিস")}</div>
         <div className="text-sm text-muted">
-          {tr("মোট")} {formatCount(total)} {tr("পিস")}{split ? tf(" ({p0} কার্টন {p1} পিস)", { p0: (formatCount(split.cartons)), p1: (formatCount(split.pieces)) }) : ""} {tr("· সর্বনিম্ন")} {formatCount(product.minStock)}
+          {tr("মোট")} {formatCount(total)} {tr("পিস")}{packed ? ` (${packText(total, product)})` : ""} {tr("· সর্বনিম্ন")} {formatCount(product.minStock)}
         </div>
       </Card>
 
@@ -143,7 +145,7 @@ function ProductDetail() {
       ) : (
         <RowList>
           {product.barcodes.map((b) => (
-            <Row key={b.code} title={toBanglaDigits(b.code)} subtitle={b.packSize === 1 ? tr("১ পিস") : tf("কার্টন · {p0} পিস", { p0: (formatCount(b.packSize)) })} />
+            <Row key={b.code} title={toBanglaDigits(b.code)} subtitle={b.packSize === 1 ? tr("১ পিস") : b.packSize === product.stripSize ? tf("পাতা · {p0} পিস", { p0: formatCount(b.packSize) }) : tf(hasStrips(product) ? "বক্স · {p0} পিস" : "কার্টন · {p0} পিস", { p0: formatCount(b.packSize) })} />
           ))}
         </RowList>
       )}
@@ -163,7 +165,8 @@ function ProductDetail() {
           onChange={setPack}
           options={[
             { value: "piece" as const, label: tr("১ পিস") },
-            ...(product.cartonSize > 1 ? [{ value: "carton" as const, label: tf("কার্টন ({p0} পিস)", { p0: (formatCount(product.cartonSize)) }) }] : []),
+            ...(hasStrips(product) ? [{ value: "strip" as const, label: tf("পাতা ({p0} পিস)", { p0: formatCount(product.stripSize ?? 1) }) }] : []),
+            ...(product.cartonSize > 1 ? [{ value: "carton" as const, label: tf(hasStrips(product) ? "বক্স ({p0} পিস)" : "কার্টন ({p0} পিস)", { p0: formatCount(product.cartonSize) }) }] : []),
           ]}
         />
         <p className="text-sm text-muted">{tr("কার্টনের বারকোড স্ক্যান করলে বিলে একবারে এতগুলো পিস যোগ হবে।")}</p>

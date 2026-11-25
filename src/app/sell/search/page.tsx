@@ -7,9 +7,15 @@ import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
 import { Card, Pill, Row, RowList } from "@/components/ui/card"
 import { SearchBox } from "@/components/ui/inputs"
-import { LinkButton } from "@/components/ui/button"
+import { Sheet } from "@/components/ui/sheet"
+import { Field } from "@/components/ui/field"
+import { PackQuickAdd } from "@/components/pack-quick-add"
+import { hasStrips, stockCountText } from "@/lib/store/pack-text"
+import { toAsciiDigits } from "@/lib/format/bn"
+import type { Product } from "@/lib/store/types"
+import { Button, LinkButton } from "@/components/ui/button"
 import { todayIso } from "@/lib/domain/dates"
-import { formatCount, formatTaka } from "@/lib/domain/money"
+import { formatTaka } from "@/lib/domain/money"
 import { addToCart } from "@/lib/store/actions"
 import { searchProducts } from "@/lib/store/search"
 import { withDetail } from "@/components/product-subtitle"
@@ -20,7 +26,16 @@ export default function SellSearchPage() {
   const router = useRouter()
   const today = todayIso()
   const [query, setQuery] = useState("")
+  const [picking, setPicking] = useState<Product | null>(null)
+  const [customQty, setCustomQty] = useState("")
   const results = useMemo(() => searchProducts(db, query), [db, query])
+
+  const add = (product: Product, qty: number) => {
+    update((d) => ({ ...d, draft: addToCart(d.draft, product.id, qty) }))
+    router.push("/sell")
+  }
+  const customPieces = Number(toAsciiDigits(customQty))
+  const customOk = Number.isInteger(customPieces) && customPieces >= 1
 
   return (
     <AppShell title={tr("পণ্য খুঁজুন")} backHref="/sell">
@@ -40,14 +55,16 @@ export default function SellSearchPage() {
               <Row
                 key={p.id}
                 title={p.name}
-                subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: (formatCount(sellable)) }))}
+                subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: stockCountText(p, sellable) }))}
                 right={sellable <= 0 ? <Pill tone="danger">{tr("স্টক নেই")}</Pill> : undefined}
                 onClick={
                   sellable <= 0
                     ? undefined
                     : () => {
-                        update((d) => ({ ...d, draft: addToCart(d.draft, p.id, 1) }))
-                        router.push("/sell")
+                        if (hasStrips(p)) {
+                          setCustomQty("")
+                          setPicking(p)
+                        } else add(p, 1)
                       }
                 }
               />
@@ -55,6 +72,15 @@ export default function SellSearchPage() {
           })}
         </RowList>
       )}
+      <Sheet open={picking != null} onClose={() => setPicking(null)} label={tr("কতটুকু যোগ করবেন")}>
+        <h2 className="text-lg font-bold">{picking?.name}</h2>
+        <p className="text-muted">{tr("পুরো পাতা, নাকি পাতা কেটে কয়েক পিস?")}</p>
+        {picking ? <PackQuickAdd product={picking} includeOne onAdd={(q) => add(picking, q)} /> : null}
+        <Field id="pick-qty" label={tr("অন্য সংখ্যা (পিস)")} inputMode="numeric" value={customQty} onChange={(e) => setCustomQty(e.target.value)} />
+        <Button full disabled={!customOk} onClick={() => picking && customOk && add(picking, customPieces)}>
+          {tr("বিলে যোগ করুন")}
+        </Button>
+      </Sheet>
     </AppShell>
   )
 }

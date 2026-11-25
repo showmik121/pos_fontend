@@ -31,6 +31,8 @@ export interface Product {
   unit: UnitLabel
   /** ১ কার্টনে কত পিস; ১ মানে কার্টন সাইজ ঠিক করা নেই */
   cartonSize: number
+  /** ১ পাতায় কত পিস (ট্যাবলেট/ক্যাপসুল); ফার্মেসিতে ঐচ্ছিক, না থাকলে পাতা-ধাপ নেই */
+  stripSize?: number
   costPoisha: number // প্রতি পিস
   pricePoisha: number // প্রতি পিস
   minStock: number

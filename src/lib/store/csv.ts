@@ -43,9 +43,9 @@ export function parseCsv(text: string): string[][] {
 export const MAX_IMPORT_BYTES = 1_000_000
 export const MAX_IMPORT_ROWS = 5000
 
-export const IMPORT_HEADERS = ["barcode", "name", "cost", "price", "unit", "carton_size", "min_stock", "category", "batch", "expiry", "qty", "generic", "strength", "form", "company"] as const
+export const IMPORT_HEADERS = ["barcode", "name", "cost", "price", "unit", "carton_size", "min_stock", "category", "batch", "expiry", "qty", "generic", "strength", "form", "company", "strip_size"] as const
 
-export const IMPORT_TEMPLATE_CSV = `${IMPORT_HEADERS.join(",")}\n8901234567890,পন্ডস ক্রিম ১০০ মি.লি.,200,240,piece,10,5,স্কিন কেয়ার,B2407,06/2027,30,,,,\n8901234567891,Napa,1,1.2,strip,10,50,ওষুধ,B1,06/2027,100,Paracetamol,500 mg,tablet,Beximco\n`
+export const IMPORT_TEMPLATE_CSV = `${IMPORT_HEADERS.join(",")}\n8901234567890,পন্ডস ক্রিম ১০০ মি.লি.,200,240,piece,10,5,স্কিন কেয়ার,B2407,06/2027,30,,,,,\n8901234567891,Napa,0.12,0.12,piece,100,500,ওষুধ,B1,06/2027,1000,Paracetamol,500 mg,tablet,Beximco,10\n`
 
 export interface ImportRow {
   line: number
@@ -64,6 +64,7 @@ export interface ImportRow {
   strength?: string
   form?: DosageForm
   company?: string
+  stripSize?: number
 }
 
 export interface ImportRowError {
@@ -135,11 +136,14 @@ export function validateImport(csvRows: string[][], db: Db): { ok: ImportRow[]; 
     const strength = get(r, "strength")
     const company = get(r, "company")
     if (generic.length > PHARMA_TEXT_MAX.generic || strength.length > PHARMA_TEXT_MAX.strength || company.length > PHARMA_TEXT_MAX.company) return fail("জেনেরিক/শক্তি/কোম্পানির লেখা বেশি লম্বা")
+    const stripText = get(r, "strip_size")
+    const stripSize = stripText ? toInt(stripText) : undefined
+    if (stripText && (stripSize == null || stripSize < 1)) return fail("পাতার সাইজ (strip_size) সঠিক নয়")
     const formText = get(r, "form").toLowerCase()
     const form = formText ? (Object.prototype.hasOwnProperty.call(FORM_ALIASES, formText) ? FORM_ALIASES[formText] : undefined) : undefined
     if (formText && !form) return fail("ধরন হবে tablet / capsule / syrup / injection / drop / cream / inhaler / saline / other")
 
-    ok.push({ line, barcode, name, costPoisha: cost, pricePoisha: price, unit, cartonSize: carton, minStock: min, category: get(r, "category"), batchNo: get(r, "batch"), expiryDate: expiry, qty, generic, strength, form, company })
+    ok.push({ line, barcode, name, costPoisha: cost, pricePoisha: price, unit, cartonSize: carton, minStock: min, category: get(r, "category"), batchNo: get(r, "batch"), expiryDate: expiry, qty, generic, strength, form, company, stripSize: stripSize && stripSize > 1 ? stripSize : undefined })
   })
   return { ok, errors }
 }

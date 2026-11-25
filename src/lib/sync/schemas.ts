@@ -27,6 +27,7 @@ export const productSchema = z.looseObject({
   minStock: count,
   category: text(2000),
   // ফার্মেসির ঐচ্ছিক ঘর (পুরনো ডেটা ও অন্য ডিভাইসে নেই)
+  stripSize: z.number().int().min(2).max(Number.MAX_SAFE_INTEGER).optional(),
   generic: text(300).optional(),
   strength: text(100).optional(),
   form: z.enum(["tablet", "capsule", "syrup", "injection", "drop", "cream", "inhaler", "saline", "other"]).optional(),

@@ -16,7 +16,9 @@ import { computeCart } from "@/lib/domain/cart"
 import { todayIso } from "@/lib/domain/dates"
 import { formatCount, formatTaka } from "@/lib/domain/money"
 import { toBanglaDigits } from "@/lib/format/bn"
+import { PackQuickAdd } from "@/components/pack-quick-add"
 import { addToCart, setCartQty } from "@/lib/store/actions"
+import { hasStrips, packText } from "@/lib/store/pack-text"
 import { expiredStock, findByBarcode, findProduct, sellableStock } from "@/lib/store/selectors"
 import type { Product } from "@/lib/store/types"
 
@@ -143,7 +145,8 @@ export default function SellPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-medium leading-snug">{product.name}</div>
-                    <div className="text-[13px] text-muted">{tr("প্রতি পিস")} {formatTaka(product.pricePoisha)}</div>
+                    <div className="text-[13px] text-muted">{tr("প্রতি পিস")} {formatTaka(product.pricePoisha)}{hasStrips(product) ? ` · ${tr("প্রতি পাতা")} ${formatTaka(product.pricePoisha * (product.stripSize ?? 1))}` : ""}</div>
+                    {hasStrips(product) ? <div className="text-[13px] font-medium text-brand-dark">{packText(line.qty, { stripSize: product.stripSize, cartonSize: 1 })}</div> : null}
                   </div>
                   <div className="text-right">
                     <div className="font-semibold">{formatTaka(gross - line.discount)}</div>
@@ -154,6 +157,7 @@ export default function SellPage() {
                   <Stepper value={line.qty} onChange={(q) => update((d) => ({ ...d, draft: setCartQty(d.draft, product.id, q) }))} />
                   {line.qty > sellable ? <Pill tone="warn">{tr("স্টকে আছে")} {formatCount(sellable)}</Pill> : null}
                 </div>
+                <PackQuickAdd product={product} onAdd={(q) => update((d) => ({ ...d, draft: setCartQty(d.draft, product.id, line.qty + q) }))} />
               </div>
             )
           })}

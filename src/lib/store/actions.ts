@@ -3,7 +3,7 @@ import { computeCart, settlePayments, type BillDiscount, type MobileMethod } fro
 import { localDateIso } from "../domain/dates"
 import { DomainError, requireNonNegativeInt, requirePositiveInt } from "../domain/errors"
 import { allocateFifo } from "../domain/fifo"
-import { toBaseUnits, type StockUnit } from "../domain/units"
+import { toPieces, type CountUnit } from "../domain/units"
 import { normalizeBdPhone } from "../format/phone"
 import type { ImportRow } from "./csv"
 import { newId } from "./db"
@@ -16,6 +16,8 @@ export interface ProductInput {
   name: string
   unit: UnitLabel
   cartonSize: number
+  /** ১ পাতায় কত পিস; ১/না দিলে পাতা-ধাপ নেই */
+  stripSize?: number
   costPoisha: number
   pricePoisha: number
   minStock: number
@@ -30,8 +32,9 @@ export interface ProductInput {
 }
 
 /** ঐচ্ছিক ওষুধের তথ্য ছেঁটে নেয়; ফাঁকা ঘর বাদ যায় যাতে পুরনো পণ্যের আকার বদলায় না */
-function pharmaFields(input: Pick<ProductInput, "generic" | "strength" | "form" | "company">): Pick<Product, "generic" | "strength" | "form" | "company"> {
-  const out: Pick<Product, "generic" | "strength" | "form" | "company"> = {}
+function pharmaFields(input: Pick<ProductInput, "generic" | "strength" | "form" | "company" | "stripSize">): Pick<Product, "generic" | "strength" | "form" | "company" | "stripSize"> {
+  const out: Pick<Product, "generic" | "strength" | "form" | "company" | "stripSize"> = {}
+  if (input.stripSize && input.stripSize > 1) out.stripSize = input.stripSize
   const generic = input.generic?.trim()
   const strength = input.strength?.trim()
   const company = input.company?.trim()
@@ -47,6 +50,7 @@ function validateProductFields(input: ProductInput): void {
   if (!(input.pricePoisha > 0)) throw new DomainError("price_required", tr("বিক্রয়মূল্য দিন"))
   requireNonNegativeInt(input.costPoisha, "ক্রয়মূল্য")
   requirePositiveInt(input.cartonSize, "কার্টনে পিসের সংখ্যা")
+  if (input.stripSize !== undefined) requirePositiveInt(input.stripSize, "পাতায় পিসের সংখ্যা")
   requireNonNegativeInt(input.minStock, "সর্বনিম্ন স্টক")
   if ((input.generic?.trim().length ?? 0) > PHARMA_TEXT_MAX.generic) throw new DomainError("generic_too_long", tr("জেনেরিক নাম বেশি লম্বা"))
   if ((input.strength?.trim().length ?? 0) > PHARMA_TEXT_MAX.strength) throw new DomainError("strength_too_long", tr("শক্তি বেশি লম্বা (যেমন ৫০০ mg)"))
@@ -83,7 +87,7 @@ export function updateProduct(db: Db, id: string, input: Omit<ProductInput, "bar
     products: db.products.map((p) => {
       if (p.id !== id) return p
       // পুরনো ওষুধের তথ্য সরিয়ে নতুনটা বসে, তাই ঘর ফাঁকা করলে তথ্য মুছে যায়
-      const { generic: _g, strength: _s, form: _f, company: _c, ...rest } = p
+      const { generic: _g, strength: _s, form: _f, company: _c, stripSize: _z, ...rest } = p
       return { ...rest, name: input.name.trim(), unit: input.unit, cartonSize: input.cartonSize, costPoisha: input.costPoisha, pricePoisha: input.pricePoisha, minStock: input.minStock, category: input.category.trim(), ...pharmaFields(input) }
     }),
   }
@@ -104,7 +108,7 @@ export function addBarcode(db: Db, productId: string, code: string, packSize: nu
 export interface StockInInput {
   productId: string
   qty: number
-  unit: StockUnit
+  unit: CountUnit
   batchNo: string
   expiryDate: string | null
   /** unit অনুযায়ী প্রতি কার্টন বা প্রতি পিসের ক্রয়মূল্য (পয়সা) */
@@ -120,14 +124,14 @@ export interface StockInInput {
 export function stockIn(db: Db, input: StockInInput, now: Date): Db {
   const product = findProduct(db, input.productId)
   if (!product) throw new DomainError("not_found", tr("পণ্যটি পাওয়া যায়নি"))
-  const pieces = toBaseUnits({ qty: input.qty, unit: input.unit, packSize: product.cartonSize })
+  const pieces = toPieces({ qty: input.qty, unit: input.unit, stripSize: product.stripSize ?? 1, cartonSize: product.cartonSize })
   requireNonNegativeInt(input.costPoisha, "ক্রয়মূল্য")
   const batchNo = input.batchNo.trim()
   if (input.requireBatchAndExpiry) {
     if (!batchNo) throw new DomainError("batch_required", tr("ব্যাচ নম্বর দিন"))
     if (!input.expiryDate) throw new DomainError("expiry_required", tr("মেয়াদ দিন (মাস/বছর)"))
   }
-  const costPerPiece = input.unit === "carton" ? Math.round(input.costPoisha / product.cartonSize) : input.costPoisha
+  const costPerPiece = input.unit === "carton" ? Math.round(input.costPoisha / product.cartonSize) : input.unit === "strip" ? Math.round(input.costPoisha / (product.stripSize ?? 1)) : input.costPoisha
   const nowIso = now.toISOString()
 
   const existing = db.batches.find((b) => b.productId === product.id && b.batchNo === batchNo && b.expiryDate === input.expiryDate && batchNo !== "")
@@ -369,7 +373,7 @@ export function importProducts(db: Db, rows: readonly ImportRow[], now: Date): D
   for (const r of rows) {
     const created = createProduct(
       next,
-      { name: r.name, unit: r.unit, cartonSize: r.cartonSize, costPoisha: r.costPoisha, pricePoisha: r.pricePoisha, minStock: r.minStock, category: r.category, generic: r.generic, strength: r.strength, form: r.form, company: r.company, barcode: r.barcode || null, open: !r.barcode },
+      { name: r.name, unit: r.unit, cartonSize: r.cartonSize, costPoisha: r.costPoisha, pricePoisha: r.pricePoisha, minStock: r.minStock, category: r.category, stripSize: r.stripSize, generic: r.generic, strength: r.strength, form: r.form, company: r.company, barcode: r.barcode || null, open: !r.barcode },
       now,
     )
     next = created.db

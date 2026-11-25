@@ -18,3 +18,26 @@ export function splitCartons(totalPieces: number, packSize: number): { cartons: 
   requirePositiveInt(packSize, "কার্টনে পিসের সংখ্যা")
   return { cartons: Math.floor(totalPieces / packSize), pieces: totalPieces % packSize }
 }
+
+/** স্টক-জমায় গোনার একক: পিস, পাতা (stripSize পিস) বা কার্টন/বক্স (cartonSize পিস) */
+export type CountUnit = "piece" | "strip" | "carton"
+
+/** পিস/পাতা/কার্টন থেকে পিসে (স্টক সবসময় পিসে)। পাতা বা কার্টনের মাপ ঠিক না থাকলে বাংলা বার্তাসহ ত্রুটি। */
+export function toPieces(input: { qty: number; unit: CountUnit; stripSize: number; cartonSize: number }): number {
+  const { qty, unit, stripSize, cartonSize } = input
+  if (unit !== "strip") return toBaseUnits({ qty, unit, packSize: cartonSize })
+  requirePositiveInt(qty, "পরিমাণ")
+  requirePositiveInt(stripSize, "পাতায় পিসের সংখ্যা")
+  if (stripSize === 1) throw new DomainError("no_strip", tr("এই পণ্যের পাতার সাইজ ঠিক করা নেই"))
+  return qty * stripSize
+}
+
+/** ২৫৭ পিস, পাতা ১০, বক্স ১০০ → { boxes: 2, strips: 5, pieces: 7 }। মাপ ১ বা তার কম হলে ওই ধাপ বাদ (০) */
+export function packBreakdown(totalPieces: number, stripSize: number, cartonSize: number): { boxes: number; strips: number; pieces: number } {
+  let rest = Math.max(0, Math.trunc(totalPieces))
+  const boxes = cartonSize > 1 ? Math.floor(rest / cartonSize) : 0
+  rest -= boxes * cartonSize
+  const strips = stripSize > 1 ? Math.floor(rest / stripSize) : 0
+  rest -= strips * stripSize
+  return { boxes, strips, pieces: rest }
+}
