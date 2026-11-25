@@ -137,6 +137,10 @@ export interface RemovedBatch {
   qty: number
   costPoisha: number // প্রতি পিস
   reason: string
+  /** ডিলারে ফেরত দিলে: কোন ডিলার ও কত টাকা ক্রেডিট পাওয়া গেল (পয়সায়); সাধারণ সরানোয় নেই */
+  returnedToDealerId?: string
+  returnedToDealerName?: string
+  creditPoisha?: number
 }
 
 export interface Settings {

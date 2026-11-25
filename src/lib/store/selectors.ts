@@ -95,6 +95,37 @@ export function removedBatchLoss(db: Db): number {
   return (db.removedBatches ?? []).reduce((sum, r) => sum + r.qty * r.costPoisha, 0)
 }
 
+/** ফেরত দিয়ে মোট যত ক্রেডিট পাওয়া গেছে (পয়সায়) */
+export function removedBatchCredit(db: Db): number {
+  return (db.removedBatches ?? []).reduce((sum, r) => sum + (r.creditPoisha ?? 0), 0)
+}
+
+export const NO_COMPANY = "কোম্পানি দেওয়া নেই"
+
+export interface ReturnGroup {
+  company: string
+  rows: ExpiryRow[]
+  /** কেনা দামে মোট মূল্য (পয়সায়) */
+  costPoisha: number
+}
+
+/**
+ * ফেরতের তালিকা: মেয়াদোত্তীর্ণ বা `withinDays` দিনের মধ্যে মেয়াদ শেষ হবে এমন ব্যাচ, কোম্পানি ধরে সাজানো
+ * (ব্যাচে ডিলার লেখা থাকে না, তাই পণ্যের কোম্পানি দিয়ে মেলানো হয়)। যে গ্রুপে মূল্য বেশি সেটি আগে।
+ */
+export function returnList(db: Db, today: string, withinDays = 90): ReturnGroup[] {
+  const buckets = expiryBuckets(db, today)
+  const rows = [...buckets.expired, ...buckets.within30, ...buckets.within60, ...buckets.within90].filter((r) => r.days <= withinDays)
+  const groups = new Map<string, ExpiryRow[]>()
+  for (const r of rows) {
+    const company = r.product.company?.trim() || NO_COMPANY
+    groups.set(company, [...(groups.get(company) ?? []), r])
+  }
+  return [...groups.entries()]
+    .map(([company, list]) => ({ company, rows: list, costPoisha: list.reduce((s, r) => s + r.batch.qtyRemaining * r.batch.costPoisha, 0) }))
+    .sort((a, b) => (a.company === NO_COMPANY ? 1 : b.company === NO_COMPANY ? -1 : b.costPoisha - a.costPoisha))
+}
+
 export function customerBalance(db: Db, customerId: string): number {
   let sum = 0
   for (const e of db.ledger) {

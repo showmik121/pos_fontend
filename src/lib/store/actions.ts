@@ -1,4 +1,4 @@
-import { tr } from "../i18n"
+import { tf, tr } from "../i18n"
 import { computeCart, settlePayments, type BillDiscount, type MobileMethod } from "../domain/cart"
 import { localDateIso } from "../domain/dates"
 import { DomainError, requireNonNegativeInt, requirePositiveInt } from "../domain/errors"
@@ -7,6 +7,7 @@ import { toPieces, type CountUnit } from "../domain/units"
 import { normalizeBdPhone } from "../format/phone"
 import type { ImportRow } from "./csv"
 import { newId } from "./db"
+import { addDealerEntry, findDealer } from "./dealers"
 import { customerBalance, findByBarcode, findProduct } from "./selectors"
 import { DOSAGE_FORMS, PHARMA_TEXT_MAX, type Batch, type Customer, type Db, type Draft, type DosageForm, type LedgerEntry, type Product, type RemovedBatch, type Sale, type SaleLine, type UnitLabel } from "./types"
 
@@ -151,6 +152,10 @@ export function removeBatch(db: Db, batchId: string, input: { by: string; reason
   if (!batch) return db
   const reason = input.reason.trim()
   if (!reason) throw new DomainError("reason_required", tr("সরানোর কারণ বাছুন"))
+  return withoutBatch(db, batch, { by: input.by, reason }, now)
+}
+
+function withoutBatch(db: Db, batch: Batch, input: { by: string; reason: string }, now: Date, extra: Partial<RemovedBatch> = {}): Db {
   const entry: RemovedBatch = {
     id: newId(),
     at: now.toISOString(),
@@ -162,9 +167,38 @@ export function removeBatch(db: Db, batchId: string, input: { by: string; reason
     expiryDate: batch.expiryDate,
     qty: batch.qtyRemaining,
     costPoisha: batch.costPoisha,
-    reason,
+    reason: input.reason,
+    ...extra,
   }
-  return { ...db, batches: db.batches.filter((b) => b.id !== batchId), removedBatches: [...(db.removedBatches ?? []), entry] }
+  return { ...db, batches: db.batches.filter((b) => b.id !== batch.id), removedBatches: [...(db.removedBatches ?? []), entry] }
+}
+
+export const RETURN_REASON = "ডিলারে ফেরত"
+
+/**
+ * মেয়াদ থাকতেই ব্যাচ ডিলার/কোম্পানিতে ফেরত দেয়: ব্যাচ স্টক থেকে যায়, সরানোর খাতায় "ফেরত" হিসেবে লেখা হয়,
+ * আর ক্রেডিট থাকলে ডিলারের খাতায় জমা (payment) বসে, ফলে ডিলারকে দেওয়া পাওনা কমে। ক্রেডিট ০ হলে (বদলে মাল পাবেন) খাতায় কিছু বসে না।
+ */
+export function returnBatchToDealer(
+  db: Db,
+  batchId: string,
+  input: { dealerId: string; creditPoisha: number; by: string },
+  now: Date,
+): Db {
+  const batch = db.batches.find((b) => b.id === batchId)
+  if (!batch) throw new DomainError("batch_not_found", tr("ব্যাচটি পাওয়া যায়নি"))
+  const dealer = findDealer(db, input.dealerId)
+  if (!dealer) throw new DomainError("dealer_not_found", tr("ডিলার বাছুন"))
+  if (!Number.isInteger(input.creditPoisha) || input.creditPoisha < 0) throw new DomainError("invalid_credit", tr("ক্রেডিটের টাকা সঠিক নয়"))
+  const removed = withoutBatch(db, batch, { by: input.by, reason: RETURN_REASON }, now, {
+    returnedToDealerId: dealer.id,
+    returnedToDealerName: dealer.name,
+    creditPoisha: input.creditPoisha,
+  })
+  if (input.creditPoisha === 0) return removed
+  const productName = db.products.find((p) => p.id === batch.productId)?.name ?? ""
+  const note = tf("ফেরত: {p0}{p1}", { p0: productName, p1: batch.batchNo ? ` (${batch.batchNo})` : "" })
+  return addDealerEntry(removed, dealer.id, { kind: "payment", amount: input.creditPoisha, date: localDateIso(now), note }, input.by, now)
 }
 
 // ---- কার্ট (খসড়া বিল) ----

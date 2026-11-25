@@ -11,12 +11,15 @@ import { Chips } from "@/components/ui/segmented"
 import { Sheet } from "@/components/ui/sheet"
 import { localDateIso, todayIso } from "@/lib/domain/dates"
 import { domainMessage } from "@/lib/domain/errors"
-import { formatCount, formatTaka } from "@/lib/domain/money"
+import { formatCount, formatTaka, parseTaka, takaInputValue } from "@/lib/domain/money"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { formatDateBn } from "@/lib/domain/dates"
-import { removeBatch } from "@/lib/store/actions"
-import { expiryBuckets, removedBatchLoss, removedBatchLog, type ExpiryRow } from "@/lib/store/selectors"
+import { removeBatch, returnBatchToDealer } from "@/lib/store/actions"
+import { activeDealers } from "@/lib/store/dealers"
+import { expiryBuckets, removedBatchCredit, removedBatchLoss, removedBatchLog, returnList, type ExpiryRow } from "@/lib/store/selectors"
 import { Banner } from "@/components/ui/banner"
+import { Field } from "@/components/ui/field"
+import Link from "next/link"
 
 type Range = "30" | "60" | "90"
 
@@ -39,6 +42,20 @@ export default function ExpiryPage() {
   const [reason, setReason] = useState<string>(REMOVE_REASONS[0])
   const [removeError, setRemoveError] = useState<string | null>(null)
   const log = removedBatchLog(db)
+  const dealers = activeDealers(db)
+  const [returning, setReturning] = useState<ExpiryRow | null>(null)
+  const [dealerId, setDealerId] = useState("")
+  const [credit, setCredit] = useState("")
+  const [returnError, setReturnError] = useState<string | null>(null)
+  const groups = returnList(db, today)
+
+  function openReturn(row: ExpiryRow, company: string) {
+    const match = dealers.find((d) => d.name.trim().toLowerCase() === company.toLowerCase())
+    setDealerId(match?.id ?? (dealers.length === 1 ? (dealers[0]?.id ?? "") : ""))
+    setCredit(takaInputValue(row.batch.qtyRemaining * row.batch.costPoisha))
+    setReturnError(null)
+    setReturning(row)
+  }
 
   const buckets = expiryBuckets(db, today)
   const upcoming = [...buckets.within30, ...(range !== "30" ? buckets.within60 : []), ...(range === "90" ? buckets.within90 : [])]
@@ -97,18 +114,56 @@ export default function ExpiryPage() {
         </RowList>
       )}
 
+      {groups.length > 0 ? (
+        <>
+          <SectionTitle>{tr("ডিলারে ফেরতের তালিকা")}</SectionTitle>
+          <Card className="px-4 py-3 text-sm text-muted">{tr("মেয়াদ শেষ হওয়ার আগে ফেরত দিলে ক্ষতি কমে। কোম্পানি ধরে সাজানো; কেনা দামে মূল্য দেখানো হয়েছে।")}</Card>
+          {groups.map((g) => (
+            <div key={g.company} data-testid="return-group">
+              <div className="flex items-baseline justify-between px-1 pb-1 pt-3 text-sm font-bold">
+                <span>{tr(g.company)}</span>
+                <span className="text-muted">{formatTaka(g.costPoisha)}</span>
+              </div>
+              <RowList>
+                {g.rows.map((r) => (
+                  <Row
+                    key={r.batch.id}
+                    dot={r.days <= 0 ? "danger" : r.days <= 30 ? "amber" : "muted"}
+                    title={r.product.name}
+                    subtitle={tf("{p0} · {p1}", { p0: describe(r), p1: formatTaka(r.batch.qtyRemaining * r.batch.costPoisha) })}
+                    right={
+                      isOwner ? (
+                        <Button variant="secondary" className="min-h-11 px-3 text-sm" onClick={() => openReturn(r, g.company)}>
+                          {tr("ফেরত")}
+                        </Button>
+                      ) : undefined
+                    }
+                  />
+                ))}
+              </RowList>
+            </div>
+          ))}
+        </>
+      ) : null}
+
       {log.length > 0 ? (
         <>
           <SectionTitle>{tr("সরানো ব্যাচের খাতা")}</SectionTitle>
           <Card className="px-4 py-3 text-sm text-muted">
             {tr("মোট")} {toBanglaDigits(log.length)}{tr("টি ব্যাচ সরানো হয়েছে; কেনা দামে ক্ষতি")} {formatTaka(removedBatchLoss(db))}।
+            {removedBatchCredit(db) > 0 ? (
+              <>
+                {" "}
+                {tr("ডিলারে ফেরত দিয়ে ক্রেডিট")} {formatTaka(removedBatchCredit(db))}{tr("; নিট ক্ষতি")} {formatTaka(removedBatchLoss(db) - removedBatchCredit(db))}।
+              </>
+            ) : null}
           </Card>
           <RowList>
             {log.slice(0, LOG_SHOWN).map((r) => (
               <Row
                 key={r.id}
                 title={r.productName}
-                subtitle={tf("{p0}{p1} পিস · {p2} · {p3} · {p4}", { p0: (r.batchNo ? tf("ব্যাচ {p0} · ", { p0: (r.batchNo) }) : ""), p1: (formatCount(r.qty)), p2: (r.reason), p3: (r.by), p4: (formatDateBn(localDateIso(new Date(r.at)))) })}
+                subtitle={tf("{p0}{p1} পিস · {p2} · {p3} · {p4}", { p0: (r.batchNo ? tf("ব্যাচ {p0} · ", { p0: (r.batchNo) }) : ""), p1: (formatCount(r.qty)), p2: (r.returnedToDealerName ? tf("{p0}-এ ফেরত, ক্রেডিট {p1}", { p0: r.returnedToDealerName, p1: formatTaka(r.creditPoisha ?? 0) }) : r.reason), p3: (r.by), p4: (formatDateBn(localDateIso(new Date(r.at)))) })}
                 right={<span className="font-medium">{formatTaka(r.qty * r.costPoisha)}</span>}
               />
             ))}
@@ -155,6 +210,56 @@ export default function ExpiryPage() {
           }}
         >
           {tr("না, রেখে দিন")}
+        </Button>
+      </Sheet>
+
+      <Sheet
+        open={returning != null}
+        onClose={() => {
+          setReturning(null)
+          setReturnError(null)
+        }}
+        label={tr("ডিলারে ফেরত")}
+      >
+        <h2 className="text-lg font-bold">{tr("ডিলারে ফেরত দেবেন?")}</h2>
+        <p className="text-muted">
+          {returning?.product.name} — {returning ? describe(returning) : ""}{tr("। ব্যাচটি স্টক থেকে সরে যাবে এবং খাতায় ফেরত হিসেবে লেখা থাকবে।")}
+        </p>
+        {dealers.length === 0 ? (
+          <Banner tone="warn">
+            {tr("আগে ডিলার যোগ করুন")} — <Link href="/dealers/" className="underline">{tr("ডিলারের পাতা")}</Link>
+          </Banner>
+        ) : (
+          <Chips value={dealerId} onChange={setDealerId} options={dealers.map((d) => ({ value: d.id, label: d.name }))} />
+        )}
+        <Field
+          id="return-credit"
+          label={tr("ক্রেডিট (টাকা) — ডিলার যত টাকা কাটবে")}
+          hint={tr("বদলে মাল পেলে ০ দিন। ক্রেডিট দিলে ডিলারের খাতায় জমা হবে।")}
+          inputMode="decimal"
+          value={credit}
+          onChange={(e) => setCredit(e.target.value)}
+        />
+        {returnError ? <Banner tone="danger">{returnError}</Banner> : null}
+        <Button
+          full
+          onClick={() => {
+            if (!returning || state.status !== "authed") return
+            const poisha = parseTaka(credit)
+            if (poisha === null) return setReturnError(tr("ক্রেডিটের টাকা সঠিক নয়"))
+            try {
+              update((d) => returnBatchToDealer(d, returning.batch.id, { dealerId, creditPoisha: poisha, by: state.user.name }, new Date()))
+              setReturning(null)
+              setReturnError(null)
+            } catch (err) {
+              setReturnError(domainMessage(err))
+            }
+          }}
+        >
+          {tr("ফেরত দিন")}
+        </Button>
+        <Button variant="secondary" full onClick={() => (setReturning(null), setReturnError(null))}>
+          {tr("থাক")}
         </Button>
       </Sheet>
     </AppShell>

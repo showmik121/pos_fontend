@@ -192,7 +192,7 @@ test("কর্মচারী: বিল বাতিল, লাভের র�
   await expect(page.getByText("এই পাতা শুধু মালিক দেখতে পারেন।")).toBeVisible()
 
   await page.goto("/stock/expiry/")
-  await expect(page.getByText("পুরনো সিরাপ")).toBeVisible() // মেয়াদোত্তীর্ণ ব্যাচ দেখা যায়
+  await expect(page.getByText("পুরনো সিরাপ").first()).toBeVisible() // মেয়াদোত্তীর্ণ ব্যাচ দেখা যায়
   await expect(page.getByRole("button", { name: "সরান" })).toHaveCount(0) // কিন্তু সরানো যায় না
 })
 

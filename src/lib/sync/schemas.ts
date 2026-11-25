@@ -96,6 +96,9 @@ export const removedBatchSchema = z.looseObject({
   qty: count,
   costPoisha: poisha,
   reason: text(2000),
+  returnedToDealerId: id.optional(),
+  returnedToDealerName: text(2000).optional(),
+  creditPoisha: poisha.optional(),
 })
 
 export const settingsSchema = z.looseObject({
