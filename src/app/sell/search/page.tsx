@@ -20,6 +20,9 @@ import { addToCart } from "@/lib/store/actions"
 import { searchProducts } from "@/lib/store/search"
 import { withDetail } from "@/components/product-subtitle"
 import { sellableStock } from "@/lib/store/selectors"
+import { groupByFamily } from "@/lib/store/variants"
+import { formatCount } from "@/lib/domain/money"
+import { toBanglaDigits } from "@/lib/format/bn"
 
 export default function SellSearchPage() {
   const { db, update } = useDb()
@@ -29,6 +32,15 @@ export default function SellSearchPage() {
   const [picking, setPicking] = useState<Product | null>(null)
   const [customQty, setCustomQty] = useState("")
   const results = useMemo(() => searchProducts(db, query), [db, query])
+  const groups = useMemo(() => groupByFamily(results), [results])
+  // ভ্যারিয়েন্টের গ্রুপ: খোঁজার সময় খোলা (কাউন্টারে এক ট্যাপে সাইজ বাছতে), খালি খোঁজে গোটানো
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const toggle = (key: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
 
   const add = (product: Product, qty: number) => {
     update((d) => ({ ...d, draft: addToCart(d.draft, product.id, qty) }))
@@ -49,25 +61,43 @@ export default function SellSearchPage() {
         <Card className="px-4 py-6 text-center text-muted">{tr("কিছু পাওয়া যায়নি")}</Card>
       ) : (
         <RowList>
-          {results.map((p) => {
-            const sellable = sellableStock(db, p.id, today)
+          {groups.map((g) => {
+            const productRow = (p: Product, asVariant: boolean) => {
+              const sellable = sellableStock(db, p.id, today)
+              return (
+                <Row
+                  key={p.id}
+                  title={asVariant ? (p.variant ?? p.name) : p.name}
+                  subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: stockCountText(p, sellable) }))}
+                  className={asVariant ? "bg-canvas/60 pl-8" : undefined}
+                  right={sellable <= 0 ? <Pill tone="danger">{tr("স্টক নেই")}</Pill> : undefined}
+                  onClick={
+                    sellable <= 0
+                      ? undefined
+                      : () => {
+                          if (hasStrips(p)) {
+                            setCustomQty("")
+                            setPicking(p)
+                          } else add(p, 1)
+                        }
+                  }
+                />
+              )
+            }
+            const first = g.items[0]
+            if (g.items.length === 1 && first) return productRow(first, false)
+            const open = query.trim() !== "" || expanded.has(g.key)
+            const total = g.items.reduce((n, p) => n + sellableStock(db, p.id, today), 0)
             return (
-              <Row
-                key={p.id}
-                title={p.name}
-                subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: stockCountText(p, sellable) }))}
-                right={sellable <= 0 ? <Pill tone="danger">{tr("স্টক নেই")}</Pill> : undefined}
-                onClick={
-                  sellable <= 0
-                    ? undefined
-                    : () => {
-                        if (hasStrips(p)) {
-                          setCustomQty("")
-                          setPicking(p)
-                        } else add(p, 1)
-                      }
-                }
-              />
+              <div key={g.key}>
+                <Row
+                  onClick={query.trim() !== "" ? undefined : () => toggle(g.key)}
+                  title={g.title}
+                  subtitle={tf("{p0}টি ভ্যারিয়েন্ট · মোট স্টক {p1} পিস", { p0: toBanglaDigits(g.items.length), p1: formatCount(total) })}
+                  chevron={query.trim() === ""}
+                />
+                {open ? <div className="divide-y divide-line border-t border-line">{g.items.map((p) => productRow(p, true))}</div> : null}
+              </div>
             )
           })}
         </RowList>

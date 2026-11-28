@@ -1,5 +1,6 @@
 // কসমেটিক্স: একই পণ্যের শেড/সাইজ ভ্যারিয়েন্ট। এক ফ্যামিলিতে বাঁধা, স্টকে এক সারি, "আরেকটি ভ্যারিয়েন্ট" আগে থেকে ভরা ফর্মে।
 import { expect, test } from "@playwright/test"
+import { createProduct, stockIn } from "../src/lib/store/actions"
 import { emptyDb } from "../src/lib/store/db"
 import { mockApi, seedStore, storedDb } from "./support"
 
@@ -55,4 +56,28 @@ test("ফার্মেসিতে ভ্যারিয়েন্টের 
   await seedStore(page, { role: "owner", kind: "pharmacy", db: emptyDb() })
   await page.goto("/products/new/")
   await expect(page.locator("#p-variant")).toHaveCount(0)
+})
+
+test("বিক্রির খোঁজে ভ্যারিয়েন্ট এক ফ্যামিলির নিচে; খুঁজলে খোলা, এক ট্যাপে সাইজ বিলে যায়", async ({ page }) => {
+  const now = new Date()
+  let db = emptyDb()
+  const ids: string[] = []
+  for (const [variant, price] of [["50ml", 20000], ["100ml", 35000]] as const) {
+    const made = createProduct(db, { name: "Ponds Cream", variant, unit: "piece", cartonSize: 1, costPoisha: 10000, pricePoisha: price, minStock: 1, category: "", barcode: null, open: true }, now)
+    db = stockIn(made.db, { productId: made.product.id, qty: 5, unit: "piece", batchNo: "", expiryDate: null, costPoisha: 10000, pricePoisha: null, requireBatchAndExpiry: false }, now)
+    ids.push(made.product.id)
+  }
+  await mockApi(page, { role: "owner", kind: "cosmetics" })
+  await seedStore(page, { role: "owner", kind: "cosmetics", db })
+  await page.goto("/sell/search/")
+  // খালি খোঁজে গোটানো
+  await expect(page.getByText("২টি ভ্যারিয়েন্ট")).toBeVisible()
+  await expect(page.getByText("100ml", { exact: true })).toHaveCount(0)
+  await page.locator("#sell-search").fill("ponds")
+  await expect(page.getByText("50ml", { exact: true })).toBeVisible()
+  await page.getByText("100ml", { exact: true }).click()
+  await expect(page).toHaveURL(/\/sell\/$/)
+  const lines = (await storedDb(page))?.draft.lines ?? []
+  expect(lines).toHaveLength(1)
+  expect(lines[0]?.productId).toBe(ids[1])
 })
