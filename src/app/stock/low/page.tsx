@@ -5,8 +5,8 @@ import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
 import { Card, Pill, Row, RowList } from "@/components/ui/card"
 import { todayIso } from "@/lib/domain/dates"
-import { formatCount } from "@/lib/domain/money"
 import { lowStockProducts, sellableStock } from "@/lib/store/selectors"
+import { stockCountText } from "@/lib/store/pack-text"
 
 export default function LowStockPage() {
   const { db } = useDb()
@@ -26,7 +26,7 @@ export default function LowStockPage() {
               key={p.id}
               href={`/stock/in?product=${p.id}`}
               title={p.name}
-              subtitle={tf("আছে {p0} · সর্বনিম্ন {p1}", { p0: (formatCount(sellable)), p1: (formatCount(p.minStock)) })}
+              subtitle={tf("আছে {p0} · সর্বনিম্ন {p1}", { p0: stockCountText(p, sellable), p1: stockCountText(p, p.minStock) })}
               right={<Pill tone={sellable === 0 ? "danger" : "warn"}>{sellable === 0 ? tr("শেষ") : tr("কম")}</Pill>}
               chevron
             />

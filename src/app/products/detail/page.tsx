@@ -17,7 +17,7 @@ import { classifyExpiry, daysUntil } from "@/lib/domain/expiry"
 import { sellableBatches } from "@/lib/domain/fifo"
 import { domainMessage } from "@/lib/domain/errors"
 import { formatCount, formatTaka } from "@/lib/domain/money"
-import { hasStrips, packText } from "@/lib/store/pack-text"
+import { hasStrips, packText, priceText, stockWithUnit } from "@/lib/store/pack-text"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { addBarcode } from "@/lib/store/actions"
 import { siblingsOf } from "@/lib/store/variants"
@@ -88,8 +88,8 @@ function ProductDetail() {
       <Card>
         <div className="divide-y divide-line">
           {product.variant ? <KeyValue label={tr("ভ্যারিয়েন্ট")} value={product.variant} /> : null}
-          <KeyValue label={tr("বিক্রয়মূল্য")} value={formatTaka(product.pricePoisha)} />
-          <KeyValue label={tr("ক্রয়মূল্য")} value={formatTaka(product.costPoisha)} />
+          <KeyValue label={tr("বিক্রয়মূল্য")} value={priceText(product)} />
+          <KeyValue label={tr("ক্রয়মূল্য")} value={priceText(product, product.costPoisha)} />
           <KeyValue label={tr("একক")} value={UNIT_LABELS[product.unit]} />
           {hasStrips(product) ? <KeyValue label={tr("১ পাতায়")} value={tf("{p0} পিস", { p0: formatCount(product.stripSize ?? 1) })} /> : null}
           {hasStrips(product) ? <KeyValue label={tr("প্রতি পাতার দাম")} value={formatTaka(product.pricePoisha * (product.stripSize ?? 1))} /> : null}
@@ -106,9 +106,9 @@ function ProductDetail() {
           <span className="text-sm text-muted">{tr("বিক্রি করা যাবে")}</span>
           {low ? <Pill tone={sellable === 0 ? "danger" : "warn"}>{sellable === 0 ? tr("স্টক শেষ") : tr("স্টক কম")}</Pill> : null}
         </div>
-        <div className="text-[28px] font-bold leading-tight">{formatCount(sellable)} {tr("পিস")}</div>
+        <div className="text-[28px] font-bold leading-tight">{stockWithUnit(product, sellable)}</div>
         <div className="text-sm text-muted">
-          {tr("মোট")} {formatCount(total)} {tr("পিস")}{packed ? ` (${packText(total, product)})` : ""} {tr("· সর্বনিম্ন")} {formatCount(product.minStock)}
+          {tr("মোট")} {stockWithUnit(product, total)}{packed ? ` (${packText(total, product)})` : ""} {tr("· সর্বনিম্ন")} {stockWithUnit(product, product.minStock)}
         </div>
       </Card>
 
@@ -125,7 +125,7 @@ function ProductDetail() {
           <SectionTitle>{tf("{p0}-এর অন্য ভ্যারিয়েন্ট", { p0: product.family ?? product.name })}</SectionTitle>
           <RowList>
             {siblings.map((x) => (
-              <Row key={x.id} href={`/products/detail?id=${x.id}`} title={x.variant ?? x.name} subtitle={tf("{p0} · স্টক {p1} পিস", { p0: formatTaka(x.pricePoisha), p1: formatCount(sellableStock(db, x.id, today)) })} chevron />
+              <Row key={x.id} href={`/products/detail?id=${x.id}`} title={x.variant ?? x.name} subtitle={tf("{p0} · স্টক {p1}", { p0: priceText(x), p1: stockWithUnit(x, sellableStock(db, x.id, today)) })} chevron />
             ))}
           </RowList>
         </>
@@ -143,7 +143,7 @@ function ProductDetail() {
               <Row
                 key={b.id}
                 title={b.batchNo ? tf("ব্যাচ {p0}", { p0: (b.batchNo) }) : tr("ব্যাচ নম্বর নেই")}
-                subtitle={tf("{p0} পিস · {p1}", { p0: (formatCount(b.qtyRemaining)), p1: (b.expiryDate ? formatDateBn(b.expiryDate) : tr("মেয়াদ নেই")) })}
+                subtitle={tf("{p0} · {p1}", { p0: stockWithUnit(product, b.qtyRemaining), p1: (b.expiryDate ? formatDateBn(b.expiryDate) : tr("মেয়াদ নেই")) })}
                 right={
                   cls === "expired" ? (
                     <Pill tone="danger">{tr("মেয়াদোত্তীর্ণ")}</Pill>

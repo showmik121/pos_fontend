@@ -14,16 +14,18 @@ import { Sheet } from "@/components/ui/sheet"
 import { Stepper } from "@/components/ui/stepper"
 import { computeCart } from "@/lib/domain/cart"
 import { todayIso } from "@/lib/domain/dates"
-import { formatCount, formatTaka } from "@/lib/domain/money"
+import { formatTaka } from "@/lib/domain/money"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { PackQuickAdd } from "@/components/pack-quick-add"
+import { MeasureQty } from "@/components/measure-qty"
+import { measureName, perMeasurePoisha, perPiecePoishaFromMeasure, PIECES_PER_MEASURE } from "@/lib/domain/measure"
 import { addToCart, setCartLinePrice, setCartQty, setProductPrice } from "@/lib/store/actions"
 import { lineUnitPrice } from "@/lib/store/line-price"
 import { Field } from "@/components/ui/field"
 import { domainMessage } from "@/lib/domain/errors"
 import { parseTaka, takaInputValue } from "@/lib/domain/money"
 import { useSessionInfo } from "@/lib/hooks/use-session"
-import { hasStrips, packText } from "@/lib/store/pack-text"
+import { hasStrips, packText, stockWithUnit } from "@/lib/store/pack-text"
 import { expiredStock, findByBarcode, findProduct, sellableStock } from "@/lib/store/selectors"
 import type { Product } from "@/lib/store/types"
 
@@ -83,20 +85,23 @@ export default function SellPage() {
       return tf("এই বারকোডের পণ্য নেই ({p0})", { p0: (code) })
     }
     setNotFound(null)
-    addProduct(hit.product, hit.packSize)
+    addProduct(hit.product, hit.product.measure ? PIECES_PER_MEASURE : hit.packSize)
     return tf("✓ {p0} যোগ হলো", { p0: (hit.product.name) })
   }
 
   const openPrice = (product: Product, current: number) => {
     setPricing(product)
-    setPriceInput(takaInputValue(current))
+    setPriceInput(takaInputValue(product.measure ? perMeasurePoisha(current) : current))
     setPriceSave(false)
     setPriceError(null)
   }
   const applyPrice = (reset: boolean) => {
     if (!pricing) return
-    const poisha = reset ? null : parseTaka(priceInput)
-    if (!reset && (poisha == null || poisha < 1)) return setPriceError(tr("দাম সঠিকভাবে দিন (যেমন ২৪০)"))
+    const typed = reset ? null : parseTaka(priceInput)
+    if (!reset && (typed == null || typed < 1)) return setPriceError(tr("দাম সঠিকভাবে দিন (যেমন ২৪০)"))
+    // কেজি/লিটারের পণ্যে লেখা দাম প্রতি কেজির; পূর্ণ টাকা না হলে প্রতি-পিস দাম পূর্ণ পয়সা হয় না
+    const poisha = typed != null && pricing.measure ? perPiecePoishaFromMeasure(typed) : typed
+    if (!reset && poisha == null) return setPriceError(tr("প্রতি কেজি/লিটারের দাম পূর্ণ টাকায় দিন (যেমন ৮৫)"))
     try {
       update((d) => {
         // তালিকা-দামও বদলালে বিলের লাইন আবার তালিকা-দামে ফেরে (দুটো একই হয়ে যায়)
@@ -111,7 +116,7 @@ export default function SellPage() {
 
   const hasDiscount = totals != null && totals.lineDiscount + totals.billDiscount > 0
   const overStock = lines.some((l) => l.line.qty > l.sellable)
-  const itemCount = lines.reduce((s, l) => s + l.line.qty, 0)
+  const itemCount = lines.reduce((s, l) => s + (l.product.measure ? 1 : l.line.qty), 0)
 
   return (
     <AppShell
@@ -181,7 +186,7 @@ export default function SellPage() {
                   <div className="min-w-0">
                     <div className="font-medium leading-snug">{product.name}</div>
                     <div className="text-[13px] text-muted">
-                      {tr("প্রতি পিস")} {formatTaka(unitPrice)}{hasStrips(product) ? ` · ${tr("প্রতি পাতা")} ${formatTaka(unitPrice * (product.stripSize ?? 1))}` : ""}
+                      {product.measure ? `${tr("প্রতি")} ${measureName(product.measure)} ${formatTaka(perMeasurePoisha(unitPrice))}` : `${tr("প্রতি পিস")} ${formatTaka(unitPrice)}`}{hasStrips(product) ? ` · ${tr("প্রতি পাতা")} ${formatTaka(unitPrice * (product.stripSize ?? 1))}` : ""}
                       {changed ? <span className="ml-1 font-medium text-warn">{tr("(বদলানো)")}</span> : null}
                     </div>
                     {isOwner ? (
@@ -197,10 +202,19 @@ export default function SellPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <Stepper value={line.qty} onChange={(q) => update((d) => ({ ...d, draft: setCartQty(d.draft, product.id, q) }))} />
-                  {line.qty > sellable ? <Pill tone="warn">{tr("স্টকে আছে")} {formatCount(sellable)}</Pill> : null}
+                  {product.measure ? (
+                    <MeasureQty id={`mq-${product.id}`} measure={product.measure} qty={line.qty} onChange={(q) => update((d) => ({ ...d, draft: setCartQty(d.draft, product.id, q) }))} />
+                  ) : (
+                    <Stepper value={line.qty} onChange={(q) => update((d) => ({ ...d, draft: setCartQty(d.draft, product.id, q) }))} />
+                  )}
+                  {line.qty > sellable ? <Pill tone="warn">{tr("স্টকে আছে")} {stockWithUnit(product, sellable)}</Pill> : null}
                 </div>
-                <PackQuickAdd product={product} onAdd={(q) => update((d) => ({ ...d, draft: setCartQty(d.draft, product.id, line.qty + q) }))} />
+                {product.measure ? (
+                  <Button variant="ghost" className="min-h-11 text-sm" onClick={() => update((d) => ({ ...d, draft: setCartQty(d.draft, product.id, 0) }))}>
+                    {tr("বিল থেকে বাদ দিন")}
+                  </Button>
+                ) : null}
+                {product.measure ? null : <PackQuickAdd product={product} onAdd={(q) => update((d) => ({ ...d, draft: setCartQty(d.draft, product.id, line.qty + q) }))} />}
               </div>
             )
           })}
@@ -217,8 +231,8 @@ export default function SellPage() {
 
       <Sheet open={pricing != null} onClose={() => setPricing(null)} label={tr("দাম বদলান")}>
         <h2 className="text-lg font-bold">{pricing?.name}</h2>
-        <p className="text-muted">{tr("শুধু এই বিলের দাম বদলাবে। প্রতি পিসের দাম লিখুন।")}</p>
-        <Field id="line-price" label={tr("প্রতি পিস দাম")} inputMode="decimal" value={priceInput} onChange={(e) => setPriceInput(e.target.value)} autoFocus />
+        <p className="text-muted">{pricing?.measure ? tr("শুধু এই বিলের দাম বদলাবে। প্রতি কেজি/লিটারের দাম লিখুন (পূর্ণ টাকা)।") : tr("শুধু এই বিলের দাম বদলাবে। প্রতি পিসের দাম লিখুন।")}</p>
+        <Field id="line-price" label={pricing?.measure ? `${tr("প্রতি")} ${measureName(pricing.measure)} ${tr("দাম")}` : tr("প্রতি পিস দাম")} inputMode="decimal" value={priceInput} onChange={(e) => setPriceInput(e.target.value)} autoFocus />
         <label className="flex min-h-11 items-center gap-3 text-[15px]">
           <input type="checkbox" checked={priceSave} onChange={(e) => setPriceSave(e.target.checked)} className="size-5" />
           {tr("এই পণ্যের দামও এটাই রাখুন (পরের বিলেও)")}

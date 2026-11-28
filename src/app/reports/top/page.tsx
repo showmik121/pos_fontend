@@ -1,6 +1,6 @@
 "use client"
 
-import { tr, tf } from "@/lib/i18n"
+import { tr } from "@/lib/i18n"
 import { useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
@@ -9,9 +9,10 @@ import { Card, Row, RowList } from "@/components/ui/card"
 import { Chips } from "@/components/ui/segmented"
 import { useSessionInfo } from "@/lib/hooks/use-session"
 import { todayIso } from "@/lib/domain/dates"
-import { formatCount, formatTaka } from "@/lib/domain/money"
+import { formatTaka } from "@/lib/domain/money"
 import { toBanglaDigits } from "@/lib/format/bn"
-import { rangeStart, topProducts } from "@/lib/store/selectors"
+import { findProduct, rangeStart, topProducts } from "@/lib/store/selectors"
+import { soldText } from "@/lib/store/pack-text"
 
 type Range = "1" | "7" | "30"
 
@@ -42,7 +43,7 @@ export default function TopProductsPage() {
           ) : (
             <RowList>
               {rows.map((r, i) => (
-                <Row key={r.productId} title={`${toBanglaDigits(i + 1)}. ${r.name}`} subtitle={tf("{p0} পিস বিক্রি", { p0: (formatCount(r.qty)) })} right={<span className="font-semibold">{formatTaka(r.revenue)}</span>} />
+                <Row key={r.productId} title={`${toBanglaDigits(i + 1)}. ${r.name}`} subtitle={soldText(findProduct(db, r.productId)?.measure, r.qty)} right={<span className="font-semibold">{formatTaka(r.revenue)}</span>} />
               ))}
             </RowList>
           )}

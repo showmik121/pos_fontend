@@ -10,10 +10,9 @@ import { Icon } from "@/components/ui/icons"
 import { SearchBox } from "@/components/ui/inputs"
 import { Chips } from "@/components/ui/segmented"
 import { todayIso } from "@/lib/domain/dates"
-import { formatCount, formatTaka } from "@/lib/domain/money"
 import { searchProducts } from "@/lib/store/search"
 import { withDetail } from "@/components/product-subtitle"
-import { stockCountText } from "@/lib/store/pack-text"
+import { priceText, stockCountText, stockWithUnit } from "@/lib/store/pack-text"
 import { expiringSoonCount, isLowStock, lowStockProducts, nearestExpiryDays, sellableStock } from "@/lib/store/selectors"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { groupByFamily } from "@/lib/store/variants"
@@ -102,7 +101,7 @@ export default function StockPage() {
                   key={p.id}
                   href={`/products/detail?id=${p.id}`}
                   title={asVariant ? (p.variant ?? p.name) : p.name}
-                  subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: stockCountText(p, sellable) }))}
+                  subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: priceText(p), p1: stockCountText(p, sellable) }))}
                   className={asVariant ? "bg-canvas/60 pl-8" : undefined}
                   right={
                     days != null && days <= 30 ? <Pill tone="warn">{tr("মেয়াদ")} {toBanglaDigits(days)} {tr("দিন")}</Pill> : low ? <Pill tone="danger">{tr("স্টক কম")}</Pill> : undefined
@@ -121,7 +120,7 @@ export default function StockPage() {
                 <Row
                   onClick={() => toggle(g.key)}
                   title={g.title}
-                  subtitle={tf("{p0}টি ভ্যারিয়েন্ট · মোট স্টক {p1} পিস", { p0: toBanglaDigits(g.items.length), p1: formatCount(total) })}
+                  subtitle={tf("{p0}টি ভ্যারিয়েন্ট · মোট স্টক {p1}", { p0: toBanglaDigits(g.items.length), p1: stockWithUnit(g.items[0] ?? {}, total) })}
                   right={anyLow ? <Pill tone="danger">{tr("স্টক কম")}</Pill> : undefined}
                   chevron
                 />

@@ -10,6 +10,7 @@ import { newId } from "./db"
 import { addDealerEntry, findDealer } from "./dealers"
 import { customerBalance, findByBarcode, findProduct } from "./selectors"
 import { lineUnitPrice } from "./line-price"
+import type { Measure } from "../domain/measure"
 import { hasVariant, resolveVariant } from "./variants"
 import { DOSAGE_FORMS, PHARMA_TEXT_MAX, type Batch, type Customer, type Db, type Draft, type DosageForm, type LedgerEntry, type Product, type RemovedBatch, type Sale, type SaleLine, type UnitLabel } from "./types"
 
@@ -32,6 +33,8 @@ export interface ProductInput {
   company?: string
   /** শেড/সাইজের লেবেল; দিলে `name` ফ্যামিলির নাম ধরা হয় আর পণ্যের নাম হয় "ফ্যামিলি · ভ্যারিয়েন্ট" */
   variant?: string
+  /** কেজি/লিটারে বিক্রির পণ্য (শুধু নতুন পণ্যে বসে, পরে বদলানো যায় না: স্টকের মান পাল্টে যাবে); এতে পাতা থাকে না */
+  measure?: Measure
   barcode: string | null
   open: boolean
 }
@@ -56,6 +59,7 @@ function validateProductFields(input: ProductInput): void {
   requireNonNegativeInt(input.costPoisha, "ক্রয়মূল্য")
   requirePositiveInt(input.cartonSize, "কার্টনে পিসের সংখ্যা")
   if (input.stripSize !== undefined) requirePositiveInt(input.stripSize, "পাতায় পিসের সংখ্যা")
+  if (input.measure && (input.stripSize ?? 1) > 1) throw new DomainError("measure_no_strip", tr("কেজি/লিটারের পণ্যে পাতা থাকে না"))
   requireNonNegativeInt(input.minStock, "সর্বনিম্ন স্টক")
   if ((input.generic?.trim().length ?? 0) > PHARMA_TEXT_MAX.generic) throw new DomainError("generic_too_long", tr("জেনেরিক নাম বেশি লম্বা"))
   if ((input.strength?.trim().length ?? 0) > PHARMA_TEXT_MAX.strength) throw new DomainError("strength_too_long", tr("শক্তি বেশি লম্বা (যেমন ৫০০ mg)"))
@@ -80,6 +84,7 @@ export function createProduct(db: Db, input: ProductInput, now: Date): { db: Db;
     minStock: input.minStock,
     category: input.category.trim(),
     ...pharmaFields(input),
+    ...(input.measure ? { measure: input.measure } : {}),
     open: input.open && !code,
     createdAt: now.toISOString(),
   }

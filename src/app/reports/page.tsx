@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { useDb } from "@/components/db-provider"
+import { soldText } from "@/lib/store/pack-text"
 import { ReportDownloads } from "@/components/report-downloads"
 import { Banner } from "@/components/ui/banner"
 import { LinkButton } from "@/components/ui/button"
@@ -11,13 +12,13 @@ import { Card, Pill, Row, RowList, SectionTitle, StatBox } from "@/components/ui
 import { Icon } from "@/components/ui/icons"
 import { Segmented } from "@/components/ui/segmented"
 import { addDays, formatDateBn, todayIso } from "@/lib/domain/dates"
-import { formatCount, formatTaka } from "@/lib/domain/money"
+import { formatTaka } from "@/lib/domain/money"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { tf, tr } from "@/lib/i18n"
 import { useSessionInfo } from "@/lib/hooks/use-session"
 import { expenseTotal } from "@/lib/store/expenses"
 import { changePercent, reportRange, type ReportPreset } from "@/lib/store/report-range"
-import { expiringSoonCount, lowStockProducts, rangeSummary, topProducts, totalDue } from "@/lib/store/selectors"
+import { expiringSoonCount, findProduct, lowStockProducts, rangeSummary, topProducts, totalDue } from "@/lib/store/selectors"
 
 function Bar({ label, value, total, tone }: { label: string; value: number; total: number; tone: string }) {
   const pct = total > 0 ? Math.round((Math.max(0, value) / total) * 100) : 0
@@ -159,7 +160,7 @@ export default function ReportsPage() {
               </SectionTitle>
               <RowList>
                 {top.map((r, i) => (
-                  <Row key={r.productId} title={`${toBanglaDigits(i + 1)}. ${r.name}`} subtitle={tf("{p0} পিস বিক্রি", { p0: formatCount(r.qty) })} right={<span className="font-semibold">{formatTaka(r.revenue)}</span>} />
+                  <Row key={r.productId} title={`${toBanglaDigits(i + 1)}. ${r.name}`} subtitle={soldText(findProduct(db, r.productId)?.measure, r.qty)} right={<span className="font-semibold">{formatTaka(r.revenue)}</span>} />
                 ))}
               </RowList>
             </>

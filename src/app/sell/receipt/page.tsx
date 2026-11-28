@@ -19,12 +19,14 @@ import { formatTaka } from "@/lib/domain/money"
 import { formatDateTimeBn } from "@/lib/format/datetime"
 import { formatBillNo } from "@/lib/domain/bill"
 import { toBanglaDigits } from "@/lib/format/bn"
-import type { Sale } from "@/lib/store/types"
+import type { Db, Sale } from "@/lib/store/types"
+import { lineQtyText } from "@/lib/store/pack-text"
+import { findProduct } from "@/lib/store/selectors"
 
 const METHOD_LABEL = { cash: "ক্যাশ", bkash: "বিকাশ", nagad: "নগদ", rocket: "রকেট" } as const
 
-function receiptText(storeName: string, sale: Sale): string {
-  const rows = sale.lines.map((l) => `${l.name} × ${toBanglaDigits(l.qty)} = ${formatTaka(l.unitPrice * l.qty - l.discount)}`)
+function receiptText(storeName: string, sale: Sale, db: Db): string {
+  const rows = sale.lines.map((l) => `${l.name} ${lineQtyText(findProduct(db, l.productId)?.measure, l.unitPrice, l.qty).replace(/^.*? × /, "× ")} = ${formatTaka(l.unitPrice * l.qty - l.discount)}`)
   const out = sale.voided ? [tr("*** বাতিল বিল ***"), storeName, tf("বিল নং {p0} · {p1}", { p0: (formatBillNo(sale)), p1: (formatDateTimeBn(sale.at)) }), "", ...rows, ""] : [storeName, tf("বিল নং {p0} · {p1}", { p0: (formatBillNo(sale)), p1: (formatDateTimeBn(sale.at)) }), "", ...rows, ""]
   if (sale.lineDiscount + sale.billDiscount > 0) out.push(tf("ছাড়: −{p0}", { p0: (formatTaka(sale.lineDiscount + sale.billDiscount)) }))
   out.push(tf("মোট: {p0}", { p0: (formatTaka(sale.total)) }))
@@ -60,7 +62,7 @@ function ReceiptView() {
   }
 
   const share = async () => {
-    const text = receiptText(storeName, sale)
+    const text = receiptText(storeName, sale, db)
     try {
       if (typeof navigator.share === "function") {
         await navigator.share({ text })
@@ -129,7 +131,7 @@ function ReceiptView() {
               <div className="min-w-0">
                 <div className="font-medium">{l.name}</div>
                 <div className="text-[13px] text-muted">
-                  {formatTaka(l.unitPrice)} × {toBanglaDigits(l.qty)}
+                  {lineQtyText(findProduct(db, l.productId)?.measure, l.unitPrice, l.qty)}
                   {l.discount > 0 ? tf(" · ছাড় −{p0}", { p0: (formatTaka(l.discount)) }) : ""}
                 </div>
               </div>

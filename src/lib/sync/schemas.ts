@@ -33,6 +33,7 @@ export const productSchema = z.looseObject({
   form: z.enum(["tablet", "capsule", "syrup", "injection", "drop", "cream", "inhaler", "saline", "other"]).optional(),
   company: text(300).optional(),
   // ভ্যারিয়েন্ট (শেড/সাইজ): একই ফ্যামিলির পণ্যগুলো বাঁধে
+  measure: z.enum(["kg", "l"]).optional(),
   family: text(300).optional(),
   variant: text(300).optional(),
   open: z.boolean(),

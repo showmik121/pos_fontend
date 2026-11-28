@@ -1,4 +1,5 @@
 import type { BillDiscount, MobileMethod, Payment } from "../domain/cart"
+import type { Measure } from "../domain/measure"
 
 export type UnitLabel = "piece" | "strip" | "box"
 export const UNIT_LABELS: Record<UnitLabel, string> = { piece: "পিস", strip: "পাতা", box: "বক্স" }
@@ -47,6 +48,8 @@ export interface Product {
   form?: DosageForm
   /** কোম্পানি/প্রস্তুতকারক */
   company?: string
+  /** কেজি/লিটারে বিক্রির পণ্য: স্টক ও পরিমাণ ০.০১ কেজি (১০ গ্রাম) ধাপের পূর্ণসংখ্যায়, প্রতি-পিস দাম = প্রতি কেজির দাম (পূর্ণ টাকা); দেখুন `domain/measure.ts`। পুরনো ডেটায় নেই */
+  measure?: Measure
   /** ভ্যারিয়েন্টের ফ্যামিলি (যেমন "Ponds Cream"); `variant` থাকলে `name` = "ফ্যামিলি · ভ্যারিয়েন্ট", পুরনো ডেটায় নেই */
   family?: string
   /** শেড বা সাইজের লেবেল (যেমন "৫০ml", "শেড ০২") */

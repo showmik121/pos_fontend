@@ -1,6 +1,6 @@
 "use client"
 
-import { tr } from "@/lib/i18n"
+import { tf, tr } from "@/lib/i18n"
 import { useState } from "react"
 import { Banner } from "./ui/banner"
 import { Button } from "./ui/button"
@@ -15,6 +15,7 @@ import { normalizeExpiryInput } from "@/lib/domain/expiry-input"
 import { CompanyPicker } from "./company-picker"
 import { ExpiryField } from "./expiry-field"
 import { parseTaka, takaInputValue } from "@/lib/domain/money"
+import { measureInputValue, measureName, parseMeasureQty, perMeasurePoisha, perPiecePoishaFromMeasure, type Measure } from "@/lib/domain/measure"
 import type { ProductInput } from "@/lib/store/actions"
 import { DOSAGE_FORMS, PHARMA_TEXT_MAX, UNIT_LABELS, VARIANT_TEXT_MAX, type DosageForm, type Product, type UnitLabel } from "@/lib/store/types"
 
@@ -54,10 +55,15 @@ export function ProductForm({ initial, prefill, initialBarcode = "", open = fals
   const src = initial ?? prefill
   const [name, setName] = useState(src?.family ?? src?.name ?? "")
   const [variant, setVariant] = useState(initial?.variant ?? "")
+  // কেজি/লিটারের পণ্য: নতুন পণ্যে বাছা যায়, পরে বদলানো যায় না; "আরেকটি ভ্যারিয়েন্ট"-এ আগেরটাই চলে
+  const [measure, setMeasure] = useState<Measure | null>(src?.measure ?? null)
+  const measured = measure != null
+  const [sack, setSack] = useState(src?.measure && src.cartonSize > 1 ? measureInputValue(src.cartonSize) : "")
+  const [minMeasure, setMinMeasure] = useState(src?.measure && src.minStock > 0 ? measureInputValue(src.minStock) : "")
   const [barcode, setBarcode] = useState(initialBarcode)
   const [unit, setUnit] = useState<UnitLabel>(src?.unit ?? "piece")
-  const [cost, setCost] = useState(src ? takaInputValue(src.costPoisha) : "")
-  const [price, setPrice] = useState(src ? takaInputValue(src.pricePoisha) : "")
+  const [cost, setCost] = useState(src ? takaInputValue(src.measure ? perMeasurePoisha(src.costPoisha) : src.costPoisha) : "")
+  const [price, setPrice] = useState(src ? takaInputValue(src.measure ? perMeasurePoisha(src.pricePoisha) : src.pricePoisha) : "")
   const [carton, setCarton] = useState(src ? String(src.cartonSize) : "1")
   const [minStock, setMinStock] = useState(String(src?.minStock ?? defaultMinStock))
   const [category, setCategory] = useState(src?.category ?? "")
@@ -88,10 +94,24 @@ export function ProductForm({ initial, prefill, initialBarcode = "", open = fals
 
   const submit = (addAnother = false) => {
     setError(null)
-    const pricePoisha = parseTaka(price)
-    const costPoisha = cost.trim() ? parseTaka(cost) : 0
-    const cartonSize = Number(toAsciiDigits(carton))
-    const min = Number(toAsciiDigits(minStock))
+    const typedPrice = parseTaka(price)
+    const typedCost = cost.trim() ? parseTaka(cost) : 0
+    // কেজি/লিটারে: দাম প্রতি কেজির (পূর্ণ টাকা), ভেতরে প্রতি ০.০১ কেজির দামে রাখা হয়
+    const pricePoisha = measured && typedPrice != null ? perPiecePoishaFromMeasure(typedPrice) : typedPrice
+    const costPoisha = measured && typedCost != null ? perPiecePoishaFromMeasure(typedCost, false) : typedCost
+    if (measured && typedPrice != null && pricePoisha == null) return setError(tr("কেজি বা লিটারের দাম পূর্ণ টাকায় দিন (যেমন ৮৫)"))
+    const sackPieces = sack.trim() ? parseMeasureQty(sack) : 1
+    if (measured && sackPieces == null) {
+      setMore(true)
+      return setError(tr("বস্তার ওজন সঠিক নয় (যেমন ২৫)"))
+    }
+    const minPieces = minMeasure.trim() ? parseMeasureQty(minMeasure) : 0
+    if (measured && minPieces == null) {
+      setMore(true)
+      return setError(tr("সর্বনিম্ন স্টক সঠিক নয় (যেমন ৫)"))
+    }
+    const cartonSize = measured ? (sackPieces ?? 1) : Number(toAsciiDigits(carton))
+    const min = measured ? (minPieces ?? 0) : Number(toAsciiDigits(minStock))
     const stripSize = strip.trim() ? Number(toAsciiDigits(strip)) : 1
     if (pharmacy && (!Number.isInteger(stripSize) || stripSize < 1)) return setError(tr("পাতায় পিসের সংখ্যা ১ বা তার বেশি হতে হবে"))
     if (pricePoisha == null) return setError(tr("বিক্রয়মূল্য সঠিকভাবে দিন (যেমন ২৪০)"))
@@ -104,8 +124,8 @@ export function ProductForm({ initial, prefill, initialBarcode = "", open = fals
       setMore(true)
       return setError(tr("সর্বনিম্ন স্টক সঠিক নয়"))
     }
-    const qty = stockQty.trim() ? Number(toAsciiDigits(stockQty)) : 0
-    if (withInitialStock && (!Number.isInteger(qty) || qty < 0)) return setError(tr("শুরুর স্টক ০ বা পূর্ণসংখ্যা দিন"))
+    const qty = measured ? (stockQty.trim() ? (parseMeasureQty(stockQty) ?? -1) : 0) : stockQty.trim() ? Number(toAsciiDigits(stockQty)) : 0
+    if (withInitialStock && (!Number.isInteger(qty) || qty < 0)) return setError(measured ? tr("শুরুর স্টক সঠিক নয় (যেমন ২.৫)") : tr("শুরুর স্টক ০ বা পূর্ণসংখ্যা দিন"))
     let expiryDate: string | null = null
     if (pharmacy && withInitialStock && showExpiry && qty > 0 && !expiry.trim()) return setError(tr("মেয়াদ দিন (মাস/বছর)"))
     if (withInitialStock && showExpiry && qty > 0 && expiry.trim()) {
@@ -113,7 +133,7 @@ export function ProductForm({ initial, prefill, initialBarcode = "", open = fals
       if (!expiryDate) return setError(tr("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)"))
     }
     try {
-      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, stripSize: pharmacy ? stripSize : undefined, generic, strength, form: form || null, company, variant: pharmacy ? undefined : variant, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate }, addAnother)
+      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, stripSize: pharmacy ? stripSize : undefined, generic, strength, form: form || null, company, variant: pharmacy ? undefined : variant, measure: measure ?? undefined, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate }, addAnother)
     } catch (err) {
       setError(domainMessage(err))
     }
@@ -149,6 +169,22 @@ export function ProductForm({ initial, prefill, initialBarcode = "", open = fals
           <CompanyPicker value={company} onChange={setCompany} />
         </>
       ) : null}
+      {!pharmacy && !editing && !prefill ? (
+        <div className="space-y-1.5">
+          <span className="block text-sm font-medium">{tr("কীভাবে বিক্রি হয়")}</span>
+          <Segmented
+            label={tr("বিক্রির ধরন")}
+            options={[
+              { value: "piece" as const, label: tr("পিস") },
+              { value: "kg" as const, label: tr("কেজি") },
+              { value: "l" as const, label: tr("লিটার") },
+            ]}
+            value={measure ?? "piece"}
+            onChange={(v) => setMeasure(v === "piece" ? null : v)}
+          />
+          {measured ? <p className="text-sm text-muted">{tr("ওজন বা মাপ অনুযায়ী বিক্রি হবে (০.২৫ কেজি, ২.৫ লিটার)। দাম প্রতি একক, পূর্ণ টাকায়।")}</p> : null}
+        </div>
+      ) : null}
       {!open && !editing ? (
         <Field
           id="p-barcode"
@@ -164,10 +200,10 @@ export function ProductForm({ initial, prefill, initialBarcode = "", open = fals
         />
       ) : null}
       <div className="grid grid-cols-2 gap-3">
-        <Field id="p-cost" label={tr("ক্রয়মূল্য (ঐচ্ছিক)")} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
-        <Field id="p-price" label={tr("বিক্রয়মূল্য")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <Field id="p-cost" label={measured ? tf("ক্রয়মূল্য (প্রতি {p0}, ঐচ্ছিক)", { p0: measureName(measure) }) : tr("ক্রয়মূল্য (ঐচ্ছিক)")} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
+        <Field id="p-price" label={measured ? tf("বিক্রয়মূল্য (প্রতি {p0})", { p0: measureName(measure) }) : tr("বিক্রয়মূল্য")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
-      <p className="-mt-2 text-sm text-muted">{tr("দাম প্রতি পিসের হিসাবে লিখুন। ক্রয়মূল্য দিলে লাভের হিসাব মেলে।")}</p>
+      <p className="-mt-2 text-sm text-muted">{measured ? tr("বিক্রয়মূল্য প্রতি কেজি/লিটারের, পূর্ণ টাকায়। ক্রয়মূল্য দিলে লাভের হিসাব মেলে।") : tr("দাম প্রতি পিসের হিসাবে লিখুন। ক্রয়মূল্য দিলে লাভের হিসাব মেলে।")}</p>
       {stripN > 1 ? (
         <Field
           id="p-strip-price"
@@ -186,7 +222,7 @@ export function ProductForm({ initial, prefill, initialBarcode = "", open = fals
       ) : null}
       {withInitialStock ? (
         <>
-          <Field id="p-stock" label={tr("এখন কতগুলো আছে (পিস)")} placeholder={tr("০")} inputMode="numeric" value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
+          <Field id="p-stock" label={measured ? tf("এখন কত {p0} আছে", { p0: measureName(measure) }) : tr("এখন কতগুলো আছে (পিস)")} placeholder={tr("০")} inputMode={measured ? "decimal" : "numeric"} value={stockQty} onChange={(e) => setStockQty(e.target.value)} />
           {showExpiry && Number(toAsciiDigits(stockQty)) > 0 ? <ExpiryField id="p-expiry" label={pharmacy ? tr("মেয়াদ (মাস/বছর)") : tr("মেয়াদ (ঐচ্ছিক, মাস/বছর)")} value={expiry} onChange={setExpiry} quick={pharmacy} /> : null}
         </>
       ) : null}
@@ -202,14 +238,23 @@ export function ProductForm({ initial, prefill, initialBarcode = "", open = fals
       </button>
       {more ? (
         <div id="p-more" className="space-y-4">
-          <div className="space-y-1.5">
-            <span className="block text-sm font-medium">{tr("একক")}</span>
-            <Segmented label={tr("একক")} options={UNIT_OPTIONS} value={unit} onChange={setUnit} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field id="p-carton" label={pharmacy ? tr("১ বক্সে কত পিস") : tr("১ কার্টনে কত পিস")} inputMode="numeric" value={carton} onChange={(e) => setCarton(e.target.value)} />
-            <Field id="p-min" label={tr("সর্বনিম্ন স্টক")} inputMode="numeric" value={minStock} onChange={(e) => setMinStock(e.target.value)} />
-          </div>
+          {measured ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Field id="p-sack" label={tf("১ বস্তায় কত {p0} (ঐচ্ছিক)", { p0: measureName(measure) })} inputMode="decimal" value={sack} onChange={(e) => setSack(e.target.value)} />
+              <Field id="p-min-measure" label={tf("সর্বনিম্ন স্টক ({p0})", { p0: measureName(measure) })} inputMode="decimal" value={minMeasure} onChange={(e) => setMinMeasure(e.target.value)} />
+            </div>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <span className="block text-sm font-medium">{tr("একক")}</span>
+                <Segmented label={tr("একক")} options={UNIT_OPTIONS} value={unit} onChange={setUnit} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field id="p-carton" label={pharmacy ? tr("১ বক্সে কত পিস") : tr("১ কার্টনে কত পিস")} inputMode="numeric" value={carton} onChange={(e) => setCarton(e.target.value)} />
+                <Field id="p-min" label={tr("সর্বনিম্ন স্টক")} inputMode="numeric" value={minStock} onChange={(e) => setMinStock(e.target.value)} />
+              </div>
+            </>
+          )}
           <Field id="p-cat" label={tr("ক্যাটেগরি (ঐচ্ছিক)")} lang="en" autoCapitalize="words" value={category} onChange={(e) => setCategory(e.target.value)} />
         </div>
       ) : null}
