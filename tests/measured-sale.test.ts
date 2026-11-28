@@ -40,7 +40,7 @@ describe("কেজিতে বিক্রির পণ্য", () => {
 
   it("পরে measure বদলানো যায় না", () => {
     const { db, id } = rice()
-    const out = updateProduct(db, id, { name: "চাল (নতুন)", unit: "piece", cartonSize: 1, costPoisha: 70, pricePoisha: 90, minStock: 0, category: "", barcode: null, open: true, measure: "l" }, NOW)
+    const out = updateProduct(db, id, { name: "চাল (নতুন)", unit: "piece", cartonSize: 1, costPoisha: 70, pricePoisha: 90, minStock: 0, category: "", measure: "l" })
     expect(out.products[0]?.measure).toBe("kg")
     expect(out.products[0]?.pricePoisha).toBe(90)
   })
