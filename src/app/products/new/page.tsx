@@ -9,22 +9,28 @@ import { ProductForm } from "@/components/product-form"
 import { useSessionInfo } from "@/lib/hooks/use-session"
 import { createProduct, stockIn } from "@/lib/store/actions"
 import { afterCreateHref } from "@/lib/store/flow"
+import { findProduct } from "@/lib/store/selectors"
 
 function NewProduct() {
   const router = useRouter()
   const params = useSearchParams()
   const { db, run } = useDb()
   const { isPharmacy } = useSessionInfo()
+  // ?from=<id>: সেই পণ্যের নাম/দাম ভরা ফর্মে আরেকটি ভ্যারিয়েন্ট যোগ
+  const fromId = params.get("from")
+  const template = fromId ? findProduct(db, fromId) : undefined
   return (
     <AppShell title={tr("নতুন পণ্য")} backHref={params.get("next") === "stock" ? "/stock/in" : "/stock"}>
       <ProductForm
+        key={fromId ?? "new"}
+        prefill={template}
         initialBarcode={params.get("barcode") ?? ""}
         defaultMinStock={db.settings.defaultMinStock}
         submitLabel={tr("পণ্য সেভ করুন")}
         withInitialStock
         showExpiry={isPharmacy}
         pharmacy={isPharmacy}
-        onSubmit={(input, stock) => {
+        onSubmit={(input, stock, addAnother) => {
           const product = run((d) => {
             const now = new Date()
             const out = createProduct(d, input, now)
@@ -34,7 +40,7 @@ function NewProduct() {
               : out.db
             return { db: next, value: { id: out.product.id, stocked: stock.qty > 0 } }
           })
-          router.replace(afterCreateHref(product.stocked ? null : params.get("next"), product.id))
+          router.replace(addAnother ? `/products/new?from=${product.id}` : afterCreateHref(product.stocked ? null : params.get("next"), product.id))
         }}
       />
     </AppShell>

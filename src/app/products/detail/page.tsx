@@ -20,12 +20,15 @@ import { formatCount, formatTaka } from "@/lib/domain/money"
 import { hasStrips, packText } from "@/lib/store/pack-text"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { addBarcode } from "@/lib/store/actions"
+import { siblingsOf } from "@/lib/store/variants"
+import { useSessionInfo } from "@/lib/hooks/use-session"
 import { batchesOf, findByBarcode, findProduct, sellableStock, totalStock } from "@/lib/store/selectors"
 import { DOSAGE_FORMS, UNIT_LABELS } from "@/lib/store/types"
 
 function ProductDetail() {
   const id = useSearchParams().get("id")
   const { db, update } = useDb()
+  const { isPharmacy } = useSessionInfo()
   const today = todayIso()
   const [scanning, setScanning] = useState(false)
   const [pending, setPending] = useState<string | null>(null)
@@ -47,6 +50,7 @@ function ProductDetail() {
   const firstSellableId = sellableBatches(batches, today)[0]?.id
   const packed = hasStrips(product) || product.cartonSize > 1
   const low = sellable < product.minStock
+  const siblings = siblingsOf(db, product)
 
   const onScanned = (code: string) => {
     setScanning(false)
@@ -83,6 +87,7 @@ function ProductDetail() {
     >
       <Card>
         <div className="divide-y divide-line">
+          {product.variant ? <KeyValue label={tr("ভ্যারিয়েন্ট")} value={product.variant} /> : null}
           <KeyValue label={tr("বিক্রয়মূল্য")} value={formatTaka(product.pricePoisha)} />
           <KeyValue label={tr("ক্রয়মূল্য")} value={formatTaka(product.costPoisha)} />
           <KeyValue label={tr("একক")} value={UNIT_LABELS[product.unit]} />
@@ -110,6 +115,21 @@ function ProductDetail() {
       <LinkButton href={`/stock/in?product=${product.id}`} full>
         <Icon name="plus" /> {tr("স্টক যোগ করুন")}
       </LinkButton>
+      {!isPharmacy ? (
+        <LinkButton href={`/products/new?from=${product.id}`} variant="secondary" full>
+          <Icon name="plus" /> {tr("আরেকটি ভ্যারিয়েন্ট যোগ করুন")}
+        </LinkButton>
+      ) : null}
+      {siblings.length > 0 ? (
+        <>
+          <SectionTitle>{tf("{p0}-এর অন্য ভ্যারিয়েন্ট", { p0: product.family ?? product.name })}</SectionTitle>
+          <RowList>
+            {siblings.map((x) => (
+              <Row key={x.id} href={`/products/detail?id=${x.id}`} title={x.variant ?? x.name} subtitle={tf("{p0} · স্টক {p1} পিস", { p0: formatTaka(x.pricePoisha), p1: formatCount(sellableStock(db, x.id, today)) })} chevron />
+            ))}
+          </RowList>
+        </>
+      ) : null}
 
       <SectionTitle>{tr("ব্যাচ")}</SectionTitle>
       {batches.length === 0 ? (

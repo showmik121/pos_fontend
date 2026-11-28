@@ -10,12 +10,13 @@ import { Icon } from "@/components/ui/icons"
 import { SearchBox } from "@/components/ui/inputs"
 import { Chips } from "@/components/ui/segmented"
 import { todayIso } from "@/lib/domain/dates"
-import { formatTaka } from "@/lib/domain/money"
+import { formatCount, formatTaka } from "@/lib/domain/money"
 import { searchProducts } from "@/lib/store/search"
 import { withDetail } from "@/components/product-subtitle"
 import { stockCountText } from "@/lib/store/pack-text"
 import { expiringSoonCount, isLowStock, lowStockProducts, nearestExpiryDays, sellableStock } from "@/lib/store/selectors"
 import { toBanglaDigits } from "@/lib/format/bn"
+import { groupByFamily } from "@/lib/store/variants"
 import { DEMO_ENABLED } from "@/lib/config"
 
 type Filter = "all" | "low" | "expiry"
@@ -25,6 +26,8 @@ export default function StockPage() {
   const today = todayIso()
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<Filter>("all")
+  // খোলা ফ্যামিলি (ভ্যারিয়েন্টের গ্রুপ); খোঁজার সময় সব খোলা দেখায়
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const lowCount = lowStockProducts(db, today).length
   const soonCount = expiringSoonCount(db, today)
@@ -39,6 +42,14 @@ export default function StockPage() {
       return true
     })
   }, [db, query, filter, today])
+
+  const groups = useMemo(() => groupByFamily(rows), [rows])
+  const toggle = (key: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
 
   return (
     <AppShell
@@ -81,21 +92,41 @@ export default function StockPage() {
         <Card className="px-4 py-6 text-center text-muted">{tr("এই ফিল্টারে কোনো পণ্য নেই")}</Card>
       ) : (
         <RowList>
-          {rows.map((p) => {
-            const sellable = sellableStock(db, p.id, today)
-            const days = nearestExpiryDays(db, p.id, today)
-            const low = sellable < p.minStock
+          {groups.map((g) => {
+            const productRow = (p: (typeof rows)[number], asVariant: boolean) => {
+              const sellable = sellableStock(db, p.id, today)
+              const days = nearestExpiryDays(db, p.id, today)
+              const low = sellable < p.minStock
+              return (
+                <Row
+                  key={p.id}
+                  href={`/products/detail?id=${p.id}`}
+                  title={asVariant ? (p.variant ?? p.name) : p.name}
+                  subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: stockCountText(p, sellable) }))}
+                  className={asVariant ? "bg-canvas/60 pl-8" : undefined}
+                  right={
+                    days != null && days <= 30 ? <Pill tone="warn">{tr("মেয়াদ")} {toBanglaDigits(days)} {tr("দিন")}</Pill> : low ? <Pill tone="danger">{tr("স্টক কম")}</Pill> : undefined
+                  }
+                  chevron
+                />
+              )
+            }
+            const first = g.items[0]
+            if (g.items.length === 1 && first) return productRow(first, false)
+            const open = query.trim() !== "" || expanded.has(g.key)
+            const total = g.items.reduce((n, p) => n + sellableStock(db, p.id, today), 0)
+            const anyLow = g.items.some((p) => sellableStock(db, p.id, today) < p.minStock)
             return (
-              <Row
-                key={p.id}
-                href={`/products/detail?id=${p.id}`}
-                title={p.name}
-                subtitle={withDetail(p, tf("{p0} · স্টক {p1}", { p0: (formatTaka(p.pricePoisha)), p1: stockCountText(p, sellable) }))}
-                right={
-                  days != null && days <= 30 ? <Pill tone="warn">{tr("মেয়াদ")} {toBanglaDigits(days)} {tr("দিন")}</Pill> : low ? <Pill tone="danger">{tr("স্টক কম")}</Pill> : undefined
-                }
-                chevron
-              />
+              <div key={g.key}>
+                <Row
+                  onClick={() => toggle(g.key)}
+                  title={g.title}
+                  subtitle={tf("{p0}টি ভ্যারিয়েন্ট · মোট স্টক {p1} পিস", { p0: toBanglaDigits(g.items.length), p1: formatCount(total) })}
+                  right={anyLow ? <Pill tone="danger">{tr("স্টক কম")}</Pill> : undefined}
+                  chevron
+                />
+                {open ? <div className="divide-y divide-line border-t border-line">{g.items.map((p) => productRow(p, true))}</div> : null}
+              </div>
             )
           })}
         </RowList>

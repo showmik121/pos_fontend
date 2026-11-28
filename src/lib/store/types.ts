@@ -17,6 +17,8 @@ export const DOSAGE_FORMS: Record<DosageForm, string> = {
   other: "অন্যান্য",
 }
 export const PHARMA_TEXT_MAX = { generic: 120, strength: 40, company: 120 } as const
+/** ভ্যারিয়েন্ট (শেড/সাইজ) লেখার সীমা: ফ্যামিলির নাম ও ভ্যারিয়েন্টের লেবেল */
+export const VARIANT_TEXT_MAX = { family: 120, variant: 60 } as const
 
 export interface ProductBarcode {
   code: string
@@ -45,6 +47,10 @@ export interface Product {
   form?: DosageForm
   /** কোম্পানি/প্রস্তুতকারক */
   company?: string
+  /** ভ্যারিয়েন্টের ফ্যামিলি (যেমন "Ponds Cream"); `variant` থাকলে `name` = "ফ্যামিলি · ভ্যারিয়েন্ট", পুরনো ডেটায় নেই */
+  family?: string
+  /** শেড বা সাইজের লেবেল (যেমন "৫০ml", "শেড ০২") */
+  variant?: string
   /** বারকোড ছাড়া "খোলা" পণ্য */
   open: boolean
   createdAt: string

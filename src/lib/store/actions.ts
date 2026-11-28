@@ -9,6 +9,7 @@ import type { ImportRow } from "./csv"
 import { newId } from "./db"
 import { addDealerEntry, findDealer } from "./dealers"
 import { customerBalance, findByBarcode, findProduct } from "./selectors"
+import { hasVariant, resolveVariant } from "./variants"
 import { DOSAGE_FORMS, PHARMA_TEXT_MAX, type Batch, type Customer, type Db, type Draft, type DosageForm, type LedgerEntry, type Product, type RemovedBatch, type Sale, type SaleLine, type UnitLabel } from "./types"
 
 // সব ফাংশন বিশুদ্ধ: পুরনো Db বদলায় না, নতুন Db ফেরত দেয়। ব্যর্থ হলে DomainError ছোঁড়ে।
@@ -28,6 +29,8 @@ export interface ProductInput {
   strength?: string
   form?: DosageForm | null
   company?: string
+  /** শেড/সাইজের লেবেল; দিলে `name` ফ্যামিলির নাম ধরা হয় আর পণ্যের নাম হয় "ফ্যামিলি · ভ্যারিয়েন্ট" */
+  variant?: string
   barcode: string | null
   open: boolean
 }
@@ -63,9 +66,11 @@ export function createProduct(db: Db, input: ProductInput, now: Date): { db: Db;
   validateProductFields(input)
   const code = input.barcode?.trim() || null
   if (code && findByBarcode(db, code)) throw new DomainError("duplicate_barcode", tr("এই বারকোড আগে থেকেই আছে"))
+  const named = resolveVariant(input)
+  if (named.family && named.variant && hasVariant(db, named.family, named.variant)) throw new DomainError("duplicate_variant", tr("এই ভ্যারিয়েন্ট আগে থেকেই আছে"))
   const product: Product = {
     id: newId(),
-    name: input.name.trim(),
+    ...named,
     barcodes: code ? [{ code, packSize: 1 }] : [],
     unit: input.unit,
     cartonSize: input.cartonSize,
@@ -83,13 +88,15 @@ export function createProduct(db: Db, input: ProductInput, now: Date): { db: Db;
 export function updateProduct(db: Db, id: string, input: Omit<ProductInput, "barcode" | "open">): Db {
   validateProductFields({ ...input, barcode: null, open: false })
   if (!findProduct(db, id)) throw new DomainError("not_found", tr("পণ্যটি পাওয়া যায়নি"))
+  const named = resolveVariant(input)
+  if (named.family && named.variant && hasVariant(db, named.family, named.variant, id)) throw new DomainError("duplicate_variant", tr("এই ভ্যারিয়েন্ট আগে থেকেই আছে"))
   return {
     ...db,
     products: db.products.map((p) => {
       if (p.id !== id) return p
-      // পুরনো ওষুধের তথ্য সরিয়ে নতুনটা বসে, তাই ঘর ফাঁকা করলে তথ্য মুছে যায়
-      const { generic: _g, strength: _s, form: _f, company: _c, stripSize: _z, ...rest } = p
-      return { ...rest, name: input.name.trim(), unit: input.unit, cartonSize: input.cartonSize, costPoisha: input.costPoisha, pricePoisha: input.pricePoisha, minStock: input.minStock, category: input.category.trim(), ...pharmaFields(input) }
+      // পুরনো ওষুধের তথ্য ও ভ্যারিয়েন্ট সরিয়ে নতুনটা বসে, তাই ঘর ফাঁকা করলে তথ্য মুছে যায়
+      const { generic: _g, strength: _s, form: _f, company: _c, stripSize: _z, family: _fa, variant: _v, ...rest } = p
+      return { ...rest, ...named, unit: input.unit, cartonSize: input.cartonSize, costPoisha: input.costPoisha, pricePoisha: input.pricePoisha, minStock: input.minStock, category: input.category.trim(), ...pharmaFields(input) }
     }),
   }
 }

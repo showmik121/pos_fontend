@@ -16,7 +16,7 @@ import { CompanyPicker } from "./company-picker"
 import { ExpiryField } from "./expiry-field"
 import { parseTaka, takaInputValue } from "@/lib/domain/money"
 import type { ProductInput } from "@/lib/store/actions"
-import { DOSAGE_FORMS, PHARMA_TEXT_MAX, UNIT_LABELS, type DosageForm, type Product, type UnitLabel } from "@/lib/store/types"
+import { DOSAGE_FORMS, PHARMA_TEXT_MAX, UNIT_LABELS, VARIANT_TEXT_MAX, type DosageForm, type Product, type UnitLabel } from "@/lib/store/types"
 
 const FORM_KEYS = Object.keys(DOSAGE_FORMS) as DosageForm[]
 const UNIT_OPTIONS = (Object.keys(UNIT_LABELS) as UnitLabel[]).map((value) => ({ value, label: UNIT_LABELS[value] }))
@@ -24,6 +24,8 @@ const UNIT_OPTIONS = (Object.keys(UNIT_LABELS) as UnitLabel[]).map((value) => ({
 interface Props {
   /** সম্পাদনার সময় বিদ্যমান পণ্য */
   initial?: Product
+  /** "আরেকটি ভ্যারিয়েন্ট": এই পণ্যের নাম, দাম, ক্যাটেগরি ইত্যাদি নতুন ফর্মে আগে থেকে ভরা (বারকোড, ভ্যারিয়েন্ট, স্টক খালি) */
+  prefill?: Product
   /** স্ক্যান করে না-পাওয়া বারকোড থেকে এলে আগে থেকে ভরা */
   initialBarcode?: string
   /** বারকোডহীন "খোলা" পণ্য */
@@ -36,7 +38,8 @@ interface Props {
   showExpiry?: boolean
   /** ফার্মেসি: জেনেরিক নাম, শক্তি, ধরন ও কোম্পানির ঘর দেখায় */
   pharmacy?: boolean
-  onSubmit: (input: ProductInput, stock: InitialStock) => void
+  /** addAnother = true: সেভ করে একই ফ্যামিলির পরের ভ্যারিয়েন্টের ফর্ম খুলবে */
+  onSubmit: (input: ProductInput, stock: InitialStock, addAnother: boolean) => void
 }
 
 export interface InitialStock {
@@ -46,16 +49,18 @@ export interface InitialStock {
 }
 
 /** নতুন পণ্য / খোলা পণ্য / পণ্য সম্পাদনার ফর্ম */
-export function ProductForm({ initial, initialBarcode = "", open = false, defaultMinStock, submitLabel, withInitialStock = false, showExpiry = false, pharmacy = false, onSubmit }: Props) {
+export function ProductForm({ initial, prefill, initialBarcode = "", open = false, defaultMinStock, submitLabel, withInitialStock = false, showExpiry = false, pharmacy = false, onSubmit }: Props) {
   const editing = Boolean(initial)
-  const [name, setName] = useState(initial?.name ?? "")
+  const src = initial ?? prefill
+  const [name, setName] = useState(src?.family ?? src?.name ?? "")
+  const [variant, setVariant] = useState(initial?.variant ?? "")
   const [barcode, setBarcode] = useState(initialBarcode)
-  const [unit, setUnit] = useState<UnitLabel>(initial?.unit ?? "piece")
-  const [cost, setCost] = useState(initial ? takaInputValue(initial.costPoisha) : "")
-  const [price, setPrice] = useState(initial ? takaInputValue(initial.pricePoisha) : "")
-  const [carton, setCarton] = useState(initial ? String(initial.cartonSize) : "1")
-  const [minStock, setMinStock] = useState(String(initial?.minStock ?? defaultMinStock))
-  const [category, setCategory] = useState(initial?.category ?? "")
+  const [unit, setUnit] = useState<UnitLabel>(src?.unit ?? "piece")
+  const [cost, setCost] = useState(src ? takaInputValue(src.costPoisha) : "")
+  const [price, setPrice] = useState(src ? takaInputValue(src.pricePoisha) : "")
+  const [carton, setCarton] = useState(src ? String(src.cartonSize) : "1")
+  const [minStock, setMinStock] = useState(String(src?.minStock ?? defaultMinStock))
+  const [category, setCategory] = useState(src?.category ?? "")
   const [generic, setGeneric] = useState(initial?.generic ?? "")
   const [strength, setStrength] = useState(initial?.strength ?? "")
   const [form, setForm] = useState<DosageForm | "">(initial?.form ?? "")
@@ -69,7 +74,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
   const [expiry, setExpiry] = useState("")
   // একক/কার্টন/সর্বনিম্ন স্টক/ক্যাটেগরি ডিফল্টে লুকানো; ডিফল্টের বাইরে কিছু থাকলে (সম্পাদনা) খোলা
   const [more, setMore] = useState(
-    (initial !== undefined && (initial.unit !== "piece" || initial.cartonSize !== 1 || initial.minStock !== defaultMinStock || Boolean(initial.category))),
+    (src !== undefined && (src.unit !== "piece" || src.cartonSize !== 1 || src.minStock !== defaultMinStock || Boolean(src.category))),
   )
 
   const stripN = pharmacy ? Number(toAsciiDigits(strip)) || 1 : 1
@@ -81,7 +86,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
       ? tr("এই দামে পিসের দাম পূর্ণ পয়সা হয় না — প্রতি পিসের দাম নিজে লিখুন")
       : tr("পাতার দাম লিখলে প্রতি পিসের দাম নিজেই বসে যায়")
 
-  const submit = () => {
+  const submit = (addAnother = false) => {
     setError(null)
     const pricePoisha = parseTaka(price)
     const costPoisha = cost.trim() ? parseTaka(cost) : 0
@@ -108,7 +113,7 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
       if (!expiryDate) return setError(tr("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)"))
     }
     try {
-      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, stripSize: pharmacy ? stripSize : undefined, generic, strength, form: form || null, company, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate })
+      onSubmit({ name, unit, cartonSize, costPoisha, pricePoisha, minStock: min, category, stripSize: pharmacy ? stripSize : undefined, generic, strength, form: form || null, company, variant: pharmacy ? undefined : variant, barcode: open || editing ? null : barcode.trim() || null, open }, { qty: withInitialStock ? qty : 0, expiryDate }, addAnother)
     } catch (err) {
       setError(domainMessage(err))
     }
@@ -118,6 +123,9 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
     <div className="space-y-4">
       {open ? <Banner tone="info">{tr("বারকোড ছাড়া পণ্য (যেমন খোলা ওষুধ, লুজ আইটেম)। নাম দিয়ে খুঁজে বিক্রি হবে।")}</Banner> : null}
       <Field id="p-name" label={tr("পণ্যের নাম")} hint={pharmacy ? tr("ব্র্যান্ড নাম, ইংরেজি বা বাংলা — যেমন Napa") : tr("ইংরেজি বা বাংলা — যেভাবে লেখা সহজ, যেমন Pond's Cream")} lang="en" autoCapitalize="words" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+      {!pharmacy ? (
+        <Field id="p-variant" label={tr("ভ্যারিয়েন্ট — শেড বা সাইজ (ঐচ্ছিক)")} hint={tr("যেমন ৫০ml বা শেড ০২ — একই পণ্যের সব ভ্যারিয়েন্ট স্টকে এক সারিতে থাকবে")} maxLength={VARIANT_TEXT_MAX.variant} autoFocus={Boolean(prefill)} value={variant} onChange={(e) => setVariant(e.target.value)} autoComplete="off" />
+      ) : null}
       {pharmacy ? (
         <>
           <Field id="p-generic" label={tr("জেনেরিক নাম (ঐচ্ছিক)")} hint={tr("যেমন Paracetamol — বাংলা বা ইংরেজি, দুটো দিয়েই খোঁজা যাবে")} maxLength={PHARMA_TEXT_MAX.generic} autoCapitalize="words" value={generic} onChange={(e) => setGeneric(e.target.value)} autoComplete="off" />
@@ -206,9 +214,14 @@ export function ProductForm({ initial, initialBarcode = "", open = false, defaul
         </div>
       ) : null}
       {error ? <Banner tone="danger">{error}</Banner> : null}
-      <Button full onClick={submit}>
+      <Button full onClick={() => submit(false)}>
         {submitLabel}
       </Button>
+      {!pharmacy && !editing && variant.trim() ? (
+        <Button full variant="secondary" onClick={() => submit(true)}>
+          {tr("সেভ করে আরেকটি ভ্যারিয়েন্ট")}
+        </Button>
+      ) : null}
       <Scanner
         open={scanning}
         onClose={() => setScanning(false)}
