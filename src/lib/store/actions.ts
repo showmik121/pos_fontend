@@ -9,6 +9,7 @@ import type { ImportRow } from "./csv"
 import { newId } from "./db"
 import { addDealerEntry, findDealer } from "./dealers"
 import { customerBalance, findByBarcode, findProduct } from "./selectors"
+import { lineUnitPrice } from "./line-price"
 import { hasVariant, resolveVariant } from "./variants"
 import { DOSAGE_FORMS, PHARMA_TEXT_MAX, type Batch, type Customer, type Db, type Draft, type DosageForm, type LedgerEntry, type Product, type RemovedBatch, type Sale, type SaleLine, type UnitLabel } from "./types"
 
@@ -226,6 +227,26 @@ export function setCartQty(draft: Draft, productId: string, qty: number): Draft 
   return { ...draft, lines: draft.lines.map((l) => (l.productId === productId ? { ...l, qty } : l)) }
 }
 
+/** শুধু এই বিলের একটি লাইনের প্রতি-পিস দাম বদলায় (null = পণ্যের দামে ফেরে); ছাড় দামের বেশি হয়ে গেলে ছাড় কমে দামের সমান হয় */
+export function setCartLinePrice(draft: Draft, productId: string, unitPrice: number | null): Draft {
+  if (unitPrice != null && (!Number.isInteger(unitPrice) || unitPrice < 1)) throw new DomainError("invalid_price", tr("দাম ১ পয়সা বা তার বেশি হতে হবে"))
+  return {
+    ...draft,
+    lines: draft.lines.map((l) => {
+      if (l.productId !== productId) return l
+      const { unitPrice: _old, ...rest } = l
+      return unitPrice == null ? rest : { ...rest, unitPrice }
+    }),
+  }
+}
+
+/** পণ্যের তালিকা-দাম (প্রতি পিস) বদলায়; বিলের সময় "পণ্যের দামও বদলান" বাছলে চলে */
+export function setProductPrice(db: Db, productId: string, pricePoisha: number): Db {
+  if (!Number.isInteger(pricePoisha) || pricePoisha < 1) throw new DomainError("invalid_price", tr("দাম ১ পয়সা বা তার বেশি হতে হবে"))
+  if (!findProduct(db, productId)) throw new DomainError("not_found", tr("পণ্যটি পাওয়া যায়নি"))
+  return { ...db, products: db.products.map((p) => (p.id === productId ? { ...p, pricePoisha } : p)) }
+}
+
 export function setLineDiscounts(draft: Draft, discounts: Record<string, number>): Draft {
   return { ...draft, lines: draft.lines.map((l) => ({ ...l, discount: discounts[l.productId] ?? l.discount })) }
 }
@@ -262,7 +283,7 @@ export function completeSale(db: Db, input: CompleteSaleInput, now: Date): { db:
     return { line: l, product }
   })
   const totals = computeCart(
-    priced.map(({ line, product }) => ({ unitPrice: product.pricePoisha, qty: line.qty, discount: line.discount })),
+    priced.map(({ line, product }) => ({ unitPrice: lineUnitPrice(line, product), qty: line.qty, discount: line.discount })),
     draft.bill,
   )
   const customer = draft.customerId ? db.customers.find((c) => c.id === draft.customerId) : undefined
@@ -280,7 +301,7 @@ export function completeSale(db: Db, input: CompleteSaleInput, now: Date): { db:
       productId: product.id,
       name: product.name,
       qty: line.qty,
-      unitPrice: product.pricePoisha,
+      unitPrice: lineUnitPrice(line, product),
       discount: line.discount,
       allocations: allocs.map((a) => {
         const b = productBatches.find((x) => x.id === a.batchId)

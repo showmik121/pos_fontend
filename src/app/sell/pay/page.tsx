@@ -24,6 +24,7 @@ import { limitStatus } from "@/lib/store/dues-view"
 import { customerBalance } from "@/lib/store/selectors"
 import { loadDevice } from "@/lib/store/device"
 import { findProduct } from "@/lib/store/selectors"
+import { lineUnitPrice } from "@/lib/store/line-price"
 
 // ভাগ করে নেওয়ার সময় মোবাইলের মাধ্যম (রকেট নতুন বিলে নেই)
 const MOBILE_METHODS = [
@@ -64,7 +65,7 @@ function PayScreen() {
   const total = useMemo(() => {
     try {
       return computeCart(
-        lines.map(({ line, product }) => ({ unitPrice: product.pricePoisha, qty: line.qty, discount: line.discount })),
+        lines.map(({ line, product }) => ({ unitPrice: lineUnitPrice(line, product), qty: line.qty, discount: line.discount })),
         db.draft.bill,
       ).total
     } catch {

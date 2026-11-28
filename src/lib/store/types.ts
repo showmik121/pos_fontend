@@ -159,6 +159,8 @@ export interface DraftLine {
   productId: string
   qty: number
   discount: number
+  /** শুধু এই বিলের জন্য বদলানো প্রতি-পিস দাম (পয়সা); না থাকলে পণ্যের দাম */
+  unitPrice?: number
 }
 
 export interface Draft {

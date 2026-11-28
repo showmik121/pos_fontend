@@ -15,6 +15,7 @@ import { domainMessage } from "@/lib/domain/errors"
 import { formatTaka, parseTaka, takaInputValue } from "@/lib/domain/money"
 import { setBillDiscount, setLineDiscounts } from "@/lib/store/actions"
 import { findProduct } from "@/lib/store/selectors"
+import { lineUnitPrice } from "@/lib/store/line-price"
 
 type Kind = "amount" | "percent"
 const KINDS = [
@@ -47,7 +48,7 @@ function DiscountScreen() {
     const bill: BillDiscount = { type: kind, value: billValue }
     try {
       const totals = computeCart(
-        lines.map(({ line, product }) => ({ unitPrice: product.pricePoisha, qty: line.qty, discount: discounts[line.productId] ?? 0 })),
+        lines.map(({ line, product }) => ({ unitPrice: lineUnitPrice(line, product), qty: line.qty, discount: discounts[line.productId] ?? 0 })),
         bill,
       )
       return { ok: true as const, totals, discounts, bill }
@@ -94,7 +95,7 @@ function DiscountScreen() {
           <div key={product.id} className="flex items-center justify-between gap-3 px-4 py-2">
             <div className="min-w-0">
               <div className="truncate font-medium">{product.name}</div>
-              <div className="text-[13px] text-muted">{formatTaka(product.pricePoisha * line.qty)}</div>
+              <div className="text-[13px] text-muted">{formatTaka(lineUnitPrice(line, product) * line.qty)}</div>
             </div>
             <AmountInput id={`d-${product.id}`} label={tf("{p0}-এর ছাড়", { p0: (product.name) })} placeholder={tr("০")} value={lineInputs[product.id] ?? ""} onChange={(e) => setLineInputs((p) => ({ ...p, [product.id]: e.target.value }))} />
           </div>

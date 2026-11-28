@@ -17,7 +17,12 @@ import { todayIso } from "@/lib/domain/dates"
 import { formatCount, formatTaka } from "@/lib/domain/money"
 import { toBanglaDigits } from "@/lib/format/bn"
 import { PackQuickAdd } from "@/components/pack-quick-add"
-import { addToCart, setCartQty } from "@/lib/store/actions"
+import { addToCart, setCartLinePrice, setCartQty, setProductPrice } from "@/lib/store/actions"
+import { lineUnitPrice } from "@/lib/store/line-price"
+import { Field } from "@/components/ui/field"
+import { domainMessage } from "@/lib/domain/errors"
+import { parseTaka, takaInputValue } from "@/lib/domain/money"
+import { useSessionInfo } from "@/lib/hooks/use-session"
 import { hasStrips, packText } from "@/lib/store/pack-text"
 import { expiredStock, findByBarcode, findProduct, sellableStock } from "@/lib/store/selectors"
 import type { Product } from "@/lib/store/types"
@@ -28,6 +33,12 @@ export default function SellPage() {
   const [scanning, setScanning] = useState(false)
   const [notFound, setNotFound] = useState<string | null>(null)
   const [expiredFor, setExpiredFor] = useState<Product | null>(null)
+  const { isOwner } = useSessionInfo()
+  // "দাম বদলান" শিট: কোন পণ্যের দাম, লেখা দাম, পণ্যের তালিকা-দামও বদলাবে কি না
+  const [pricing, setPricing] = useState<Product | null>(null)
+  const [priceInput, setPriceInput] = useState("")
+  const [priceSave, setPriceSave] = useState(false)
+  const [priceError, setPriceError] = useState<string | null>(null)
 
   // হোমের স্ক্যান বোতাম (/sell?scan=1) থেকে এলে সরাসরি স্ক্যানার খোলে; ঠিকানা থেকে চিহ্নটা সরিয়ে দেয়, যাতে রিফ্রেশে আবার না খোলে
   useEffect(() => {
@@ -51,7 +62,7 @@ export default function SellPage() {
   const totals = useMemo(() => {
     try {
       return computeCart(
-        lines.map(({ line, product }) => ({ unitPrice: product.pricePoisha, qty: line.qty, discount: line.discount })),
+        lines.map(({ line, product }) => ({ unitPrice: lineUnitPrice(line, product), qty: line.qty, discount: line.discount })),
         db.draft.bill,
       )
     } catch {
@@ -74,6 +85,28 @@ export default function SellPage() {
     setNotFound(null)
     addProduct(hit.product, hit.packSize)
     return tf("✓ {p0} যোগ হলো", { p0: (hit.product.name) })
+  }
+
+  const openPrice = (product: Product, current: number) => {
+    setPricing(product)
+    setPriceInput(takaInputValue(current))
+    setPriceSave(false)
+    setPriceError(null)
+  }
+  const applyPrice = (reset: boolean) => {
+    if (!pricing) return
+    const poisha = reset ? null : parseTaka(priceInput)
+    if (!reset && (poisha == null || poisha < 1)) return setPriceError(tr("দাম সঠিকভাবে দিন (যেমন ২৪০)"))
+    try {
+      update((d) => {
+        // তালিকা-দামও বদলালে বিলের লাইন আবার তালিকা-দামে ফেরে (দুটো একই হয়ে যায়)
+        if (!reset && priceSave && poisha != null) return { ...setProductPrice(d, pricing.id, poisha), draft: setCartLinePrice(d.draft, pricing.id, null) }
+        return { ...d, draft: setCartLinePrice(d.draft, pricing.id, poisha) }
+      })
+      setPricing(null)
+    } catch (err) {
+      setPriceError(domainMessage(err))
+    }
   }
 
   const hasDiscount = totals != null && totals.lineDiscount + totals.billDiscount > 0
@@ -139,13 +172,23 @@ export default function SellPage() {
       ) : (
         <RowList>
           {lines.map(({ line, product, sellable }) => {
-            const gross = product.pricePoisha * line.qty
+            const unitPrice = lineUnitPrice(line, product)
+            const changed = line.unitPrice != null && line.unitPrice !== product.pricePoisha
+            const gross = unitPrice * line.qty
             return (
               <div key={product.id} className="space-y-2 px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-medium leading-snug">{product.name}</div>
-                    <div className="text-[13px] text-muted">{tr("প্রতি পিস")} {formatTaka(product.pricePoisha)}{hasStrips(product) ? ` · ${tr("প্রতি পাতা")} ${formatTaka(product.pricePoisha * (product.stripSize ?? 1))}` : ""}</div>
+                    <div className="text-[13px] text-muted">
+                      {tr("প্রতি পিস")} {formatTaka(unitPrice)}{hasStrips(product) ? ` · ${tr("প্রতি পাতা")} ${formatTaka(unitPrice * (product.stripSize ?? 1))}` : ""}
+                      {changed ? <span className="ml-1 font-medium text-warn">{tr("(বদলানো)")}</span> : null}
+                    </div>
+                    {isOwner ? (
+                      <button type="button" onClick={() => openPrice(product, unitPrice)} className="min-h-11 text-sm text-brand-dark underline">
+                        {tr("দাম বদলান")}
+                      </button>
+                    ) : null}
                     {hasStrips(product) ? <div className="text-[13px] font-medium text-brand-dark">{packText(line.qty, { stripSize: product.stripSize, cartonSize: 1 })}</div> : null}
                   </div>
                   <div className="text-right">
@@ -171,6 +214,23 @@ export default function SellPage() {
       ) : null}
 
       <Scanner open={scanning} onClose={() => setScanning(false)} onCode={onScanned} continuous title={tr("বিলে স্ক্যান করুন")} />
+
+      <Sheet open={pricing != null} onClose={() => setPricing(null)} label={tr("দাম বদলান")}>
+        <h2 className="text-lg font-bold">{pricing?.name}</h2>
+        <p className="text-muted">{tr("শুধু এই বিলের দাম বদলাবে। প্রতি পিসের দাম লিখুন।")}</p>
+        <Field id="line-price" label={tr("প্রতি পিস দাম")} inputMode="decimal" value={priceInput} onChange={(e) => setPriceInput(e.target.value)} autoFocus />
+        <label className="flex min-h-11 items-center gap-3 text-[15px]">
+          <input type="checkbox" checked={priceSave} onChange={(e) => setPriceSave(e.target.checked)} className="size-5" />
+          {tr("এই পণ্যের দামও এটাই রাখুন (পরের বিলেও)")}
+        </label>
+        {priceError ? <Banner tone="danger">{priceError}</Banner> : null}
+        <Button full onClick={() => applyPrice(false)}>
+          {tr("দাম বসান")}
+        </Button>
+        <Button variant="ghost" full onClick={() => applyPrice(true)}>
+          {tr("তালিকার দামে ফিরুন")}
+        </Button>
+      </Sheet>
 
       <Sheet open={expiredFor != null} onClose={() => setExpiredFor(null)} label={tr("মেয়াদোত্তীর্ণ ব্যাচ")}>
         <h2 className="text-lg font-bold">{tr("মেয়াদোত্তীর্ণ ব্যাচ আছে")}</h2>
