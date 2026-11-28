@@ -48,6 +48,13 @@ describe("পণ্য ও স্টক-ইন", () => {
     const { db, pondsId } = setup()
     expect(() => stockIn(db, { productId: pondsId, qty: 1, unit: "piece", batchNo: "", expiryDate: null, costPoisha: 1, pricePoisha: null, requireBatchAndExpiry: true }, NOW)).toThrow()
   })
+  it("batchOptional দিলে ফার্মেসিতে ব্যাচ নম্বর ছাড়াই স্টক ওঠে, কিন্তু মেয়াদ তবু লাগে", () => {
+    const { db, pondsId } = setup()
+    const base = { productId: pondsId, qty: 2, unit: "piece" as const, costPoisha: 100, pricePoisha: null, requireBatchAndExpiry: true, batchOptional: true }
+    const ok = stockIn(db, { ...base, batchNo: "", expiryDate: "2027-09-30" }, NOW)
+    expect(totalStock(ok, pondsId)).toBe(totalStock(db, pondsId) + 2)
+    expect(() => stockIn(db, { ...base, batchNo: "", expiryDate: null }, NOW)).toThrow(/মেয়াদ/)
+  })
   it("একই ব্যাচ আবার এলে যোগ হয়ে যায়", () => {
     const { db, pondsId } = setup()
     const next = stockIn(db, { productId: pondsId, qty: 5, unit: "piece", batchNo: "B2407", expiryDate: "2027-06-30", costPoisha: 20000, pricePoisha: null, requireBatchAndExpiry: true }, NOW)

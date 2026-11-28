@@ -19,6 +19,8 @@ import { parseMonthYear } from "@/lib/domain/dates"
 import { normalizeExpiryInput } from "@/lib/domain/expiry-input"
 import { ExpiryField } from "@/components/expiry-field"
 import { addToQty } from "@/lib/domain/qty-input"
+import { toPieces } from "@/lib/domain/units"
+import type { Product } from "@/lib/store/types"
 import { DomainError, domainMessage } from "@/lib/domain/errors"
 import { formatCount, formatTaka, parseTaka, takaInputValue } from "@/lib/domain/money"
 import { hasStrips, packText } from "@/lib/store/pack-text"
@@ -34,13 +36,29 @@ const QTY_STEPS = [1, 5, 10, 20, 50] as const
 
 type CountUnitValue = "piece" | "strip" | "carton"
 
+/** এককের বাংলা নাম (পাতা থাকলে বড় একককে "বক্স", নইলে "কার্টন") */
+function unitName(unit: CountUnitValue, p: Pick<Product, "stripSize" | "cartonSize">): string {
+  if (unit === "piece") return tr("পিস")
+  if (unit === "strip") return tr("পাতা")
+  return hasStrips(p) ? tr("বক্স") : tr("কার্টন")
+}
+
+/** ১ একক = কত পিস (পাতার মাপ ঠিক না থাকলে ১) */
+function piecesPerUnit(unit: CountUnitValue, p: Pick<Product, "stripSize" | "cartonSize">): number {
+  try {
+    return toPieces({ qty: 1, unit, stripSize: p.stripSize ?? 1, cartonSize: p.cartonSize })
+  } catch {
+    return 1
+  }
+}
+
 function StockInForm() {
   const params = useSearchParams()
   const router = useRouter()
   const { db, update, ready } = useDb()
   // শুধু-দেখা মোডে নতুন স্টক-জমা বন্ধ; ব্যানার কারণ বলে
   const readOnlyShop = useReadOnlyShop()
-  const { isPharmacy } = useSessionInfo()
+  const { isPharmacy, isOwner } = useSessionInfo()
   const [productId, setProductId] = useState<string | null>(params.get("product"))
   const [query, setQuery] = useState("")
   // ?scan=1 হলে পাতা খুলেই ক্যামেরা চালু (একটানা অনেক পণ্যের স্টক তোলার সময় সুবিধা)
@@ -53,26 +71,35 @@ function StockInForm() {
   const [qty, setQty] = useState("")
   const [batchNo, setBatchNo] = useState("")
   const [expiry, setExpiry] = useState("")
-  const [cost, setCost] = useState("")
+  // ক্রয়মূল্য: null = বাছা এককের জন্য পণ্যের বর্তমান দাম (একক বদলালে নিজে হিসাব হয়); লিখলে সেটাই
+  const [costEdit, setCostEdit] = useState<string | null>(null)
   const [price, setPrice] = useState("")
+  // ফার্মেসিতে দামের ঘর ডিফল্টে গোটানো: বেশিরভাগ সময় দাম একই, তাই টাইপ লাগে না
+  const [showPrices, setShowPrices] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const product = productId ? findProduct(db, productId) : undefined
   const results = useMemo(() => searchProducts(db, query), [db, query])
 
-  // পণ্য বাছা হলে তার বর্তমান দাম আগে থেকে বসে যায়
+  // পণ্য বাছা হলে তার বর্তমান দাম আগে থেকে বসে যায়; ফার্মেসিতে বড় একক (বক্স) আগে থেকে বাছা, কারণ ডিলার বক্সেই মাল দেয়
   useEffect(() => {
     if (!ready || !productId) return
     const p = findProduct(db, productId)
     if (p) {
-      setCost(takaInputValue(p.costPoisha))
+      setCostEdit(null)
       setPrice(takaInputValue(p.pricePoisha))
+      setUnit(isPharmacy && p.cartonSize > 1 ? "carton" : "piece")
+      setShowPrices(!isPharmacy || p.costPoisha === 0)
     }
     // শুধু পণ্য বদলালে চলবে; db বদলালে ব্যবহারকারীর লেখা মুছে যাবে
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, productId])
 
   const choose = (id: string) => setProductId(id)
+  const changeUnit = (u: CountUnitValue) => {
+    setUnit(u)
+    setCostEdit(null)
+  }
 
   if (!product) {
     return (
@@ -135,12 +162,12 @@ function StockInForm() {
       if (!expiryDate) return setError(tr("মেয়াদ মাস/বছর আকারে দিন (যেমন ০৬/২০২৭)"))
     }
     try {
-      update((d) => stockIn(d, { productId: product.id, qty: q, unit, batchNo, expiryDate, costPoisha, pricePoisha, requireBatchAndExpiry: isPharmacy }, new Date()))
+      update((d) => stockIn(d, { productId: product.id, qty: q, unit, batchNo, expiryDate, costPoisha, pricePoisha, requireBatchAndExpiry: isPharmacy, batchOptional: true }, new Date()))
     } catch (err) {
       return setError(err instanceof DomainError ? err.message : domainMessage(err))
     }
     if (!next) return router.replace(`/products/detail?id=${product.id}`)
-    setLastAdded(tf("✓ {p0}: {p1} যোগ হলো। পরের পণ্য বাছুন।", { p0: product.name, p1: `${formatCount(q)} ${unit === "carton" ? (hasStrips(product) ? tr("বক্স") : tr("কার্টন")) : unit === "strip" ? tr("পাতা") : tr("পিস")}` }))
+    setLastAdded(tf("✓ {p0}: {p1} যোগ হলো। পরের পণ্য বাছুন।", { p0: product.name, p1: `${formatCount(q)} ${unitName(unit, product)}` }))
     setProductId(null)
     setQty("")
     setBatchNo("")
@@ -152,6 +179,10 @@ function StockInForm() {
 
   const perCarton = product.cartonSize > 1
   const strips = hasStrips(product)
+  const perUnit = piecesPerUnit(unit, product)
+  const cost = costEdit ?? takaInputValue(product.costPoisha * perUnit)
+  const qtyNum = Number(toAsciiDigits(qty))
+  const qtyOk = Number.isInteger(qtyNum) && qtyNum >= 1
   const unitOptions = [
     { value: "piece" as const, label: "পিস" },
     ...(strips ? [{ value: "strip" as const, label: "পাতা" }] : []),
@@ -167,10 +198,10 @@ function StockInForm() {
   return (
     <AppShell title={tr("স্টক যোগ")} backHref="/stock" footer={
         <div className="flex gap-2">
-          <Button variant="secondary" className="flex-1" onClick={() => submit(true)} disabled={readOnlyShop}>
+          <Button variant={isPharmacy ? "primary" : "secondary"} className="flex-1" onClick={() => submit(true)} disabled={readOnlyShop}>
             {tr("সেভ করে পরের পণ্য")}
           </Button>
-          <Button className="flex-1" onClick={() => submit(false)} disabled={readOnlyShop}>
+          <Button variant={isPharmacy ? "secondary" : "primary"} className="flex-1" onClick={() => submit(false)} disabled={readOnlyShop}>
             {tr("স্টকে যোগ করুন")}
           </Button>
         </div>
@@ -188,7 +219,7 @@ function StockInForm() {
       {unitOptions.length > 1 ? (
         <div className="space-y-1.5">
           <span className="block text-sm font-medium">{tr("কীভাবে গুনছেন")}</span>
-          <Segmented label={tr("একক")} options={unitOptions} value={unit} onChange={setUnit} />
+          <Segmented label={tr("একক")} options={unitOptions} value={unit} onChange={changeUnit} />
         </div>
       ) : null}
       <Field
@@ -206,14 +237,33 @@ function StockInForm() {
           </Button>
         ))}
       </div>
+      {qtyOk && unit !== "piece" ? (
+        <div className="text-sm text-muted" data-testid="si-total">
+          {tf("মোট {p0} পিস যোগ হবে", { p0: formatCount(qtyNum * perUnit) })}
+          {strips ? ` (${packText(qtyNum * perUnit, product)})` : ""}
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-3">
-        <Field id="si-batch" label={isPharmacy ? tr("ব্যাচ নম্বর") : tr("ব্যাচ (ঐচ্ছিক)")} value={batchNo} onChange={(e) => setBatchNo(e.target.value)} />
+        <Field id="si-batch" label={tr("ব্যাচ (ঐচ্ছিক)")} value={batchNo} onChange={(e) => setBatchNo(e.target.value)} autoComplete="off" />
         <ExpiryField id="si-expiry" label={isPharmacy ? tr("মেয়াদ (মাস/বছর)") : tr("মেয়াদ (ঐচ্ছিক)")} value={expiry} onChange={setExpiry} quick={isPharmacy} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field id="si-cost" label={unitCost[unit]} inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
-        <Field id="si-price" label={tr("বিক্রয়মূল্য (প্রতি পিস)")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
-      </div>
+      {showPrices ? (
+        <div className="grid grid-cols-2 gap-3">
+          <Field id="si-cost" label={unitCost[unit]} inputMode="decimal" value={cost} onChange={(e) => setCostEdit(e.target.value)} />
+          <Field id="si-price" label={tr("বিক্রয়মূল্য (প্রতি পিস)")} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+        </div>
+      ) : (
+        <Card className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="text-sm" data-testid="si-price-summary">
+            {isOwner
+              ? tf("ক্রয় {p0} (প্রতি {p1}) · বিক্রয় {p2} (প্রতি পিস)", { p0: formatTaka(product.costPoisha * perUnit), p1: unitName(unit, product), p2: formatTaka(product.pricePoisha) })
+              : tf("বিক্রয় {p0} (প্রতি পিস)", { p0: formatTaka(product.pricePoisha) })}
+          </div>
+          <button type="button" onClick={() => setShowPrices(true)} className="min-h-11 shrink-0 text-sm text-brand-dark underline">
+            {tr("দাম বদলান")}
+          </button>
+        </Card>
+      )}
       {error ? <Banner tone="danger">{error}</Banner> : null}
     </AppShell>
   )

@@ -893,4 +893,8 @@ export const EN: Record<string, string> = {
   "কোম্পানির নাম": "Company name",
   "দ্রুত মেয়াদ": "Quick expiry",
   "বছর": "years",
+  "মোট {p0} পিস যোগ হবে": "{p0} pieces will be added",
+  "ক্রয় {p0} (প্রতি {p1}) · বিক্রয় {p2} (প্রতি পিস)": "Cost {p0} (per {p1}) · Sell {p2} (per piece)",
+  "বিক্রয় {p0} (প্রতি পিস)": "Sell {p0} (per piece)",
+  "দাম বদলান": "Change prices",
 }

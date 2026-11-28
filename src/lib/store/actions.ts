@@ -118,6 +118,8 @@ export interface StockInInput {
   pricePoisha: number | null
   /** ফার্মেসিতে ব্যাচ ও মেয়াদ বাধ্যতামূলক */
   requireBatchAndExpiry: boolean
+  /** true হলে ব্যাচ নম্বর খালি থাকতে পারে (মেয়াদ তবু বাধ্যতামূলক); দোকানদারের টাইপ কমাতে */
+  batchOptional?: boolean
   /** সিংক ইভেন্টের id; দিলে ব্যাচের `rcpt`-এ লেখা হয় */
   receiptId?: string
 }
@@ -129,7 +131,7 @@ export function stockIn(db: Db, input: StockInInput, now: Date): Db {
   requireNonNegativeInt(input.costPoisha, "ক্রয়মূল্য")
   const batchNo = input.batchNo.trim()
   if (input.requireBatchAndExpiry) {
-    if (!batchNo) throw new DomainError("batch_required", tr("ব্যাচ নম্বর দিন"))
+    if (!batchNo && !input.batchOptional) throw new DomainError("batch_required", tr("ব্যাচ নম্বর দিন"))
     if (!input.expiryDate) throw new DomainError("expiry_required", tr("মেয়াদ দিন (মাস/বছর)"))
   }
   const costPerPiece = input.unit === "carton" ? Math.round(input.costPoisha / product.cartonSize) : input.unit === "strip" ? Math.round(input.costPoisha / (product.stripSize ?? 1)) : input.costPoisha
